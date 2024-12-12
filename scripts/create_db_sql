@@ -1,0 +1,30 @@
+-- SQL script to create the necessary tables in PostgreSQL for the Mishna Flask application
+
+-- Table: mishna
+CREATE TABLE mishna (
+    id VARCHAR(100) PRIMARY KEY, -- Unique ID combining chapter and mishna
+    chapter VARCHAR(50) NOT NULL,
+    mishna VARCHAR(50) NOT NULL,
+    text TEXT NOT NULL,
+    interpretation TEXT
+);
+
+-- Table: tag
+CREATE TABLE tag (
+    id SERIAL PRIMARY KEY, -- Auto-incrementing primary key
+    name VARCHAR(100) NOT NULL UNIQUE -- Unique name for the tag
+);
+
+-- Table: mishna_tag (association table)
+CREATE TABLE mishna_tag (
+    mishna_id VARCHAR(100) NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (mishna_id, tag_id),
+    FOREIGN KEY (mishna_id) REFERENCES mishna (id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tag (id) ON DELETE CASCADE
+);
+
+-- Indexes for optimization
+CREATE INDEX idx_mishna_chapter ON mishna (chapter);
+CREATE INDEX idx_mishna_mishna ON mishna (mishna);
+CREATE INDEX idx_tag_name ON tag (name);

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pirkey Avot Flask App Setup Instructions (Windows)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        code {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+            padding: 2px 4px;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+        @media print {
+            body {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Pirkey Avot Flask App Setup Instructions (Windows)</h1>
+
+    <h2>First-time Setup Instructions:</h2>
+    <ol>
+        <li>Open Command Prompt and create a new directory for your project:
+            <br><code>mkdir pirkey_avot_flask</code>
+            <br><code>cd pirkey_avot_flask</code>
+        </li>
+        <li>Create a virtual environment:
+            <br><code>python -m venv venv</code>
+        </li>
+        <li>Activate the virtual environment:
+            <br><code>venv\Scripts\activate</code>
+            <br><span class="note">Note: On macOS/Linux, use <code>source venv/bin/activate</code></span>
+        </li>
+        <li>Create a <code>requirements.txt</code> file with the following content:
+            <br><code>Flask==2.0.3</code>
+            <br><code>Flask-WTF==1.0.0</code>
+            <br><code>Flask-SQLAlchemy==2.5.1</code>
+        </li>
+        <li>Install the required packages:
+            <br><code>pip install -r requirements.txt</code>
+        </li>
+        <li>Create the main application file <code>app.py</code></li>
+        <li>Create a <code>templates</code> folder and place your <code>index.html</code> file inside it.</li>
+        <li>Set up the SQLite database (implement in <code>app.py</code>)</li>
+        <li>Set the FLASK_APP environment variable:
+            <br><code>set FLASK_APP=app.py</code>
+            <br><span class="note">Note: On macOS/Linux, use <code>export FLASK_APP=app.py</code></span>
+        </li>
+        <li>Initialize the database (if using Flask-SQLAlchemy):
+            <br><code>flask db init</code>
+            <br><code>flask db migrate</code>
+            <br><code>flask db upgrade</code>
+        </li>
+    </ol>
+
+    <h2>Running the App (after setup):</h2>
+    <ol>
+        <li>Open Command Prompt and navigate to your project directory:
+            <br><code>cd path\to\pirkey_avot_flask</code>
+        </li>
+        <li>Activate the virtual environment:
+            <br><code>venv\Scripts\activate</code>
+            <br><span class="note">Note: On macOS/Linux, use <code>source venv/bin/activate</code></span>
+        </li>
+        <li>Ensure all requirements are installed:
+            <br><code>pip install -r requirements.txt</code>
+        </li>
+        <li>Set the FLASK_APP environment variable (if not already set):
+            <br><code>set FLASK_APP=app.py</code>
+            <br><span class="note">Note: On macOS/Linux, use <code>export FLASK_APP=app.py</code></span>
+        </li>
+        <li>Run the Flask development server:
+            <br><code>flask run</code>
+        </li>
+        <li>Open a web browser and go to <code>http://127.0.0.1:5000/</code> to view your app.</li>
+    </ol>
+
+    <p><strong>Optional:</strong> For development, enable debug mode by setting the FLASK_ENV environment variable:
+        <br><code>set FLASK_ENV=development</code>
+        <br><span class="note">Note: On macOS/Linux, use <code>export FLASK_ENV=development</code></span>
+    </p>
+</body>
+</html>

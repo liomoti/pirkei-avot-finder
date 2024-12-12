@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Results</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Search Results for "{{ query }}"</h1>
+    <ul>
+        {% for result in results %}
+        <li>
+            <strong>Chapter {{ result.chapter }}, Mishna {{ result.mishna }}</strong>: {{ result.text }}
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="/">New Search</a>
+</body>
+</html>

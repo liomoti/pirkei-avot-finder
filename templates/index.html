@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חיפוש מִשׁנָה</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800" x-data="{ showTags: false, selectedTags: [] }">
+
+    <h1 class="text-2xl font-bold text-center my-4">חיפוש חכם בפרקי אבות</h1>
+
+    <div class="flex justify-center" x-data="{ searchType: '{{ searchType }}'}" >
+        <form method="POST" class="bg-white p-6 rounded shadow-md w-full max-w-lg">
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="search_type" :value="searchType">
+            <!-- Search Type Selection as Stylish Flat Buttons -->
+            <h3 class="text-2xl font-bold text-center my-4">חפש לפי</h3>
+            <div class="flex justify-center gap-4 mb-6">
+                <button type="button"
+                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_mishna', 'bg-gray-200 opacity-50': searchType !== 'search_mishna'}"
+                        class="px-4 py-2 rounded-md font-semibold"
+                        @click="searchType = 'search_mishna'">פרק ומשנה</button>
+                <button type="button"
+                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_free_text', 'bg-gray-200 opacity-50': searchType !== 'search_free_text'}"
+                        class="px-4 py-2 rounded-md font-semibold"
+                        @click="searchType = 'search_free_text'">טקסט חופשי</button>
+                <button type="button"
+                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_by_tags', 'bg-gray-200 opacity-50': searchType !== 'search_by_tags'}"
+                        class="px-4 py-2 rounded-md font-semibold"
+                        @click="searchType = 'search_by_tags'">תגיות</button>
+            </div>
+
+            <!-- Chapter and Mishna in the same line -->
+            <div x-show="searchType === 'search_mishna'" x-cloak>
+                <div class="mb-4 flex gap-4">
+                    <div class="inline short-input w-1/2">
+                        {{ form.chapter.label(class="block text-sm font-semibold mb-1") }}
+                        {{ form.chapter(class="border p-2 w-full", id="chapter") }}
+                    </div>
+                    <div class="inline short-input w-1/2">
+                        {{ form.mishna.label(class="block text-sm font-semibold mb-1") }}
+                        {{ form.mishna(class="border p-2 w-full", id="mishna") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Free Text Search -->
+            <div class="mt-4 mb-4" x-show="searchType === 'search_free_text'" x-cloak>
+                {{ form.text.label(class="block text-gray-700") }}
+                {{ form.text(class="w-full border rounded px-2 py-1") }}
+            </div>
+
+            <!-- Tag Selection as Toggleable Buttons -->
+            <div x-show="searchType === 'search_by_tags'" x-cloak>
+                <div class="text-center">
+                    <button type="button"
+                            class="bg-yellow-500 text-white px-4 py-2 rounded"
+                            @click="showTags = !showTags">
+                        <span x-text="showTags ? 'הסתר תגיות' : 'הצג את כל התגיות'"></span>
+                    </button>
+                </div>
+
+                <!-- Display all tags as selectable buttons -->
+                <div class="flex flex-wrap gap-2 justify-center mt-4" x-show="showTags" x-transition.duration.300ms>
+                    {% for tag in form.tags.choices %}
+                        <button type="button"
+                                :class="selectedTags.includes({{ tag[0] }}) ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'"
+                                class="px-2 py-1 rounded"
+                                @click="selectedTags.includes({{ tag[0] }}) ? selectedTags = selectedTags.filter(t => t !== {{ tag[0] }}) : selectedTags.push({{ tag[0] }})">
+                            {{ tag[1] }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <!-- Hidden input to pass selected tags to the server -->
+                <input type="hidden" name="tags" :value="selectedTags.join(',')" />
+            </div>
+
+            <div class="text-center mt-6">
+                <button name="action" :value="searchType" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">חפש</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold text-center">תוצאות</h2>
+        <div class="mt-4 p-4 border rounded bg-white w-full max-w-lg mx-auto">
+            {% if results %}
+                {% for result in results %}
+                    <div class="p-2 border-b">
+                        <div class="text-center">
+                            <p><strong>פרק:</strong> {{ result.chapter }} <strong>משנה:</strong> {{ result.mishna }}</p>
+                        </div>
+                        <p class="text-center">{{ result.text }}</p>
+                        <div class="flex flex-wrap gap-2 justify-center mt-2">
+                            {% for tag in result.tags %}
+                                <span class="bg-blue-500 text-white px-2 py-1 rounded">
+                                    {{ tag.name }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-gray-600">לא נמצאו תוצאות.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script>
+    const allowedChapters = {{ ALLOWED_CHAPTERS | tojson }};
+    const chapterSelect = document.getElementById('chapter');
+    const mishnaSelect = document.getElementById('mishna');
+
+    // Pre-select the chapter and mishna if available
+    const selectedChapter = "{{ selected_chapter | default('') }}";
+    const selectedMishna = "{{ selected_mishna | default('') }}";
+
+    // Set the initial chapter value
+    if (selectedChapter!='None') {
+        chapterSelect.value = selectedChapter;
+        updateMishnaOptions(selectedChapter, selectedMishna);
+    } else {
+    chapterSelect.value = 'א'
+    }
+
+    // Update mishnayot options based on chapter selection
+    chapterSelect.addEventListener('change', function () {
+        const selectedChapter = chapterSelect.value;
+        updateMishnaOptions(selectedChapter, selectedMishna);
+    });
+
+    // Function to update the mishna options dropdown based on selected chapter
+    function updateMishnaOptions(chapter, preselectedMishna = null) {
+        const mishnayot = allowedChapters[chapter] || [];
+        mishnaSelect.innerHTML = '';
+
+        mishnayot.forEach(function (mishna) {
+            const option = document.createElement('option');
+            option.value = mishna;
+            option.text = mishna;
+            if (preselectedMishna && preselectedMishna === mishna) {
+                option.selected = true;
+            }
+            mishnaSelect.add(option);
+        });
+    }
+
+    // Trigger the event to populate options if chapter is already selected
+    if (selectedChapter) {
+        chapterSelect.dispatchEvent(new Event('change'));
+    }
+</script>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הוספת מִשׁנָה</title>
+<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">-->
+    <style>
+        body {
+            direction: rtl;
+        }
+        .inline {
+            display: inline-block;
+        }
+        .short-input {
+            width: 45%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-lg mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4 text-center">הוספת מִשׁנָה</h1>
+
+        <form method="POST" id="mishna_form"
+              x-data="{
+              selectedTags: {{ selected_tags | tojson }},
+              mishnaSelected: {{ 'true' if selected_mishna else 'false' }}
+              }">
+            {{ mishna_form.hidden_tag() }}
+
+            <!-- Chapter and Mishna in the same line -->
+            <div class="mb-4">
+                <div class="inline short-input">
+                    {{ mishna_form.chapter.label(class="block text-sm font-semibold mb-1") }}
+                    {{ mishna_form.chapter(class="border p-2 w-full", id="chapter") }}
+                </div>
+                <div class="inline short-input">
+                    {{ mishna_form.mishna.label(class="block text-sm font-semibold mb-1") }}
+                    {{ mishna_form.mishna(class="border p-2 w-full", id="mishna") }}
+                </div>
+            </div>
+
+            <!-- Search Button -->
+            <div class="mb-4 text-center">
+                <button class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                        id="search_mishna"
+                        name="action"
+                        value="search_mishna">
+                    חפש
+                </button>
+            </div>
+
+            <!-- Textarea for Mishna content -->
+            <div class="mb-4">
+                {{ mishna_form.text.label(class="block text-sm font-semibold mb-1") }}
+                {{ mishna_form.text(class="border p-2 w-full", rows="4") }}
+            </div>
+
+            <!-- Tag Selection Dropdown -->
+            <div class="mb-4" x-show="mishnaSelected">
+                <label class="block text-sm font-semibold mb-1">בחר תגיות</label>
+                <div id="tag-buttons" class="flex flex-wrap gap-2">
+                    {% for tag in all_tags %}
+                        <button type="button"
+                                class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-opacity-75"
+                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                @click="selectedTags.includes({{ tag.id }}) ? selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : selectedTags.push({{ tag.id }})">
+                            {{ tag.name }}
+                        </button>
+                    {% endfor %}
+                </div>
+                <!-- Hidden input to store selected tag IDs -->
+                <input type="hidden" name="tags" :value="selectedTags.join(',')">
+            </div>
+
+            <!-- Action button (עדכן משנה or הוסף משנה) -->
+            <div class="mb-4 text-center">
+                <button class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100" id="submit_mishna" name="action" value="submit_mishna">
+                    {{ button_label }}
+                </button>
+            </div>
+        </form>
+
+        <!-- Messages -->
+        {% if mishna_message %}
+        <div class="mt-4 text-green-600 text-center">
+            <p>{{ mishna_message }}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+<script>
+    const allowedChapters = {{ ALLOWED_CHAPTERS | tojson }};
+    const chapterSelect = document.getElementById('chapter');
+    const mishnaSelect = document.getElementById('mishna');
+
+    // Pre-select the chapter and mishna if available
+    const selectedChapter = "{{ selected_chapter | default('') }}";
+    const selectedMishna = "{{ selected_mishna | default('') }}";
+
+    // Set the initial chapter value
+    if (selectedChapter!='None') {
+        chapterSelect.value = selectedChapter;
+        updateMishnaOptions(selectedChapter, selectedMishna);
+    } else {
+    chapterSelect.value = 'א'
+    }
+
+    // Update mishnayot options based on chapter selection
+    chapterSelect.addEventListener('change', function () {
+        const selectedChapter = chapterSelect.value;
+        updateMishnaOptions(selectedChapter, selectedMishna);
+    });
+
+    // Function to update the mishna options dropdown based on selected chapter
+    function updateMishnaOptions(chapter, preselectedMishna = null) {
+        const mishnayot = allowedChapters[chapter] || [];
+        mishnaSelect.innerHTML = '';
+
+        mishnayot.forEach(function (mishna) {
+            const option = document.createElement('option');
+            option.value = mishna;
+            option.text = mishna;
+            if (preselectedMishna && preselectedMishna === mishna) {
+                option.selected = true;
+            }
+            mishnaSelect.add(option);
+        });
+    }
+
+    // Trigger the event to populate options if chapter is already selected
+    if (selectedChapter) {
+        chapterSelect.dispatchEvent(new Event('change'));
+    }
+</script>

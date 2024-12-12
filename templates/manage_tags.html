@@ -1,0 +1,76 @@
+<!-- templates/manage_tags.html -->
+<div class="max-w-lg mx-auto bg-white p-6 rounded shadow mb-8" x-data="{ showTags: false }">
+    <h2 class="text-xl font-bold mb-4 text-center">ניהול תגיות</h2>
+
+    <!-- Button to toggle tags display -->
+    <form method="POST" id="tag_form" class="mb-4 text-center">
+        {{ tag_form.hidden_tag() }}
+        <button type="button"
+                class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                @click="showTags = !showTags">
+            <span x-text="showTags ? 'הסתר תגיות' : 'הצג את כל התגיות'"></span>
+        </button>
+
+        <!-- Display all tags as buttons, visible only when showTags is true -->
+        <div class="flex flex-wrap gap-2 justify-center mt-4" x-show="showTags" x-transition.duration.300ms>
+            {% for tag in all_tags %}
+                <button type="button" class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 hover:opacity-100">
+                    {{ tag.name }}
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- Form to add a new tag -->
+        <div class="flex justify-between items-center mb-4 mt-4">
+            <label class="block text-sm font-semibold">הוסף תגית חדשה</label>
+            {{ tag_form.name(class="border p-2 w-3/5", placeholder="שם התגית") }}
+        </div>
+        <div class="text-center">
+            <button type="submit"
+                    class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                    id="add_tag"
+                    name="action"
+                    value="add_tag">
+                הוסף תגית
+            </button>
+        </div>
+        <br>
+
+        <!-- Form to delete a tag -->
+        <div class="flex justify-between items-center mb-4">
+            <label for="tagToDelete" class="block text-sm font-semibold">מחק תגית</label>
+            <select id="tagToDelete" name="tag_to_delete" class="border p-2 w-3/5">
+                {% if all_tags %}
+                {% for tag in all_tags %}
+                <option value="{{ tag.id }}">{{ tag.name }}</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <!-- Confirmation Dialog for Deletion -->
+        <div x-data="{ showDeleteConfirm: false }" class="text-center">
+            <button class="bg-red-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                    @click="showDeleteConfirm = true" id="delete_tag" name="action" value="delete_tag">
+                מחק תגית
+            </button>
+            <div x-show="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="bg-white p-4 rounded shadow-lg">
+                    <p>האם אתה בטוח שברצונך למחוק את התגית?</p>
+                    <button class="bg-gray-500 text-white px-4 py-2 rounded mt-4 mr-2" @click="showDeleteConfirm = false">
+                        ביטול
+                    </button>
+                    <button class="bg-red-500 text-white px-4 py-2 rounded mt-4"
+                            @click="showDeleteConfirm = false; $refs.deleteButton.click()">
+                        אישור
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <!-- Placeholder for messages -->
+    {% if tag_message %}
+    <div id="tagMessage" class="mt-4 text-center text-red-600">
+        <p>{{ tag_message }}</p>
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="error-container">
+    <h2>שגיאה</h2>
+    <p>{{ error }}</p>
+    <a href="{{ url_for('main.search_mishna') }}">חזרה לדף הבית</a>
+</div>
+{% endblock %}
