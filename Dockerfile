@@ -26,4 +26,4 @@ COPY . /app/
 EXPOSE $PORT
 
 # Command to run the application
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "wsgi:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
