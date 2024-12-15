@@ -1,4 +1,5 @@
 flask==2.3.2
+flask-wtf==1.1.1
 gunicorn==22.0.0
 sqlalchemy==2.0.21
 flask-sqlalchemy==3.0.5
