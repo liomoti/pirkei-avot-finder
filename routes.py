@@ -4,6 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
 from models import db, Mishna, Tag
+from utils.text_utils import remove_niqqud
 
 # Define the blueprint
 main = Blueprint('main', __name__)
@@ -39,10 +40,10 @@ def search_mishna():
 
             # Free Text Search
             elif action == 'search_free_text':
-                query_text = mishna_form.text.data.lower()
+                query_text = remove_niqqud(mishna_form.text.data.lower())
                 current_app.logger.info(f'Performing free text search with query: {query_text}')
 
-                results = Mishna.query.filter(Mishna.text.ilike(f"%{query_text}%")).all()
+                results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).all()
                 current_app.logger.info(f'Found {len(results)} results for free text search')
 
             # Tag-based Search
@@ -97,7 +98,7 @@ def manage_content():
                 existing_mishna = Mishna.query.filter_by(id=mishna_id).first()
 
                 if existing_mishna:
-                    mishna_form.text.data = existing_mishna.text
+                    mishna_form.text.data = existing_mishna.text_pretty
                     selected_tags = [tag.id for tag in existing_mishna.tags]
                     mishna_message = f"מִשׁנָה בפרק {chapter} משנה {mishna} קיימת במאגר."
                     button_label = 'עדכן משנה'
@@ -113,7 +114,8 @@ def manage_content():
                 try:
                     chapter = mishna_form.chapter.data
                     mishna = mishna_form.mishna.data
-                    text = mishna_form.text.data
+                    text_pretty = mishna_form.text.data
+                    text_raw = remove_niqqud(text_pretty)
                     current_app.logger.info(
                         f'Attempting to submit/update Mishna - Chapter: {chapter}, Mishna: {mishna}')
 
@@ -127,12 +129,18 @@ def manage_content():
 
                     if existing_mishna:
                         current_app.logger.info(f'Updating existing Mishna: {mishna_id}')
-                        existing_mishna.text = text
+                        existing_mishna.text_pretty = text_pretty
+                        existing_mishna.text_raw = text_raw
                         existing_mishna.tags = new_tags
                         mishna_message = "המִשׁנָה עודכנה בהצלחה!"
                     else:
                         current_app.logger.info(f'Creating new Mishna: {mishna_id}')
-                        new_mishna = Mishna(chapter=chapter, mishna=mishna, text=text, tags=new_tags, interpretation="")
+                        new_mishna = Mishna(chapter=chapter,
+                                            mishna=mishna,
+                                            text_pretty=text_pretty,
+                                            text_raw=text_raw,
+                                            tags=new_tags,
+                                            interpretation="")
                         db.session.add(new_mishna)
                         mishna_message = "המִשׁנָה הוספה בהצלחה!"
 

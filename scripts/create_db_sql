@@ -5,7 +5,8 @@ CREATE TABLE mishna (
     id VARCHAR(100) PRIMARY KEY, -- Unique ID combining chapter and mishna
     chapter VARCHAR(50) NOT NULL,
     mishna VARCHAR(50) NOT NULL,
-    text TEXT NOT NULL,
+    text_pretty TEXT NOT NULL,
+    text_raw TEXT NOT NULL,
     interpretation TEXT
 );
 

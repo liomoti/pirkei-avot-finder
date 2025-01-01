@@ -17,14 +17,16 @@ class Mishna(db.Model):
     id = db.Column(db.String(100), primary_key=True)  # Unique ID combining chapter and mishna
     chapter = db.Column(db.String(50), nullable=False)
     mishna = db.Column(db.String(50), nullable=False)
-    text = db.Column(db.String, nullable=False)
+    text_pretty = db.Column(db.String, nullable=False)
+    text_raw = db.Column(db.String, nullable=False)
     interpretation = db.Column(db.Text)
     tags = db.relationship('Tag', secondary='mishna_tag', back_populates='mishnaiot')
 
-    def __init__(self, chapter, mishna, text, tags, interpretation=""):
+    def __init__(self, chapter, mishna, text_pretty, text_raw, tags, interpretation=""):
         self.chapter = chapter
         self.mishna = mishna
-        self.text = text
+        self.text_pretty = text_pretty
+        self.text_raw = text_raw
         self.tags = tags
         self.interpretation = interpretation
         # Create a unique id by combining chapter and mishna
