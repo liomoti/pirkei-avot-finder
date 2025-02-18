@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>התחברות</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+    body {
+        direction: rtl;
+    }
+    .inline {
+        display: inline-block;
+    }
+    .short-input {
+        width: 45%;
+    }
+</style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <h1 class="text-2xl font-bold text-center my-8">התחברות למערכת הניהול</h1>
+
+    <div class="flex justify-center">
+        <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+            <h2 class="text-xl font-bold text-center mb-4">ברוך הבא</h2>
+            <p class="text-center text-gray-600 mb-6">אנא התחבר עם החשבון שלך כדי לגשת לפאנל הניהול</p>
+
+            <!-- Login Form -->
+            <form action="/login" method="POST" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-semibold mb-1">אימייל</label>
+                    <input type="email" name="email" id="email" placeholder="הכנס אימייל" required
+                           class="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-semibold mb-1">סיסמה</label>
+                    <input type="password" name="password" id="password" placeholder="הכנס סיסמה" required
+                           class="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                        התחבר
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="mt-8 text-center bg-gray-100 py-6 border-t border-gray-200">
+      <div class="container mx-auto">
+        <p class="text-gray-700 text-sm" style="direction: ltr; display: flex; justify-content: center; align-items: center;">
+          Built by
+          <a href="https://www.linkedin.com/in/moti-shaul"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-blue-500 hover:text-blue-600 hover:underline font-medium inline-flex items-center"
+             style="margin-left: 0.25rem;">
+            Moti Shaul
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M22.225 0H1.771C.791 0 0 .776 0 1.729v20.543C0 23.214.792 24 1.77 24h20.453C23.208 24 24 23.214 24 22.272V1.729C24 .776 23.208 0 22.225 0zM7.119 20.459H3.56V9h3.558v11.459zM5.341 7.447c-1.134 0-2.054-.91-2.054-2.032a2.054 2.054 0 1 1 4.109 0c0 1.122-.92 2.032-2.055 2.032zM20.453 20.459h-3.558v-5.661c0-1.35-.027-3.086-1.885-3.086-1.889 0-2.178 1.476-2.178 3v5.747h-3.557V9h3.417v1.561h.049c.476-.9 1.633-1.848 3.36-1.848 3.593 0 4.257 2.364 4.257 5.435v6.311z"/>
+            </svg>
+          </a>
+        </p>
+      </div>
+    </footer>
+</body>
+</html>

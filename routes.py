@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, current_app
+from functools import wraps
+from flask import Blueprint, render_template, request, current_app, redirect, session
 from sqlalchemy.exc import SQLAlchemyError
 
+from api.supabase_client import supabase
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
 from models import db, Mishna, Tag
@@ -9,6 +11,34 @@ from utils.text_utils import remove_niqqud
 # Define the blueprint
 main = Blueprint('main', __name__)
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~ Authentication ~~~~~~~~~~~~~~~~~~~~~
+def login_is_required(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if not session.get("access_token"):
+            return render_template('login.html')
+        return function(*args, **kwargs)
+    return wrapper
+
+@main.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get("email")
+        password = request.form.get("password")
+        try:
+            # Authenticate with Supabase
+            auth_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if auth_response.user:  # Check if authentication was successful
+                session['access_token'] = auth_response.session.access_token
+                return redirect("manage", code=302)
+        except Exception as e:
+            return render_template('login.html')
+    return render_template('login.html')
+
+@main.route("/logout")
+def logout():
+    session.pop('access_token', None)
+    return render_template('login.html')
 
 @main.route('/', methods=['GET', 'POST'])
 def search_mishna():
@@ -70,8 +100,9 @@ def search_mishna():
         # You might want to show an error page to the user here
         return render_template('error.html', error="An error occurred during search")
 
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Front ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @main.route('/manage', methods=['GET', 'POST'])
+@login_is_required
 def manage_content():
     """Handle content management functionality."""
     try:
