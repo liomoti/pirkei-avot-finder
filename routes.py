@@ -31,14 +31,15 @@ def login():
             if auth_response.user:  # Check if authentication was successful
                 session['access_token'] = auth_response.session.access_token
                 return redirect("manage", code=302)
-        except Exception as e:
+        except (Exception,) as e:
             return render_template('login.html')
     return render_template('login.html')
 
-@main.route("/logout")
+@main.route("/logout", methods=['POST'])
 def logout():
-    session.pop('access_token', None)
-    return render_template('login.html')
+    # session.pop('access_token', None)
+    session.clear()
+    return redirect("/", code=302)
 
 @main.route('/', methods=['GET', 'POST'])
 def search_mishna():
