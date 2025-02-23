@@ -9,7 +9,9 @@
 </head>
 <body class="bg-gray-100 text-gray-800" x-data="{ showTags: false, selectedTags: [] }">
 
-    <h1 class="text-2xl font-bold text-center my-4">חיפוש חכם בפרקי אבות</h1>
+    <h1 class="text-2xl font-bold text-center my-4">
+    <a href="/" class="text-black-600 hover:text-blue-800">חיפוש חכם בפרקי אבות</a>
+    </h1>
 
     <div class="flex justify-center" x-data="{ searchType: '{{ searchType }}'}" >
         <form method="POST" class="bg-white p-6 rounded shadow-md w-full max-w-lg">
@@ -86,7 +88,17 @@
 
     <!-- Results Section -->
     <div class="mt-8">
-        <h2 class="text-xl font-semibold text-center">תוצאות</h2>
+        <h2 class="text-xl font-semibold text-center">
+
+        {% if results %}
+            {% if results|length == 1 %}
+                נמצאה משנה אחת בלבד.
+            {% else %}
+                נמצאו {{ results|length }} משניות.
+            {% endif %}
+        {% endif %}
+
+        </h2>
         <div class="mt-4 p-4 border rounded bg-white w-full max-w-lg mx-auto">
             {% if results %}
                 {% for result in results %}
