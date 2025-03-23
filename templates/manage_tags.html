@@ -1,6 +1,6 @@
 <!-- templates/manage_tags.html -->
 <div class="max-w-lg mx-auto bg-white p-6 rounded shadow mb-8" x-data="{ showTags: false }">
-    <h2 class="text-xl font-bold mb-4 text-center">ניהול תגיות</h2>
+    <h2 class="text-xl font-bold mb-4 text-center">ניהול נושאים</h2>
 
     <!-- Button to toggle tags display -->
     <form method="POST" id="tag_form" class="mb-4 text-center">
@@ -8,7 +8,7 @@
         <button type="button"
                 class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
                 @click="showTags = !showTags">
-            <span x-text="showTags ? 'הסתר תגיות' : 'הצג את כל התגיות'"></span>
+            <span x-text="showTags ? 'הסתר נושאים' : 'הצג את כל נושאים'"></span>
         </button>
 
         <!-- Display all tags as buttons, visible only when showTags is true -->
@@ -22,8 +22,8 @@
 
         <!-- Form to add a new tag -->
         <div class="flex justify-between items-center mb-4 mt-4">
-            <label class="block text-sm font-semibold">הוסף תגית חדשה</label>
-            {{ tag_form.name(class="border p-2 w-3/5", placeholder="שם התגית") }}
+            <label class="block text-sm font-semibold">הוסף נושא חדשה</label>
+            {{ tag_form.name(class="border p-2 w-3/5", placeholder="שם הנושא") }}
         </div>
         <div class="text-center">
             <button type="submit"
@@ -31,7 +31,7 @@
                     id="add_tag"
                     name="action"
                     value="add_tag">
-                הוסף תגית
+                הוסף נושא
             </button>
         </div>
         <br>

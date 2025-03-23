@@ -31,7 +31,7 @@
                 <button type="button"
                         :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_by_tags', 'bg-gray-200 opacity-50': searchType !== 'search_by_tags'}"
                         class="px-4 py-2 rounded-md font-semibold"
-                        @click="searchType = 'search_by_tags'">תגיות</button>
+                        @click="searchType = 'search_by_tags'">נושא</button>
             </div>
 
             <!-- Chapter and Mishna in the same line -->
@@ -60,7 +60,7 @@
                     <button type="button"
                             class="bg-yellow-500 text-white px-4 py-2 rounded"
                             @click="showTags = !showTags">
-                        <span x-text="showTags ? 'הסתר תגיות' : 'הצג את כל התגיות'"></span>
+                        <span x-text="showTags ? 'הסתר נושאים' : 'הצג את כל הנושאים'"></span>
                     </button>
                 </div>
 
