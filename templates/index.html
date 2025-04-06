@@ -54,29 +54,43 @@
                 {{ form.text(class="w-full border rounded px-2 py-1") }}
             </div>
 
-            <!-- Tag Selection as Toggleable Buttons -->
-            <div x-show="searchType === 'search_by_tags'" x-cloak>
+            <!-- Tag Selection with Reduced Padding in Category Boxes -->
+            <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection">
                 <div class="text-center">
-                    <button type="button"
-                            class="bg-yellow-500 text-white px-4 py-2 rounded"
-                            @click="showTags = !showTags">
-                        <span x-text="showTags ? 'הסתר נושאים' : 'הצג את כל הנושאים'"></span>
-                    </button>
+                    <label for="tag-search" class="block text-sm font-semibold mb-2">חפש נושא</label>
+                    <input type="text" id="tag-search" placeholder="הקלד נושא לחיפוש..."
+                           class="border p-2 w-full max-w-md mx-auto rounded"
+                           x-model="tagSearch" @input="filterTags()">
                 </div>
 
-                <!-- Display all tags as selectable buttons -->
-                <div class="flex flex-wrap gap-2 justify-center mt-4" x-show="showTags" x-transition.duration.300ms>
-                    {% for tag in form.tags.choices %}
-                        <button type="button"
-                                :class="selectedTags.includes({{ tag[0] }}) ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'"
-                                class="px-2 py-1 rounded"
-                                @click="selectedTags.includes({{ tag[0] }}) ? selectedTags = selectedTags.filter(t => t !== {{ tag[0] }}) : selectedTags.push({{ tag[0] }})">
-                            {{ tag[1] }}
-                        </button>
-                    {% endfor %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mt-6">
+                    <template x-for="(category, categoryName) in sortedCategories" :key="categoryName">
+                        <div class="p-2 border rounded shadow bg-gray-50">
+                            <h4 class="text-lg font-semibold text-center mb-1" x-text="categoryName"></h4>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <template x-for="(tag, index) in category" :key="tag.id">
+                                    <button type="button"
+                                            x-show="showAllCategories[categoryName] || index < 3"
+                                            :class="selectedTags.includes(tag.id) ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'"
+                                            class="px-3 py-1 rounded"
+                                            @click="toggleTag(tag.id)">
+                                        <span x-text="tag.name"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="text-center mt-1">
+                                <button type="button"
+                                        class="text-blue-500 hover:underline"
+                                        x-show="category.length > 5"
+                                        @click="toggleShowAll(categoryName)">
+                                    <span x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
-                <!-- Hidden input to pass selected tags to the server -->
+                <!-- Ensure the hidden input field is properly bound to selectedTags -->
                 <input type="hidden" name="tags" :value="selectedTags.join(',')" />
             </div>
 
@@ -144,7 +158,7 @@
 </html>
 
 <script>
-    const allowedChapters = {{ ALLOWED_CHAPTERS | tojson }};
+    const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
     const chapterSelect = document.getElementById('chapter');
     const mishnaSelect = document.getElementById('mishna');
 
@@ -186,4 +200,70 @@
     if (selectedChapter) {
         chapterSelect.dispatchEvent(new Event('change'));
     }
+</script>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('tagSelection', () => ({
+            allTags: {{ all_tags | tojson | safe }},
+            tagSearch: '',
+            selectedTags: [],
+            filteredCategories: {},
+            showAllCategories: {},
+
+            get sortedCategories() {
+                const sorted = {};
+                Object.keys(this.filteredCategories)
+                    .sort() // Sort categories alphabetically
+                    .forEach(categoryName => {
+                        sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
+                            a.name.localeCompare(b.name, 'he') // Sort tags alphabetically
+                        );
+                    });
+                return sorted;
+            },
+
+            init() {
+                this.groupTagsByCategory();
+            },
+
+            groupTagsByCategory() {
+                const categories = {};
+                this.allTags.forEach(tag => {
+                    if (!categories[tag.category]) {
+                        categories[tag.category] = [];
+                        this.showAllCategories[tag.category] = false; // Initialize "show all" state for each category
+                    }
+                    categories[tag.category].push(tag);
+                });
+                this.filteredCategories = categories;
+            },
+
+            filterTags() {
+                const search = this.tagSearch.toLowerCase();
+                const categories = {};
+                this.allTags.forEach(tag => {
+                    if (tag.name.toLowerCase().includes(search)) {
+                        if (!categories[tag.category]) {
+                            categories[tag.category] = [];
+                        }
+                        categories[tag.category].push(tag);
+                    }
+                });
+                this.filteredCategories = categories;
+            },
+
+            toggleTag(tagId) {
+                if (this.selectedTags.includes(tagId)) {
+                    this.selectedTags = this.selectedTags.filter(id => id !== tagId);
+                } else {
+                    this.selectedTags.push(tagId);
+                }
+            },
+
+            toggleShowAll(categoryName) {
+                this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
+            }
+        }));
+    });
 </script>

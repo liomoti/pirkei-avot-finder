@@ -49,7 +49,12 @@ def search_mishna():
         results = []
         selected_tags = []
         all_tags = Tag.query.all()
+        tags_with_categories = [{"id": tag.id, "name": tag.name, "category": tag.category_name} for tag in all_tags]
         search_type = request.form.get('search_type', 'search_mishna')
+
+        # Fetch tags grouped by categories
+        # categories = Category.query.all()
+
 
         if request.method == 'POST':
             action = request.form.get('action')
@@ -91,7 +96,7 @@ def search_mishna():
                                results=results,
                                searchType=search_type,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
-                               all_tags=all_tags,
+                               all_tags=tags_with_categories,
                                selected_tags=selected_tags,
                                selected_chapter=mishna_form.chapter.data,
                                selected_mishna=mishna_form.mishna.data)
