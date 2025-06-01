@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from pgvector.sqlalchemy import Vector
 
 db = SQLAlchemy()
 
@@ -15,6 +16,7 @@ class Mishna(db.Model):
         text_raw (str): The raw content of the mishna.
         interpretation (str): Optional interpretation or commentary for the mishna.
         tags (list[Tag]): A list of tags associated with the mishna.
+        embedding (list[float]): A vector representation of the mishna for machine learning purposes.
     """
     __tablename__ = 'mishna'
     id = db.Column(db.String(100), primary_key=True)  # Unique ID combining chapter and mishna
@@ -23,15 +25,17 @@ class Mishna(db.Model):
     text_pretty = db.Column(db.String, nullable=False)
     text_raw = db.Column(db.String, nullable=False)
     interpretation = db.Column(db.Text)
+    embedding = db.Column(Vector(768))
     tags = db.relationship('Tag', secondary='mishna_tag', back_populates='mishnaiot')
 
-    def __init__(self, chapter, mishna, text_pretty, text_raw, tags, interpretation=""):
+    def __init__(self, chapter, mishna, text_pretty, text_raw, tags, interpretation="", embedding=None):
         self.chapter = chapter
         self.mishna = mishna
         self.text_pretty = text_pretty
         self.text_raw = text_raw
         self.tags = tags
         self.interpretation = interpretation
+        self.embedding = embedding
         # Create a unique id by combining chapter and mishna
         self.id = f"{chapter}_{mishna}"
 

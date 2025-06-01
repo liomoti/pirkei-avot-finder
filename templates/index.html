@@ -32,6 +32,10 @@
                         :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_by_tags', 'bg-gray-200 opacity-50': searchType !== 'search_by_tags'}"
                         class="px-4 py-2 rounded-md font-semibold"
                         @click="searchType = 'search_by_tags'">נושא</button>
+                <button type="button"
+                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_semantic', 'bg-gray-200 opacity-50': searchType !== 'search_semantic'}"
+                        class="px-4 py-2 rounded-md font-semibold"
+                        @click="searchType = 'search_semantic'">חיפוש סמנטי</button>
             </div>
 
             <!-- Chapter and Mishna in the same line -->
@@ -52,6 +56,12 @@
             <div class="mt-4 mb-4" x-show="searchType === 'search_free_text'" x-cloak>
                 {{ form.text.label(class="block text-gray-700") }}
                 {{ form.text(class="w-full border rounded px-2 py-1") }}
+            </div>
+
+            <!-- Semantic Search -->
+            <div class="mt-4 mb-4" x-show="searchType === 'search_semantic'" x-cloak>
+                <label class="block text-gray-700 mb-1">הזן טקסט לחיפוש סמנטי</label>
+                {{ form.semantic_text(class="w-full border rounded px-2 py-1", placeholder="הקלד טקסט לחיפוש סמנטי...") }}
             </div>
 
             <!-- Tag Selection with Reduced Padding in Category Boxes -->

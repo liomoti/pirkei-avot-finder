@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import Blueprint, render_template, request, current_app, redirect, session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 from api.supabase_client import supabase
 from constants import ALLOWED_CHAPTERS
@@ -52,9 +53,10 @@ def search_mishna():
         tags_with_categories = [{"id": tag.id, "name": tag.name, "category": tag.category_name} for tag in all_tags]
         search_type = request.form.get('search_type', 'search_mishna')
 
-        # Fetch tags grouped by categories
-        # categories = Category.query.all()
-
+        # Semantic search model import
+        from sentence_transformers import SentenceTransformer
+        import numpy as np
+        model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
 
         if request.method == 'POST':
             action = request.form.get('action')
@@ -64,21 +66,13 @@ def search_mishna():
             if action == 'search_mishna':
                 chapter = mishna_form.chapter.data
                 mishna = mishna_form.mishna.data
-                # current_app.logger.info(f'Searching for Mishna - Chapter: {chapter}, Mishna: {mishna}')
-
                 mishna_id = f"{chapter}_{mishna}"
                 results = Mishna.query.filter_by(id=mishna_id).all()
-
-                # if results:
-                #     current_app.logger.info(f'Found {len(results)} results for Chapter {chapter}, Mishna {mishna}')
-                # else:
-                #     current_app.logger.info(f'No results found for Chapter {chapter}, Mishna {mishna}')
 
             # Free Text Search
             elif action == 'search_free_text':
                 query_text = remove_niqqud(mishna_form.text.data.lower())
                 current_app.logger.info(f'Performing free text search with query: {query_text}')
-
                 results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).all()
                 current_app.logger.info(f'Found {len(results)} results for free text search')
 
@@ -87,9 +81,33 @@ def search_mishna():
                 selected_tags = request.form.get('tags', '').split(',')
                 selected_tags = [int(tag_id) for tag_id in selected_tags if tag_id.isdigit()]
                 current_app.logger.info(f'Searching by tags: {selected_tags}')
-
                 results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
+
+            # Semantic Search
+            elif action == 'search_semantic':
+                query_text = mishna_form.semantic_text.data
+                if not query_text:
+                    results = []
+                else:
+                    # Encode the query to a vector
+                    query_vector = model.encode(query_text)
+                    # Use raw SQL for vector similarity search
+                    # Get more results initially, then filter
+                    sql = text('SELECT *, (embedding <=> (:query_vector)::vector) as distance FROM mishna ORDER BY distance LIMIT 2;')
+                    current_app.logger.info(f'Performing semantic search with query: {query_text}')
+                    query_vector = query_vector.tolist()
+                    result_proxy = db.session.execute(sql, {"query_vector": query_vector})
+                    # mishna_ids = [row[0] for row in result_proxy]
+                    # results = Mishna.query.filter(Mishna.id.in_(mishna_ids)).all()
+
+                    # Filter by similarity threshold
+                    results = []
+                    for row in result_proxy:
+                        if row.distance < 0.7:  # Adjust threshold as needed
+                            mishna = Mishna.query.get(row[0])
+                            current_app.logger.info(f"distance: {row.distance}")  # Log first 50 chars
+                            results.append(mishna)
 
         return render_template('index.html',
                                form=mishna_form,
@@ -103,7 +121,6 @@ def search_mishna():
 
     except Exception as e:
         current_app.logger.error(f'Error in search_mishna: {str(e)}', exc_info=True)
-        # You might want to show an error page to the user here
         return render_template('error.html', error="An error occurred during search")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Front ~~~~~~~~~~~~~~~~~~~~~~~~~~~
