@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from api.supabase_client import supabase
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
-from models import db, Mishna, Tag
+from models import db, Mishna, Tag, Category
 from utils.text_utils import remove_niqqud
 
 # Define the blueprint
@@ -118,6 +118,10 @@ def manage_content():
         tag_message = None
         mishna_message = None
         button_label = 'הוסף משנה'
+        
+        # Get all categories and tags
+        categories = Category.query.all()
+        uncategorized_tags = Tag.query.filter_by(category_id=None).all()
         all_tags = Tag.query.all()
         selected_tags = []
 
@@ -189,16 +193,42 @@ def manage_content():
                     current_app.logger.error(f'Database error while submitting Mishna: {str(e)}', exc_info=True)
                     mishna_message = "אירעה שגיאה בשמירת המשנה"
 
+            # Handle Categories
+            elif action == "add_category":
+                new_category_name = tag_form.new_category_name.data
+                current_app.logger.info(f'Attempting to add new category: {new_category_name}')
+
+                if new_category_name:
+                    existing_category = Category.query.filter_by(name=new_category_name).first()
+                    if not existing_category:
+                        try:
+                            new_category = Category(name=new_category_name)
+                            db.session.add(new_category)
+                            db.session.commit()
+                            tag_message = "הקטגוריה הוספה בהצלחה!"
+                            current_app.logger.info(f'Successfully added new category: {new_category_name}')
+                        except SQLAlchemyError as e:
+                            db.session.rollback()
+                            current_app.logger.error(f'Database error while adding category: {str(e)}', exc_info=True)
+                            tag_message = "אירעה שגיאה בהוספת הקטגוריה"
+                    else:
+                        current_app.logger.info(f'Category already exists: {new_category_name}')
+                        tag_message = "הקטגוריה כבר קיימת."
+
             # Handle Tags
             elif action == "add_tag":
                 new_tag_name = tag_form.name.data
+                category_id = tag_form.category_id.data
                 current_app.logger.info(f'Attempting to add new tag: {new_tag_name}')
 
                 if new_tag_name:
                     existing_tag = Tag.query.filter_by(name=new_tag_name).first()
                     if not existing_tag:
                         try:
-                            new_tag = Tag(name=new_tag_name)
+                            new_tag = Tag(
+                                name=new_tag_name,
+                                category_id=category_id if category_id != 0 else None
+                            )
                             db.session.add(new_tag)
                             db.session.commit()
                             tag_message = "התגית הוספה בהצלחה!"
@@ -210,6 +240,32 @@ def manage_content():
                     else:
                         current_app.logger.info(f'Tag already exists: {new_tag_name}')
                         tag_message = "התגית כבר קיימת."
+
+            # Handle Tag Editing
+            elif action == "edit_tag":
+                tag_id = request.form.get('tag_to_edit')
+                new_category_id = request.form.get('new_category_id')
+                current_app.logger.info(f'Attempting to edit tag ID: {tag_id}')
+
+                if tag_id:
+                    try:
+                        tag = Tag.query.get(tag_id)
+                        if tag:
+                            # Convert '0' to None for uncategorized tags
+                            tag.category_id = None if new_category_id == '0' else int(new_category_id)
+                            db.session.commit()
+                            tag_message = "קטגורית הנושא עודכנה בהצלחה!"
+                            current_app.logger.info(f'Successfully updated tag ID: {tag_id}')
+                        else:
+                            current_app.logger.warning(f'Tag not found for editing: {tag_id}')
+                            tag_message = "לא הצלחנו למצוא את הנושא במאגר."
+                    except SQLAlchemyError as e:
+                        db.session.rollback()
+                        current_app.logger.error(f'Database error while editing tag: {str(e)}', exc_info=True)
+                        tag_message = "אירעה שגיאה בעדכון הנושא"
+                else:
+                    current_app.logger.warning('No tag ID provided for editing')
+                    tag_message = "בחר נושא לעריכה."
 
             elif action == "delete_tag":
                 tag_id_to_delete = request.form.get('tag_to_delete')
@@ -242,6 +298,8 @@ def manage_content():
                                button_label=button_label,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
                                all_tags=all_tags,
+                               categories=categories,
+                               uncategorized_tags=uncategorized_tags,
                                selected_tags=selected_tags,
                                selected_chapter=mishna_form.chapter.data,
                                selected_mishna=mishna_form.mishna.data)

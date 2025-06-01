@@ -3,71 +3,189 @@
     <h2 class="text-xl font-bold mb-4 text-center">ניהול נושאים</h2>
 
     <!-- Button to toggle tags display -->
-    <form method="POST" id="tag_form" class="mb-4 text-center">
+    <form method="POST" id="tag_form" class="mb-4">
         {{ tag_form.hidden_tag() }}
-        <button type="button"
-                class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
-                @click="showTags = !showTags">
-            <span x-text="showTags ? 'הסתר נושאים' : 'הצג את כל נושאים'"></span>
-        </button>
-
-        <!-- Display all tags as buttons, visible only when showTags is true -->
-        <div class="flex flex-wrap gap-2 justify-center mt-4" x-show="showTags" x-transition.duration.300ms>
-            {% for tag in all_tags %}
-                <button type="button" class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 hover:opacity-100">
-                    {{ tag.name }}
-                </button>
-            {% endfor %}
+        
+        <!-- Categories Section -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2 text-center">קטגוריות</h3>
+            <div class="flex flex-wrap gap-2 justify-center mt-4">
+                {% for category in categories %}
+                    <div class="bg-gray-100 p-3 rounded-lg">
+                        <h4 class="font-medium mb-2">{{ category.name }}</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in category.tags %}
+                                <button type="button" class="bg-blue-500 text-white px-2 py-1 rounded opacity-50 hover:opacity-100">
+                                    {{ tag.name }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
 
         <!-- Form to add a new tag -->
-        <div class="flex justify-between items-center mb-4 mt-4">
-            <label class="block text-sm font-semibold">הוסף נושא חדשה</label>
-            {{ tag_form.name(class="border p-2 w-3/5", placeholder="שם הנושא") }}
+        <div class="mb-6 border-t pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-center">הוספת נושא חדש</h3>
+            <div class="flex justify-between items-center mb-4">
+                <label class="block text-sm font-semibold">שם הנושא</label>
+                {{ tag_form.name(class="border p-2 w-3/5", placeholder="שם הנושא") }}
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <label class="block text-sm font-semibold">קטגוריה</label>
+                {{ tag_form.category_id(class="border p-2 w-3/5") }}
+            </div>
+            <div class="text-center">
+                <button type="submit"
+                        class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                        id="add_tag"
+                        name="action"
+                        value="add_tag">
+                    הוסף נושא
+                </button>
+            </div>
         </div>
-        <div class="text-center">
-            <button type="submit"
-                    class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
-                    id="add_tag"
-                    name="action"
-                    value="add_tag">
-                הוסף נושא
-            </button>
+
+        <!-- Form to add a new category -->
+        <div class="mb-6 border-t pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-center">הוספת קטגוריה חדשה</h3>
+            <div class="flex justify-between items-center mb-4">
+                <label class="block text-sm font-semibold">שם הקטגוריה</label>
+                {{ tag_form.new_category_name(class="border p-2 w-3/5", placeholder="שם הקטגוריה") }}
+            </div>
+            <div class="text-center">
+                <button type="submit"
+                        class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                        id="add_category"
+                        name="action"
+                        value="add_category">
+                    הוסף קטגוריה
+                </button>
+            </div>
         </div>
-        <br>
+
+        <!-- Form to edit existing tag -->
+        <div class="mb-6 border-t pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-center">עריכת נושא קיים</h3>
+            <div class="flex justify-between items-center mb-4">
+                <label for="tagToEdit" class="block text-sm font-semibold">בחר נושא לעריכה</label>
+                <select id="tagToEdit" name="tag_to_edit" class="border p-2 w-3/5">
+                    {% for category in categories %}
+                        <optgroup label="{{ category.name }}">
+                            {% for tag in category.tags %}
+                                <option value="{{ tag.id }}" data-category="{{ category.id }}">{{ tag.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                    <optgroup label="כללי">
+                        {% for tag in uncategorized_tags %}
+                            <option value="{{ tag.id }}" data-category="0">{{ tag.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <label for="newCategory" class="block text-sm font-semibold">קטגוריה חדשה</label>
+                <select id="newCategory" name="new_category_id" class="border p-2 w-3/5">
+                    <option value="0">כללי</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Confirmation Dialog for Editing -->
+            <div x-data="{ showEditConfirm: false }" class="text-center">
+                <button type="button"
+                        class="bg-yellow-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                        @click="showEditConfirm = true"
+                        id="edit_tag">
+                    עדכן נושא
+                </button>
+
+                <!-- Edit Confirmation Modal -->
+                <div x-show="showEditConfirm" 
+                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+                     @click.away="showEditConfirm = false">
+                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto">
+                        <p class="text-lg mb-4">האם אתה בטוח שברצונך לשנות את קטגוריית הנושא?</p>
+                        <div class="flex justify-center space-x-4">
+                            <button type="submit"
+                                    class="bg-yellow-500 text-white px-4 py-2 rounded"
+                                    name="action"
+                                    value="edit_tag"
+                                    @click="showEditConfirm = false">
+                                אישור
+                            </button>
+                            <button type="button"
+                                    class="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                                    @click="showEditConfirm = false">
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Form to delete a tag -->
-        <div class="flex justify-between items-center mb-4">
-            <label for="tagToDelete" class="block text-sm font-semibold">מחק תגית</label>
-            <select id="tagToDelete" name="tag_to_delete" class="border p-2 w-3/5">
-                {% if all_tags %}
-                {% for tag in all_tags %}
-                <option value="{{ tag.id }}">{{ tag.name }}</option>
-                {% endfor %}
-                {% endif %}
-            </select>
-        </div>
-        <!-- Confirmation Dialog for Deletion -->
-        <div x-data="{ showDeleteConfirm: false }" class="text-center">
-            <button class="bg-red-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
-                    @click="showDeleteConfirm = true" id="delete_tag" name="action" value="delete_tag">
-                מחק תגית
-            </button>
-            <div x-show="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div class="bg-white p-4 rounded shadow-lg">
-                    <p>האם אתה בטוח שברצונך למחוק את התגית?</p>
-                    <button class="bg-gray-500 text-white px-4 py-2 rounded mt-4 mr-2" @click="showDeleteConfirm = false">
-                        ביטול
-                    </button>
-                    <button class="bg-red-500 text-white px-4 py-2 rounded mt-4"
-                            @click="showDeleteConfirm = false; $refs.deleteButton.click()">
-                        אישור
-                    </button>
+        <div class="mb-6 border-t pt-4">
+            <h3 class="text-lg font-semibold mb-4 text-center">מחיקת נושא</h3>
+            <div class="flex justify-between items-center mb-4">
+                <label for="tagToDelete" class="block text-sm font-semibold">בחר נושא למחיקה</label>
+                <select id="tagToDelete" name="tag_to_delete" class="border p-2 w-3/5">
+                    {% for category in categories %}
+                        <optgroup label="{{ category.name }}">
+                            {% for tag in category.tags %}
+                                <option value="{{ tag.id }}">{{ tag.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                    <optgroup label="כללי">
+                        {% for tag in uncategorized_tags %}
+                            <option value="{{ tag.id }}">{{ tag.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Confirmation Dialog for Deletion -->
+            <div x-data="{ showDeleteConfirm: false }" class="text-center">
+                <button type="button"
+                        class="bg-red-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
+                        @click="showDeleteConfirm = true"
+                        id="delete_tag">
+                    מחק נושא
+                </button>
+
+                <!-- Delete Confirmation Modal -->
+                <div x-show="showDeleteConfirm" 
+                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+                     @click.away="showDeleteConfirm = false">
+                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto">
+                        <p class="text-lg mb-4">האם אתה בטוח שברצונך למחוק את הנושא?</p>
+                        <div class="flex justify-center space-x-4">
+                            <button type="submit"
+                                    class="bg-red-500 text-white px-4 py-2 rounded"
+                                    name="action"
+                                    value="delete_tag"
+                                    @click="showDeleteConfirm = false">
+                                אישור
+                            </button>
+                            <button type="button"
+                                    class="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                                    @click="showDeleteConfirm = false">
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </form>
-    <!-- Placeholder for messages -->
+
+    <!-- Messages -->
     {% if tag_message %}
     <div id="tagMessage" class="mt-4 text-center text-red-600">
         <p>{{ tag_message }}</p>

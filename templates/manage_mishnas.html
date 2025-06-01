@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>הוספת מִשׁנָה</title>
-<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">-->
     <style>
         body {
             direction: rtl;
@@ -24,7 +23,8 @@
         <form method="POST" id="mishna_form"
               x-data="{
               selectedTags: {{ selected_tags | tojson }},
-              mishnaSelected: {{ 'true' if selected_mishna else 'false' }}
+              mishnaSelected: {{ 'true' if selected_mishna else 'false' }},
+              showAllCategories: {}
               }">
             {{ mishna_form.hidden_tag() }}
 
@@ -56,18 +56,54 @@
                 {{ mishna_form.text(class="border p-2 w-full", rows="4") }}
             </div>
 
-            <!-- Tag Selection Dropdown -->
+            <!-- Categorized Tag Selection -->
             <div class="mb-4" x-show="mishnaSelected">
                 <label class="block text-sm font-semibold mb-1">בחר תגיות</label>
-                <div id="tag-buttons" class="flex flex-wrap gap-2">
-                    {% for tag in all_tags %}
-                        <button type="button"
-                                class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-opacity-75"
-                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
-                                @click="selectedTags.includes({{ tag.id }}) ? selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : selectedTags.push({{ tag.id }})">
-                            {{ tag.name }}
-                        </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for category in categories %}
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <h4 class="font-medium mb-2">{{ category.name }}</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in category.tags %}
+                                    <button type="button"
+                                            class="bg-blue-500 text-white px-2 py-1 rounded"
+                                            :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                            @click="selectedTags.includes({{ tag.id }}) ? 
+                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                                    selectedTags.push({{ tag.id }})">
+                                        {{ tag.name }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                            {% if category.tags|length > 5 %}
+                                <button type="button"
+                                        class="text-blue-500 hover:underline mt-2"
+                                        @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
+                                        x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'">
+                                    הצג עוד
+                                </button>
+                            {% endif %}
+                        </div>
                     {% endfor %}
+                    
+                    <!-- Uncategorized Tags -->
+                    {% if uncategorized_tags %}
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <h4 class="font-medium mb-2">כללי</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in uncategorized_tags %}
+                                    <button type="button"
+                                            class="bg-blue-500 text-white px-2 py-1 rounded"
+                                            :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                            @click="selectedTags.includes({{ tag.id }}) ? 
+                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                                    selectedTags.push({{ tag.id }})">
+                                        {{ tag.name }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
                 <!-- Hidden input to store selected tag IDs -->
                 <input type="hidden" name="tags" :value="selectedTags.join(',')">
@@ -75,7 +111,10 @@
 
             <!-- Action button (עדכן משנה or הוסף משנה) -->
             <div class="mb-4 text-center">
-                <button class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100" id="submit_mishna" name="action" value="submit_mishna">
+                <button class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100" 
+                        id="submit_mishna" 
+                        name="action" 
+                        value="submit_mishna">
                     {{ button_label }}
                 </button>
             </div>
@@ -105,7 +144,7 @@
         chapterSelect.value = selectedChapter;
         updateMishnaOptions(selectedChapter, selectedMishna);
     } else {
-    chapterSelect.value = 'א'
+        chapterSelect.value = 'א'
     }
 
     // Update mishnayot options based on chapter selection

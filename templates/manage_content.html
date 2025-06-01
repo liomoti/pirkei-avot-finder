@@ -18,10 +18,11 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-6">
-
-    <!-- Logout Button -->
-    <div class="flex justify-end">
+<body class="bg-gray-100 p-6">    <!-- Navigation Buttons -->
+    <div class="flex justify-end space-x-4">
+        <a href="{{ url_for('main.search_mishna') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-4">
+            חזור לדף הראשי
+        </a>
         <form action="{{ url_for('main.logout') }}" method="POST">
             <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                 התנתק

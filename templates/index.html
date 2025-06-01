@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mt-6">
-                    <template x-for="(category, categoryName) in sortedCategories" :key="categoryName">
+                    <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
                         <div class="p-2 border rounded shadow bg-gray-50">
                             <h4 class="text-lg font-semibold text-center mb-1" x-text="categoryName"></h4>
                             <div class="flex flex-wrap gap-2 justify-center">
@@ -81,7 +81,7 @@
                             <div class="text-center mt-1">
                                 <button type="button"
                                         class="text-blue-500 hover:underline"
-                                        x-show="category.length > 5"
+                                        x-show="category.length > 3"
                                         @click="toggleShowAll(categoryName)">
                                     <span x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
                                 </button>
@@ -211,7 +211,7 @@
             filteredCategories: {},
             showAllCategories: {},
 
-            get sortedCategories() {
+            sortedCategories() {
                 const sorted = {};
                 Object.keys(this.filteredCategories)
                     .sort() // Sort categories alphabetically
@@ -225,18 +225,18 @@
 
             init() {
                 this.groupTagsByCategory();
-            },
-
-            groupTagsByCategory() {
+            },            groupTagsByCategory() {
                 const categories = {};
                 this.allTags.forEach(tag => {
-                    if (!categories[tag.category]) {
-                        categories[tag.category] = [];
-                        this.showAllCategories[tag.category] = false; // Initialize "show all" state for each category
+                    const categoryKey = tag.category || "כללי";
+                    if (!categories[categoryKey]) {
+                        categories[categoryKey] = [];
+                        this.showAllCategories[categoryKey] = false;
                     }
-                    categories[tag.category].push(tag);
+                    categories[categoryKey].push(tag);
                 });
                 this.filteredCategories = categories;
+                console.log('Grouped categories:', this.filteredCategories); // Debug log
             },
 
             filterTags() {
@@ -244,13 +244,15 @@
                 const categories = {};
                 this.allTags.forEach(tag => {
                     if (tag.name.toLowerCase().includes(search)) {
-                        if (!categories[tag.category]) {
-                            categories[tag.category] = [];
+                        const categoryKey = tag.category || "כללי";
+                        if (!categories[categoryKey]) {
+                            categories[categoryKey] = [];
                         }
-                        categories[tag.category].push(tag);
+                        categories[categoryKey].push(tag);
                     }
                 });
                 this.filteredCategories = categories;
+                console.log('Filtered categories:', this.filteredCategories); // Debug log
             },
 
             toggleTag(tagId) {
