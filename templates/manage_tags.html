@@ -187,8 +187,53 @@
 
     <!-- Messages -->
     {% if tag_message %}
-    <div id="tagMessage" class="mt-4 text-center text-red-600">
-        <p>{{ tag_message }}</p>
+    <div x-data="{ showTagMsg: true }">
+        <div x-show="showTagMsg" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto">
+                <p class="text-lg mb-4 text-center">{{ tag_message }}</p>
+                <div class="flex justify-center">
+                    <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded" @click="showTagMsg = false">סגור</button>
+                </div>
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>
+
+<script>
+// Client-side validation for tag/category forms
+const tagForm = document.getElementById('tag_form');
+tagForm.addEventListener('submit', function(e) {
+    const action = document.activeElement.value;
+    if (action === 'add_tag') {
+        const tagName = tagForm.querySelector('[name="name"]').value.trim();
+        if (!tagName) {
+            e.preventDefault();
+            showTagPopup('אנא מלא את שם הנושא.');
+            return;
+        }
+    }
+    if (action === 'add_category') {
+        const catName = tagForm.querySelector('[name="new_category_name"]').value.trim();
+        if (!catName) {
+            e.preventDefault();
+            showTagPopup('אנא מלא את שם הקטגוריה.');
+            return;
+        }
+    }
+});
+function showTagPopup(message) {
+    let popup = document.createElement('div');
+    popup.innerHTML = `
+        <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+            <div class='bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto'>
+                <p class='text-lg mb-4 text-center'>${message}</p>
+                <div class='flex justify-center'>
+                    <button type='button' class='bg-blue-500 text-white px-4 py-2 rounded' onclick='this.closest(".fixed").remove()'>סגור</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(popup.firstElementChild);
+}
+</script>

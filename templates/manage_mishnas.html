@@ -122,8 +122,8 @@
 
         <!-- Messages -->
         {% if mishna_message %}
-        <div class="mt-4 text-green-600 text-center">
-            <p>{{ mishna_message }}</p>
+        <div class="mt-4 text-lg text-center font-bold text-blue-700 bg-blue-100 border border-blue-300 rounded p-3">
+            {{ mishna_message }}
         </div>
         {% endif %}
     </div>
@@ -131,7 +131,7 @@
 </html>
 
 <script>
-    const allowedChapters = {{ ALLOWED_CHAPTERS | tojson }};
+    const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
     const chapterSelect = document.getElementById('chapter');
     const mishnaSelect = document.getElementById('mishna');
 
@@ -172,5 +172,40 @@
     // Trigger the event to populate options if chapter is already selected
     if (selectedChapter) {
         chapterSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Client-side validation for empty fields before submitting the form
+    document.getElementById('mishna_form').addEventListener('submit', function(e) {
+        const chapter = chapterSelect.value;
+        const mishna = mishnaSelect.value;
+        const text = document.querySelector('[name="text"]').value.trim();
+        const action = document.activeElement.value;
+        if (action === 'search_mishna') {
+            if (!chapter || !mishna) {
+                e.preventDefault();
+                showPopup('אנא מלא את כל השדות הנדרשים: פרק ומשנה.');
+            }
+        } else {
+            if (!chapter || !mishna || !text) {
+                e.preventDefault();
+                showPopup('אנא מלא את כל השדות הנדרשים: פרק, משנה, וטקסט.');
+            }
+        }
+    });
+
+    // Function to show popup for validation errors
+    function showPopup(message) {
+        let popup = document.createElement('div');
+        popup.innerHTML = `
+            <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+                <div class='bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto'>
+                    <p class='text-lg mb-4 text-center'>${message}</p>
+                    <div class='flex justify-center'>
+                        <button type='button' class='bg-blue-500 text-white px-4 py-2 rounded' onclick='this.closest(".fixed").remove()'>סגור</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup.firstElementChild);
     }
 </script>
