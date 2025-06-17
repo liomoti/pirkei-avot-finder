@@ -111,7 +111,7 @@
 
             <!-- Action button (עדכן משנה or הוסף משנה) -->
             <div class="mb-4 text-center">
-                <button class="bg-blue-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100" 
+                <button class="bg-yellow-500 text-black px-6 py-3 rounded-lg font-bold text-lg shadow-lg border-2 border-yellow-700 transition duration-200 transform hover:scale-105 hover:bg-yellow-600 hover:text-white" 
                         id="submit_mishna" 
                         name="action" 
                         value="submit_mishna">
@@ -134,6 +134,15 @@
     const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
     const chapterSelect = document.getElementById('chapter');
     const mishnaSelect = document.getElementById('mishna');
+
+    // Global variable to store the selected action
+    let selectedAction = null;
+    // Add click listener to all action buttons
+    document.querySelectorAll('button[name="action"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            selectedAction = this.value;
+        });
+    });
 
     // Pre-select the chapter and mishna if available
     const selectedChapter = "{{ selected_chapter | default('') }}";
@@ -179,7 +188,8 @@
         const chapter = chapterSelect.value;
         const mishna = mishnaSelect.value;
         const text = document.querySelector('[name="text"]').value.trim();
-        const action = document.activeElement.value;
+        // Use the global variable instead of document.activeElement
+        const action = selectedAction || document.activeElement.value;
         if (action === 'search_mishna') {
             if (!chapter || !mishna) {
                 e.preventDefault();
