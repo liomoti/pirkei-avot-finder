@@ -195,10 +195,10 @@
         const mishnayot = allowedChapters[chapter] || [];
         mishnaSelect.innerHTML = '';
 
-        // Add 'כל הפרק' option
+        // Add 'all option
         const allOption = document.createElement('option');
         allOption.value = 'all';
-        allOption.text = 'כל הפרק';
+        allOption.text = 'כל המשניות';
         mishnaSelect.add(allOption);
 
         mishnayot.forEach(function (mishna) {
@@ -211,7 +211,7 @@
             mishnaSelect.add(option);
         });
 
-        // If preselectedMishna is 'all', select 'כל הפרק'
+        // If preselectedMishna is 'all', select 'כל המשניות'
         if (preselectedMishna === 'all') {
             mishnaSelect.value = 'all';
         }

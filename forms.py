@@ -6,7 +6,7 @@ from models import Tag, Category
 
 class MishnaForm(FlaskForm):
     chapter = SelectField('פרק', choices=[], coerce=str)
-    mishna = SelectField('מספר מִשׁנָה', choices=[], coerce=str)
+    mishna = SelectField('מִשׁנָה', choices=[], coerce=str)
     text = TextAreaField('טקסט המִשׁנָה')
     semantic_text = TextAreaField('טקסט סמנטי')
     tags = SelectMultipleField('תגיות', choices=[], coerce=int)
