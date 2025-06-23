@@ -181,7 +181,7 @@
         chapterSelect.value = selectedChapter;
         updateMishnaOptions(selectedChapter, selectedMishna);
     } else {
-    chapterSelect.value = 'א'
+        chapterSelect.value = 'א'
     }
 
     // Update mishnayot options based on chapter selection
@@ -195,6 +195,12 @@
         const mishnayot = allowedChapters[chapter] || [];
         mishnaSelect.innerHTML = '';
 
+        // Add 'כל הפרק' option
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.text = 'כל הפרק';
+        mishnaSelect.add(allOption);
+
         mishnayot.forEach(function (mishna) {
             const option = document.createElement('option');
             option.value = mishna;
@@ -204,6 +210,11 @@
             }
             mishnaSelect.add(option);
         });
+
+        // If preselectedMishna is 'all', select 'כל הפרק'
+        if (preselectedMishna === 'all') {
+            mishnaSelect.value = 'all';
+        }
     }
 
     // Trigger the event to populate options if chapter is already selected

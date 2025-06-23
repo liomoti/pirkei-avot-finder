@@ -64,15 +64,12 @@ def search_mishna():
             if action == 'search_mishna':
                 chapter = mishna_form.chapter.data
                 mishna = mishna_form.mishna.data
-                # current_app.logger.info(f'Searching for Mishna - Chapter: {chapter}, Mishna: {mishna}')
-
-                mishna_id = f"{chapter}_{mishna}"
-                results = Mishna.query.filter_by(id=mishna_id).all()
-
-                # if results:
-                #     current_app.logger.info(f'Found {len(results)} results for Chapter {chapter}, Mishna {mishna}')
-                # else:
-                #     current_app.logger.info(f'No results found for Chapter {chapter}, Mishna {mishna}')
+                # If 'כל הפרק' (all) is selected, fetch all mishnas for the chapter
+                if mishna == 'all':
+                    results = Mishna.query.filter_by(chapter=chapter).all()
+                else:
+                    mishna_id = f"{chapter}_{mishna}"
+                    results = Mishna.query.filter_by(id=mishna_id).all()
 
             # Free Text Search
             elif action == 'search_free_text':
