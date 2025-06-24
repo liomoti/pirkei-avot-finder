@@ -52,9 +52,11 @@ def search_mishna():
         tags_with_categories = [{"id": tag.id, "name": tag.name, "category": tag.category_name} for tag in all_tags]
         search_type = request.form.get('search_type', 'search_mishna')
 
-        # Fetch tags grouped by categories
-        # categories = Category.query.all()
-
+        # Fetch categories for color legend
+        categories = Category.query.all()
+        categories_serialized = [
+            {"id": c.id, "name": c.name, "color": c.color} for c in categories
+        ]
 
         if request.method == 'POST':
             action = request.form.get('action')
@@ -64,9 +66,9 @@ def search_mishna():
             if action == 'search_mishna':
                 chapter = mishna_form.chapter.data
                 mishna = mishna_form.mishna.data
-                # If 'כל הפרק' (all) is selected, fetch all mishnas for the chapter
+                # If 'כל המשניות' (all) is selected, fetch all mishnas for the chapter
                 if mishna == 'all':
-                    results = Mishna.query.filter_by(chapter=chapter).all()
+                    results = Mishna.query.filter_by(chapter=chapter).order_by(Mishna.mishna).all()
                 else:
                     mishna_id = f"{chapter}_{mishna}"
                     results = Mishna.query.filter_by(id=mishna_id).all()
@@ -76,7 +78,7 @@ def search_mishna():
                 query_text = remove_niqqud(mishna_form.text.data.lower())
                 current_app.logger.info(f'Performing free text search with query: {query_text}')
 
-                results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).all()
+                results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).order_by(Mishna.chapter, Mishna.mishna).all()
                 current_app.logger.info(f'Found {len(results)} results for free text search')
 
             # Tag-based Search
@@ -85,7 +87,7 @@ def search_mishna():
                 selected_tags = [int(tag_id) for tag_id in selected_tags if tag_id.isdigit()]
                 current_app.logger.info(f'Searching by tags: {selected_tags}')
 
-                results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).all()
+                results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.chapter, Mishna.mishna).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
         return render_template('index.html',
@@ -94,6 +96,7 @@ def search_mishna():
                                searchType=search_type,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
                                all_tags=tags_with_categories,
+                               categories=categories_serialized,
                                selected_tags=selected_tags,
                                selected_chapter=mishna_form.chapter.data,
                                selected_mishna=mishna_form.mishna.data)
@@ -193,17 +196,21 @@ def manage_content():
             # Handle Categories
             elif action == "add_category":
                 new_category_name = tag_form.new_category_name.data
-                current_app.logger.info(f'Attempting to add new category: {new_category_name}')
+                new_category_color = tag_form.new_category_color.data
+                current_app.logger.info(f'Attempting to add new category: {new_category_name} with color: {new_category_color}')
 
                 if new_category_name:
                     existing_category = Category.query.filter_by(name=new_category_name).first()
                     if not existing_category:
                         try:
-                            new_category = Category(name=new_category_name)
+                            # Use the color from the form, or default if not provided
+                            category_color = new_category_color if new_category_color else '#F5F5F5'
+                            
+                            new_category = Category(name=new_category_name, color=category_color)
                             db.session.add(new_category)
                             db.session.commit()
                             tag_message = "הקטגוריה הוספה בהצלחה!"
-                            current_app.logger.info(f'Successfully added new category: {new_category_name}')
+                            current_app.logger.info(f'Successfully added new category: {new_category_name} with color: {category_color}')
                         except SQLAlchemyError as e:
                             db.session.rollback()
                             current_app.logger.error(f'Database error while adding category: {str(e)}', exc_info=True)

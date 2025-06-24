@@ -32,6 +32,7 @@ class TagForm(FlaskForm):
     name = StringField("שם הנושא")
     category_id = SelectField("קטגוריה", choices=[], coerce=int)
     new_category_name = StringField("שם הקטגוריה החדשה")
+    new_category_color = StringField("צבע הקטגוריה", default="#F5F5F5")
     tag_to_edit = SelectField("נושא לעריכה", choices=[], coerce=int)
     new_category_id = SelectField("קטגוריה חדשה", choices=[], coerce=int)
     submit = SubmitField("הוסף נושא")

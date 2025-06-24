@@ -73,6 +73,9 @@
                            x-model="tagSearch" @input="filterTags()">
                 </div>
 
+                <!-- Color Legend -->
+                {% include 'color_legend.html' %}
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mt-6">
                     <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
                         <div class="p-2 border rounded shadow bg-gray-50">
@@ -81,8 +84,9 @@
                                 <template x-for="(tag, index) in category" :key="tag.id">
                                     <button type="button"
                                             x-show="showAllCategories[categoryName] || index < 3"
-                                            :class="selectedTags.includes(tag.id) ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'"
-                                            class="px-3 py-1 rounded"
+                                            :class="selectedTags.includes(tag.id) ? 'text-black font-semibold' : 'text-black'"
+                                            class="px-3 py-1 rounded transition-all duration-200 hover:shadow-md"
+                                            :style="`background-color: ${getCategoryColor(categoryName)}; border: 1px solid ${getCategoryBorderColor(categoryName)}`"
                                             @click="toggleTag(tag.id)">
                                         <span x-text="tag.name"></span>
                                     </button>
@@ -123,6 +127,14 @@
         {% endif %}
 
         </h2>
+        
+        {% if results %}
+        <!-- Color Legend for Results -->
+        <div class="mt-4 mb-4 w-full max-w-lg mx-auto">
+            {% include 'color_legend.html' %}
+        </div>
+        {% endif %}
+        
         <div class="mt-4 p-4 border rounded bg-white w-full max-w-lg mx-auto">
             {% if results %}
                 {% for result in results %}
@@ -133,7 +145,8 @@
                         <p class="text-center">{{ result.text_pretty }}</p>
                         <div class="flex flex-wrap gap-2 justify-center mt-2">
                             {% for tag in result.tags %}
-                                <span class="bg-blue-500 text-white px-2 py-1 rounded">
+                                <span class="px-2 py-1 rounded text-black font-medium"
+                                      style="background-color: {{ tag.category.color if tag.category else '#F5F5F5' }}; border: 1px solid {{ tag.category.color if tag.category else '#F5F5F5' }};">
                                     {{ tag.name }}
                                 </span>
                             {% endfor %}
@@ -227,6 +240,7 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('tagSelection', () => ({
             allTags: {{ all_tags | tojson | safe }},
+            categories: {{ categories | tojson | safe }},
             tagSearch: '',
             selectedTags: [],
             filteredCategories: {},
@@ -246,7 +260,9 @@
 
             init() {
                 this.groupTagsByCategory();
-            },            groupTagsByCategory() {
+            },
+
+            groupTagsByCategory() {
                 const categories = {};
                 this.allTags.forEach(tag => {
                     const categoryKey = tag.category || "כללי";
@@ -286,6 +302,26 @@
 
             toggleShowAll(categoryName) {
                 this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
+            },
+
+            getCategoryColor(categoryName) {
+                // Find the category in the database categories
+                const category = this.categories.find(cat => cat.name === categoryName);
+                if (category) {
+                    return category.color;
+                }
+                // Default color for "כללי" or unknown categories
+                return "#F5F5F5";
+            },
+
+            getCategoryBorderColor(categoryName) {
+                // Find the category in the database categories
+                const category = this.categories.find(cat => cat.name === categoryName);
+                if (category) {
+                    return category.color;
+                }
+                // Default color for "כללי" or unknown categories
+                return "#F5F5F5";
             }
         }));
     });

@@ -66,7 +66,8 @@
                             <div class="flex flex-wrap gap-2">
                                 {% for tag in category.tags %}
                                     <button type="button"
-                                            class="bg-blue-500 text-white px-2 py-1 rounded"
+                                            class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                            style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
                                             :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
                                             @click="selectedTags.includes({{ tag.id }}) ? 
                                                     selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
@@ -93,7 +94,8 @@
                             <div class="flex flex-wrap gap-2">
                                 {% for tag in uncategorized_tags %}
                                     <button type="button"
-                                            class="bg-blue-500 text-white px-2 py-1 rounded"
+                                            class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                            style="background-color: #F5F5F5; border: 1px solid #F5F5F5;"
                                             :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
                                             @click="selectedTags.includes({{ tag.id }}) ? 
                                                     selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 

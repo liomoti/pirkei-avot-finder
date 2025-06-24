@@ -1,0 +1,17 @@
+<!-- Color Legend Component -->
+<div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+    <h4 class="text-sm font-semibold mb-2 text-center">מפת צבעים לקטגוריות:</h4>
+    <div class="flex flex-wrap justify-center gap-3 text-xs">
+        {% for category in categories %}
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded" style="background-color: {{ category.color }}; {% if category.color == '#F5F5F5' %}border: 1px solid #ccc;{% endif %}"></div>
+                <span>{{ category.name }}</span>
+            </div>
+        {% endfor %}
+        <!-- Show "כללי" for uncategorized tags -->
+        <div class="flex items-center gap-1">
+            <div class="w-4 h-4 rounded" style="background-color: #F5F5F5; border: 1px solid #ccc;"></div>
+            <span>כללי</span>
+        </div>
+    </div>
+</div> 
