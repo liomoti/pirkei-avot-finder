@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,20 +9,22 @@
         body {
             direction: rtl;
         }
+
         .inline {
             display: inline-block;
         }
+
         .short-input {
             width: 45%;
         }
     </style>
 </head>
+
 <body class="bg-gray-100 p-6">
     <div class="max-w-lg mx-auto bg-white p-6 rounded shadow">
         <h1 class="text-2xl font-bold mb-4 text-center">הוספת מִשׁנָה</h1>
 
-        <form method="POST" id="mishna_form"
-              x-data="{
+        <form method="POST" id="mishna_form" x-data="{
               selectedTags: {{ selected_tags | tojson }},
               mishnaSelected: {{ 'true' if selected_mishna else 'false' }},
               showAllCategories: {}
@@ -43,9 +46,7 @@
             <!-- Search Button -->
             <div class="mb-4 text-center">
                 <button class="bg-green-500 text-white px-4 py-2 rounded bg-opacity-50 hover:bg-opacity-100"
-                        id="search_mishna"
-                        name="action"
-                        value="search_mishna">
+                    id="search_mishna" name="action" value="search_mishna">
                     חפש
                 </button>
             </div>
@@ -61,50 +62,49 @@
                 <label class="block text-sm font-semibold mb-1">בחר תגיות</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% for category in categories %}
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <h4 class="font-medium mb-2">{{ category.name }}</h4>
-                            <div class="flex flex-wrap gap-2">
-                                {% for tag in category.tags %}
-                                    <button type="button"
-                                            class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                            style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
-                                            :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
-                                            @click="selectedTags.includes({{ tag.id }}) ? 
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-medium mb-2">{{ category.name }}</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in category.tags %}
+                            <button type="button"
+                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
+                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                @click="selectedTags.includes({{ tag.id }}) ? 
                                                     selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
                                                     selectedTags.push({{ tag.id }})">
-                                        {{ tag.name }}
-                                    </button>
-                                {% endfor %}
-                            </div>
-                            {% if category.tags|length > 5 %}
-                                <button type="button"
-                                        class="text-blue-500 hover:underline mt-2"
-                                        @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
-                                        x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'">
-                                    הצג עוד
-                                </button>
-                            {% endif %}
+                                {{ tag.name }}
+                            </button>
+                            {% endfor %}
                         </div>
+                        {% if category.tags|length > 5 %}
+                        <button type="button" class="text-blue-500 hover:underline mt-2"
+                            @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
+                            x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'">
+                            הצג עוד
+                        </button>
+                        {% endif %}
+                    </div>
                     {% endfor %}
-                    
+
                     <!-- Uncategorized Tags -->
                     {% if uncategorized_tags %}
-                        <div class="bg-gray-50 p-3 rounded-lg">
-                            <h4 class="font-medium mb-2">כללי</h4>
-                            <div class="flex flex-wrap gap-2">
-                                {% for tag in uncategorized_tags %}
-                                    <button type="button"
-                                            class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                            style="background-color: #F5F5F5; border: 1px solid #F5F5F5;"
-                                            :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
-                                            @click="selectedTags.includes({{ tag.id }}) ? 
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-medium mb-2">כללי</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in uncategorized_tags %}
+                            <button type="button"
+                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                style="background-color: #F5F5F5; border: 1px solid #F5F5F5;"
+                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                @click="selectedTags.includes({{ tag.id }}) ? 
                                                     selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
                                                     selectedTags.push({{ tag.id }})">
-                                        {{ tag.name }}
-                                    </button>
-                                {% endfor %}
-                            </div>
+                                {{ tag.name }}
+                            </button>
+                            {% endfor %}
                         </div>
+                    </div>
                     {% endif %}
                 </div>
                 <!-- Hidden input to store selected tag IDs -->
@@ -113,10 +113,9 @@
 
             <!-- Action button (עדכן משנה or הוסף משנה) -->
             <div class="mb-4 text-center">
-                <button class="bg-yellow-500 text-black px-6 py-3 rounded-lg font-bold text-lg shadow-lg border-2 border-yellow-700 transition duration-200 transform hover:scale-105 hover:bg-yellow-600 hover:text-white" 
-                        id="submit_mishna" 
-                        name="action" 
-                        value="submit_mishna">
+                <button
+                    class="bg-yellow-500 text-black px-6 py-3 rounded-lg font-bold text-lg shadow-lg border-2 border-yellow-700 transition duration-200 transform hover:scale-105 hover:bg-yellow-600 hover:text-white"
+                    id="submit_mishna" name="action" value="submit_mishna">
                     {{ button_label }}
                 </button>
             </div>
@@ -130,6 +129,7 @@
         {% endif %}
     </div>
 </body>
+
 </html>
 
 <script>
@@ -141,7 +141,7 @@
     let selectedAction = null;
     // Add click listener to all action buttons
     document.querySelectorAll('button[name="action"]').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             selectedAction = this.value;
         });
     });
@@ -151,7 +151,7 @@
     const selectedMishna = "{{ selected_mishna | default('') }}";
 
     // Set the initial chapter value
-    if (selectedChapter!='None') {
+    if (selectedChapter != 'None') {
         chapterSelect.value = selectedChapter;
         updateMishnaOptions(selectedChapter, selectedMishna);
     } else {
@@ -186,7 +186,7 @@
     }
 
     // Client-side validation for empty fields before submitting the form
-    document.getElementById('mishna_form').addEventListener('submit', function(e) {
+    document.getElementById('mishna_form').addEventListener('submit', function (e) {
         const chapter = chapterSelect.value;
         const mishna = mishnaSelect.value;
         const text = document.querySelector('[name="text"]').value.trim();

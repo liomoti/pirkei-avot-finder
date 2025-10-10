@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-WVH2ZN86');</script>
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-WVH2ZN86');</script>
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,170 +18,345 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body class="bg-gray-100 text-gray-800" x-data="{ showTags: false, selectedTags: [] }">
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVH2ZN86"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen text-gray-800"
+    x-data="{ showTags: false, selectedTags: [] }">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVH2ZN86" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <h1 class="text-2xl font-bold text-center my-4">
-    <a href="/" class="text-black-600 hover:text-blue-800">חיפוש חכם בפרקי אבות</a>
-    </h1>
 
-    <div class="flex justify-center" x-data="{ searchType: '{{ searchType }}'}" >
-        <form method="POST" class="bg-white p-6 rounded shadow-md w-full max-w-lg">
-            {{ form.hidden_tag() }}
-            <input type="hidden" name="search_type" :value="searchType">
-            <!-- Search Type Selection as Stylish Flat Buttons -->
-            <h3 class="text-2xl font-bold text-center my-4">חפש לפי</h3>
-            <div class="flex justify-center gap-4 mb-6">
-                <button type="button"
-                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_mishna', 'bg-gray-200 opacity-50': searchType !== 'search_mishna'}"
-                        class="px-4 py-2 rounded-md font-semibold"
-                        @click="searchType = 'search_mishna'">פרק ומשנה</button>
-                <button type="button"
-                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_free_text', 'bg-gray-200 opacity-50': searchType !== 'search_free_text'}"
-                        class="px-4 py-2 rounded-md font-semibold"
-                        @click="searchType = 'search_free_text'">טקסט חופשי</button>
-                <button type="button"
-                        :class="{'bg-blue-600 text-white opacity-100': searchType === 'search_by_tags', 'bg-gray-200 opacity-50': searchType !== 'search_by_tags'}"
-                        class="px-4 py-2 rounded-md font-semibold"
-                        @click="searchType = 'search_by_tags'">נושא</button>
-            </div>
+    <!-- Header Section -->
+    <header class="bg-white shadow-lg border-b border-gray-100 mb-8">
+        <div class="container mx-auto py-6">
+            <h1 class="text-4xl font-bold text-center">
+                <a href="/"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
+                    <svg class="w-10 h-10 ml-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                    חיפוש חכם בפרקי אבות
+                </a>
+            </h1>
+            <div class="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+        </div>
+    </header>
 
-            <!-- Chapter and Mishna in the same line -->
-            <div x-show="searchType === 'search_mishna'" x-cloak>
-                <div class="mb-4 flex gap-4">
-                    <div class="inline short-input w-1/2">
-                        {{ form.chapter.label(class="block text-sm font-semibold mb-1") }}
-                        {{ form.chapter(class="border p-2 w-full", id="chapter") }}
-                    </div>
-                    <div class="inline short-input w-1/2">
-                        {{ form.mishna.label(class="block text-sm font-semibold mb-1") }}
-                        {{ form.mishna(class="border p-2 w-full", id="mishna") }}
+    <!-- Main Search Container -->
+    <div class="container mx-auto px-4 mb-12">
+        <div class="max-w-4xl mx-auto" x-data="{ searchType: '{{ searchType }}'}">
+            <form method="POST" class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="search_type" :value="searchType">
+
+                <!-- Search Type Selection -->
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-bold text-gray-800 mb-6 flex items-center justify-center">
+                        <svg class="w-8 h-8 ml-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        חפש לפי
+                    </h3>
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <button type="button"
+                            :class="{'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105': searchType === 'search_mishna', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_mishna'}"
+                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
+                            @click="searchType = 'search_mishna'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                            </svg>
+                            פרק ומשנה
+                        </button>
+                        <button type="button"
+                            :class="{'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105': searchType === 'search_free_text', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_free_text'}"
+                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
+                            @click="searchType = 'search_free_text'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                            טקסט חופשי
+                        </button>
+                        <button type="button"
+                            :class="{'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105': searchType === 'search_by_tags', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_by_tags'}"
+                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
+                            @click="searchType = 'search_by_tags'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                </path>
+                            </svg>
+                            נושא
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Free Text Search -->
-            <div class="mt-4 mb-4" x-show="searchType === 'search_free_text'" x-cloak>
-                {{ form.text.label(class="block text-gray-700") }}
-                {{ form.text(class="w-full border rounded px-2 py-1") }}
-            </div>
-
-            <!-- Tag Selection with Reduced Padding in Category Boxes -->
-            <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection">
-                <div class="text-center">
-                    <label for="tag-search" class="block text-sm font-semibold mb-2">חפש נושא</label>
-                    <input type="text" id="tag-search" placeholder="הקלד נושא לחיפוש..."
-                           class="border p-2 w-full max-w-md mx-auto rounded"
-                           x-model="tagSearch" @input="filterTags()">
-                </div>
-
-                <!-- Color Legend -->
-                {% include 'color_legend.html' %}
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mt-6">
-                    <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
-                        <div class="p-2 border rounded shadow bg-gray-50">
-                            <h4 class="text-lg font-semibold text-center mb-1" x-text="categoryName"></h4>
-                            <div class="flex flex-wrap gap-2 justify-center">
-                                <template x-for="(tag, index) in category" :key="tag.id">
-                                    <button type="button"
-                                            x-show="showAllCategories[categoryName] || index < 3"
-                                            :class="selectedTags.includes(tag.id) ? 'text-black font-semibold' : 'text-black'"
-                                            class="px-3 py-1 rounded transition-all duration-200 hover:shadow-md"
-                                            :style="`background-color: ${getCategoryColor(categoryName)}; border: 1px solid ${getCategoryBorderColor(categoryName)}`"
-                                            @click="toggleTag(tag.id)">
-                                        <span x-text="tag.name"></span>
-                                    </button>
-                                </template>
-                            </div>
-                            <div class="text-center mt-1">
-                                <button type="button"
-                                        class="text-blue-500 hover:underline"
-                                        x-show="category.length > 3"
-                                        @click="toggleShowAll(categoryName)">
-                                    <span x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
-                                </button>
-                            </div>
+                <!-- Chapter and Mishna Selection -->
+                <div x-show="searchType === 'search_mishna'" x-cloak
+                    class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            {{ form.chapter.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
+                            {{ form.chapter(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500
+                            focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg", id="chapter") }}
                         </div>
-                    </template>
+                        <div class="space-y-2">
+                            {{ form.mishna.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
+                            {{ form.mishna(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500
+                            focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg", id="mishna") }}
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Ensure the hidden input field is properly bound to selectedTags -->
-                <input type="hidden" name="tags" :value="selectedTags.join(',')" />
-            </div>
+                <!-- Free Text Search -->
+                <div x-show="searchType === 'search_free_text'" x-cloak
+                    class="bg-green-50 p-6 rounded-xl border border-green-100 mb-6">
+                    <div class="space-y-3">
+                        {{ form.text.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
+                        {{ form.text(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-green-500
+                        focus:ring-2 focus:ring-green-200 transition-all duration-200 text-lg", placeholder="הכנס טקסט
+                        לחיפוש...") }}
+                    </div>
+                </div>
 
-            <div class="text-center mt-6">
-                <button name="action" :value="searchType" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">חפש</button>
-            </div>
-        </form>
+                <!-- Tag Selection -->
+                <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection"
+                    class="bg-purple-50 p-6 rounded-xl border border-purple-100 mb-6">
+                    <div class="text-center mb-6">
+                        <label for="tag-search"
+                            class="block text-sm font-bold text-gray-700 mb-3 flex items-center justify-center">
+                            <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חפש נושא
+                        </label>
+                        <input type="text" id="tag-search" placeholder="הקלד נושא לחיפוש..."
+                            class="border-2 border-gray-200 p-4 w-full max-w-md mx-auto rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-lg"
+                            x-model="tagSearch" @input="filterTags()">
+                    </div>
+
+                    <!-- Color Legend -->
+                    <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        {% include 'color_legend.html' %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
+                            <div
+                                class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-4 h-4 rounded-full mr-3 shadow-sm"
+                                        :style="`background-color: ${getCategoryColor(categoryName)};`"></div>
+                                    <h4 class="text-lg font-bold text-gray-800" x-text="categoryName"></h4>
+                                </div>
+                                <div class="flex flex-wrap gap-2 justify-center">
+                                    <template x-for="(tag, index) in category" :key="tag.id">
+                                        <button type="button" x-show="showAllCategories[categoryName] || index < 3"
+                                            :class="selectedTags.includes(tag.id) ? 'ring-2 ring-purple-400 font-bold transform scale-105' : 'hover:scale-105'"
+                                            class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 transition-all duration-200 hover:shadow-md cursor-pointer"
+                                            :style="`background-color: ${getCategoryColor(categoryName)}; border: 2px solid ${getCategoryBorderColor(categoryName)}20;`"
+                                            @click="toggleTag(tag.id)">
+                                            <span x-text="tag.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="button"
+                                        class="text-purple-600 hover:text-purple-800 font-medium hover:underline transition-colors duration-200"
+                                        x-show="category.length > 3" @click="toggleShowAll(categoryName)">
+                                        <span x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Ensure the hidden input field is properly bound to selectedTags -->
+                    <input type="hidden" name="tags" :value="selectedTags.join(',')" />
+                </div>
+
+                <!-- Search Button -->
+                <div class="text-center mt-8">
+                    <button name="action" :value="searchType"
+                        class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto">
+                        <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        חפש
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Results Section -->
-    <div class="mt-8">
-        <h2 class="text-xl font-semibold text-center">
-
-        {% if results %}
-            {% if results|length == 1 %}
-                נמצאה משנה אחת בלבד.
-            {% else %}
-                נמצאו {{ results|length }} משניות.
-            {% endif %}
-        {% endif %}
-
-        </h2>
-        
-        {% if results %}
-        <!-- Color Legend for Results -->
-        <div class="mt-4 mb-4 w-full max-w-lg mx-auto">
-            {% include 'color_legend.html' %}
-        </div>
-        {% endif %}
-        
-        <div class="mt-4 p-4 border rounded bg-white w-full max-w-lg mx-auto">
+    <div class="container mx-auto px-4 mb-12">
+        <div class="max-w-4xl mx-auto">
             {% if results %}
+            <!-- Results Header -->
+            <div class="text-center mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 inline-block">
+                    <div class="flex items-center justify-center mb-2">
+                        <svg class="w-8 h-8 ml-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            {% if results|length == 1 %}
+                            נמצאה משנה אחת בלבד
+                            {% else %}
+                            נמצאו {{ results|length }} משניות
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <div class="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 mx-auto rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Results Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {% for result in results %}
-                    <div class="p-2 border-b">
-                        <div class="text-center">
-                            <p><strong>פרק:</strong> {{ result.chapter }} <strong>משנה:</strong> {{ result.mishna }}</p>
+                <div
+                    class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <!-- Chapter and Mishna Header -->
+                    <div class="text-center mb-6">
+                        <div
+                            class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl inline-block shadow-md">
+                            <p class="font-bold text-lg flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                                </svg>
+                                פרק {{ result.chapter }} • משנה {{ result.mishna }}
+                            </p>
                         </div>
-                        <p class="text-center">{{ result.text_pretty }}</p>
-                        <div class="flex flex-wrap gap-2 justify-center mt-2">
+                    </div>
+
+                    <!-- Mishna Text -->
+                    <div class="bg-gray-50 p-6 rounded-xl mb-6 border-r-4 border-blue-500 relative">
+                        <div class="flex items-start justify-between">
+                            <p class="text-lg leading-relaxed text-gray-800 text-center font-medium flex-1">{{
+                                result.text_pretty }}</p>
+                            <button
+                                data-mishna-text="פרק {{ result.chapter }} משנה {{ result.mishna }}: {{ result.text_pretty }}"
+                                onclick="copyMishnaTextSimple(this)"
+                                class="mr-3 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 flex-shrink-0 group"
+                                title="העתק משנה">
+                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    {% if result.tags %}
+                    <div class="border-t pt-4">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-5 h-5 ml-2 text-gray-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                </path>
+                            </svg>
+                            <span class="text-sm font-bold text-gray-600">נושאים:</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
                             {% for tag in result.tags %}
-                                <span class="px-2 py-1 rounded text-black font-medium"
-                                      style="background-color: {{ tag.category.color if tag.category else '#F5F5F5' }}; border: 1px solid {{ tag.category.color if tag.category else '#F5F5F5' }};">
-                                    {{ tag.name }}
-                                </span>
+                            <span
+                                class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200"
+                                style="background-color: {{ tag.category.color if tag.category else '#F5F5F5' }}; border: 2px solid {{ tag.category.color if tag.category else '#F5F5F5' }}20;">
+                                {{ tag.name }}
+                            </span>
                             {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
+                </div>
                 {% endfor %}
+            </div>
             {% else %}
-                <p class="text-center text-gray-600">לא נמצאו תוצאות.</p>
+            <!-- No Results Message -->
+            <div class="text-center">
+                <div class="bg-white p-12 rounded-2xl shadow-lg border border-gray-100 max-w-md mx-auto">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">לא נמצאו תוצאות</h3>
+                    <p class="text-gray-600">נסה לחפש במילים אחרות או בדוק את הפרמטרים שלך</p>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Footer Section -->
-    <footer class="mt-8 text-center bg-gray-100 py-6 border-t border-gray-200">
-      <div class="container mx-auto">
-        <p class="text-gray-700 text-sm" style="direction: ltr; display: flex; justify-content: center; align-items: center;">
-          Built by
-          <a href="https://www.linkedin.com/in/moti-shaul"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="text-blue-500 hover:text-blue-600 hover:underline font-medium inline-flex items-center"
-             style="margin-left: 0.25rem;">
-            Moti Shaul
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M22.225 0H1.771C.791 0 0 .776 0 1.729v20.543C0 23.214.792 24 1.77 24h20.453C23.208 24 24 23.214 24 22.272V1.729C24 .776 23.208 0 22.225 0zM7.119 20.459H3.56V9h3.558v11.459zM5.341 7.447c-1.134 0-2.054-.91-2.054-2.032a2.054 2.054 0 1 1 4.109 0c0 1.122-.92 2.032-2.055 2.032zM20.453 20.459h-3.558v-5.661c0-1.35-.027-3.086-1.885-3.086-1.889 0-2.178 1.476-2.178 3v5.747h-3.557V9h3.417v1.561h.049c.476-.9 1.633-1.848 3.36-1.848 3.593 0 4.257 2.364 4.257 5.435v6.311z"/>
-            </svg>
-          </a>
-        </p>
-      </div>
+    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <!-- Logo/Title -->
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold mb-2 flex items-center justify-center">
+                        <svg class="w-8 h-8 ml-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
+                        חיפוש חכם בפרקי אבות
+                    </h3>
+                    <div class="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto rounded-full"></div>
+                </div>
+
+                <!-- Description -->
+                <p class="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
+                    כלי חיפוש מתקדם לחקר ולימוד פרקי אבות עם אפשרויות חיפוש מגוונות ותיוג נושאים
+                </p>
+
+                <!-- Developer Credit -->
+                <div class="bg-gray-700 rounded-2xl p-6 max-w-md mx-auto">
+                    <p class="text-gray-300 mb-4 flex items-center justify-center">
+                        <svg class="w-5 h-5 ml-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                        פותח על ידי
+                    </p>
+                    <a href="https://www.linkedin.com/in/moti-shaul" target="_blank" rel="noopener noreferrer"
+                        class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-2" fill="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M22.225 0H1.771C.791 0 0 .776 0 1.729v20.543C0 23.214.792 24 1.77 24h20.453C23.208 24 24 23.214 24 22.272V1.729C24 .776 23.208 0 22.225 0zM7.119 20.459H3.56V9h3.558v11.459zM5.341 7.447c-1.134 0-2.054-.91-2.054-2.032a2.054 2.054 0 1 1 4.109 0c0 1.122-.92 2.032-2.055 2.032zM20.453 20.459h-3.558v-5.661c0-1.35-.027-3.086-1.885-3.086-1.889 0-2.178 1.476-2.178 3v5.747h-3.557V9h3.417v1.561h.049c.476-.9 1.633-1.848 3.36-1.848 3.593 0 4.257 2.364 4.257 5.435v6.311z" />
+                        </svg>
+                        Moti Shaul
+                    </a>
+                </div>
+
+                <!-- Copyright -->
+                <div class="mt-8 pt-6 border-t border-gray-700">
+                    <p class="text-gray-400 text-sm">
+                        © 2025 חיפוש חכם בפרקי אבות. כל הזכויות שמורות.
+                    </p>
+                </div>
+            </div>
+        </div>
     </footer>
 </body>
+
 </html>
 
 <script>
@@ -190,7 +369,7 @@
     const selectedMishna = "{{ selected_mishna | default('') }}";
 
     // Set the initial chapter value
-    if (selectedChapter!='None') {
+    if (selectedChapter != 'None') {
         chapterSelect.value = selectedChapter;
         updateMishnaOptions(selectedChapter, selectedMishna);
     } else {
@@ -240,89 +419,196 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('tagSelection', () => ({
             allTags: {{ all_tags | tojson | safe }},
-            categories: {{ categories | tojson | safe }},
-            tagSearch: '',
-            selectedTags: [],
-            filteredCategories: {},
-            showAllCategories: {},
+        categories: {{ categories | tojson | safe }},
+        tagSearch: '',
+        selectedTags: [],
+        filteredCategories: {},
+        showAllCategories: {},
 
-            sortedCategories() {
-                const sorted = {};
-                Object.keys(this.filteredCategories)
-                    .sort() // Sort categories alphabetically
-                    .forEach(categoryName => {
-                        sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
-                            a.name.localeCompare(b.name, 'he') // Sort tags alphabetically
-                        );
-                    });
-                return sorted;
-            },
+        sortedCategories() {
+        const sorted = {};
+        Object.keys(this.filteredCategories)
+            .sort() // Sort categories alphabetically
+            .forEach(categoryName => {
+                sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
+                    a.name.localeCompare(b.name, 'he') // Sort tags alphabetically
+                );
+            });
+        return sorted;
+    },
 
-            init() {
-                this.groupTagsByCategory();
-            },
+        init() {
+        this.groupTagsByCategory();
+    },
 
-            groupTagsByCategory() {
-                const categories = {};
-                this.allTags.forEach(tag => {
-                    const categoryKey = tag.category || "כללי";
-                    if (!categories[categoryKey]) {
-                        categories[categoryKey] = [];
-                        this.showAllCategories[categoryKey] = false;
-                    }
-                    categories[categoryKey].push(tag);
-                });
-                this.filteredCategories = categories;
-                console.log('Grouped categories:', this.filteredCategories); // Debug log
-            },
-
-            filterTags() {
-                const search = this.tagSearch.toLowerCase();
-                const categories = {};
-                this.allTags.forEach(tag => {
-                    if (tag.name.toLowerCase().includes(search)) {
-                        const categoryKey = tag.category || "כללי";
-                        if (!categories[categoryKey]) {
-                            categories[categoryKey] = [];
-                        }
-                        categories[categoryKey].push(tag);
-                    }
-                });
-                this.filteredCategories = categories;
-                console.log('Filtered categories:', this.filteredCategories); // Debug log
-            },
-
-            toggleTag(tagId) {
-                if (this.selectedTags.includes(tagId)) {
-                    this.selectedTags = this.selectedTags.filter(id => id !== tagId);
-                } else {
-                    this.selectedTags.push(tagId);
-                }
-            },
-
-            toggleShowAll(categoryName) {
-                this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
-            },
-
-            getCategoryColor(categoryName) {
-                // Find the category in the database categories
-                const category = this.categories.find(cat => cat.name === categoryName);
-                if (category) {
-                    return category.color;
-                }
-                // Default color for "כללי" or unknown categories
-                return "#F5F5F5";
-            },
-
-            getCategoryBorderColor(categoryName) {
-                // Find the category in the database categories
-                const category = this.categories.find(cat => cat.name === categoryName);
-                if (category) {
-                    return category.color;
-                }
-                // Default color for "כללי" or unknown categories
-                return "#F5F5F5";
+        groupTagsByCategory() {
+        const categories = {};
+        this.allTags.forEach(tag => {
+            const categoryKey = tag.category || "כללי";
+            if (!categories[categoryKey]) {
+                categories[categoryKey] = [];
+                this.showAllCategories[categoryKey] = false;
             }
+            categories[categoryKey].push(tag);
+        });
+        this.filteredCategories = categories;
+        console.log('Grouped categories:', this.filteredCategories); // Debug log
+    },
+
+        filterTags() {
+        const search = this.tagSearch.toLowerCase();
+        const categories = {};
+        this.allTags.forEach(tag => {
+            if (tag.name.toLowerCase().includes(search)) {
+                const categoryKey = tag.category || "כללי";
+                if (!categories[categoryKey]) {
+                    categories[categoryKey] = [];
+                }
+                categories[categoryKey].push(tag);
+            }
+        });
+        this.filteredCategories = categories;
+        console.log('Filtered categories:', this.filteredCategories); // Debug log
+    },
+
+        toggleTag(tagId) {
+        if(this.selectedTags.includes(tagId)) {
+        this.selectedTags = this.selectedTags.filter(id => id !== tagId);
+    } else {
+        this.selectedTags.push(tagId);
+    }
+            },
+
+    toggleShowAll(categoryName) {
+        this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
+    },
+
+    getCategoryColor(categoryName) {
+        // Find the category in the database categories
+        const category = this.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            return category.color;
+        }
+        // Default color for "כללי" or unknown categories
+        return "#F5F5F5";
+    },
+
+    getCategoryBorderColor(categoryName) {
+        // Find the category in the database categories
+        const category = this.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            return category.color;
+        }
+        // Default color for "כללי" or unknown categories
+        return "#F5F5F5";
+    }
         }));
     });
 </script>
+
+<script>
+    // Simple copy function that works with Edge and all browsers
+    function copyMishnaTextSimple(button) {
+        const text = button.getAttribute('data-mishna-text');
+
+        // Try modern clipboard API first
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                showGlobalCopySuccess();
+            }).catch(err => {
+                console.log('Modern clipboard failed, trying fallback:', err);
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            // Use fallback method
+            fallbackCopyTextToClipboard(text);
+        }
+    }
+
+    // Fallback copy method for older browsers
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showGlobalCopySuccess();
+            } else {
+                console.error('Fallback copy failed');
+                alert('לא ניתן להעתיק. אנא העתק ידנית.');
+            }
+        } catch (err) {
+            console.error('Copy error:', err);
+            alert('לא ניתן להעתיק. אנא העתק ידנית.');
+        }
+
+        document.body.removeChild(textArea);
+    }
+
+    // Show global copy success toast message
+    function showGlobalCopySuccess() {
+        // Remove existing toast if any
+        const existingToast = document.getElementById('global-copy-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+
+        // Create new toast element
+        const toastDiv = document.createElement('div');
+        toastDiv.id = 'global-copy-toast';
+        toastDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 9999;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        `;
+
+        toastDiv.innerHTML = `
+            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            המשנה הועתקה
+        `;
+
+        document.body.appendChild(toastDiv);
+
+        // Animate in
+        setTimeout(() => {
+            toastDiv.style.opacity = '1';
+            toastDiv.style.transform = 'translateX(-50%) translateY(0)';
+        }, 10);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toastDiv.style.opacity = '0';
+            toastDiv.style.transform = 'translateX(-50%) translateY(-20px)';
+            setTimeout(() => {
+                if (toastDiv && toastDiv.parentNode) {
+                    toastDiv.remove();
+                }
+            }, 300);
+        }, 3000);
+    }
+</script>
+
+</body>
