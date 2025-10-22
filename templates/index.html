@@ -16,55 +16,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>חיפוש מִשׁנָה</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.8));
+            }
+        }
+
+        .logo-animate {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+        }
+
+        .logo-animate:hover {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+            transform: scale(1.1);
+        }
+    </style>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen text-gray-800"
-    x-data="{ showTags: false, selectedTags: [] }">
+<body class="min-h-screen" style="color: #F5F5DC;" x-data="{ showTags: false, selectedTags: [] }">
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVH2ZN86" height="0" width="0"
             style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
+    <!-- Hebrew Letters Background Animation -->
+    <div class="hebrew-letters" id="hebrewLetters"></div>
+
     <!-- Header Section -->
-    <header class="bg-white shadow-lg border-b border-gray-100 mb-8">
-        <div class="container mx-auto py-6">
-            <h1 class="text-4xl font-bold text-center">
-                <a href="/"
-                    class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
-                    <svg class="w-10 h-10 ml-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                        </path>
-                    </svg>
-                    חיפוש חכם בפרקי אבות
+    <header class="header-mystical border-b border-gray-100 mb-4">
+        <div class="container mx-auto py-4">
+            <div class="text-center">
+                <a href="/" class="inline-block">
+                    <img src="/static/pics/pirkey-avot-online-logo.png" alt="פרקי אבות אונליין"
+                        class="h-40 md:h-52 w-auto object-contain mx-auto logo-animate transition-all duration-500">
                 </a>
-            </h1>
-            <div class="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+            </div>
         </div>
     </header>
 
     <!-- Main Search Container -->
     <div class="container mx-auto px-4 mb-12">
-        <div class="max-w-4xl mx-auto" x-data="{ searchType: '{{ searchType }}'}">
-            <form method="POST" class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+        <div class="max-w-3xl mx-auto" x-data="{ searchType: '{{ searchType }}'}">
+            <form method="POST" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100">
                 {{ form.hidden_tag() }}
                 <input type="hidden" name="search_type" :value="searchType">
 
                 <!-- Search Type Selection -->
                 <div class="text-center mb-8">
-                    <h3 class="text-3xl font-bold text-gray-800 mb-6 flex items-center justify-center">
-                        <svg class="w-8 h-8 ml-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        חפש לפי
+                    <h3 class="text-3xl font-bold mb-4 flex items-center justify-center">
+                        <span
+                            style="background: linear-gradient(45deg, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 2px 8px rgba(25, 25, 112, 0.4);">חיפוש
+                            חכם בפרקי אבות</span>
                     </h3>
+                    <p class="text-lg text-gray-600 mb-6 max-w-2xl mx-auto" style="color: #F5F5DC !important;">כלי חיפוש
+                        מתקדם לחקר ולימוד פרקי אבות עם
+                        אפשרויות חיפוש מגוונות</p>
+                    <div class="w-24 h-1 mx-auto mb-6 rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
                     <div class="flex flex-wrap justify-center gap-4 mb-8">
                         <button type="button"
-                            :class="{'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105': searchType === 'search_mishna', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_mishna'}"
-                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
-                            @click="searchType = 'search_mishna'">
+                            :class="searchType === 'search_mishna' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_mishna'">
                             <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
@@ -72,9 +105,8 @@
                             פרק ומשנה
                         </button>
                         <button type="button"
-                            :class="{'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105': searchType === 'search_free_text', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_free_text'}"
-                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
-                            @click="searchType = 'search_free_text'">
+                            :class="searchType === 'search_free_text' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_free_text'">
                             <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
@@ -83,9 +115,8 @@
                             טקסט חופשי
                         </button>
                         <button type="button"
-                            :class="{'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105': searchType === 'search_by_tags', 'bg-gray-100 text-gray-600 hover:bg-gray-200': searchType !== 'search_by_tags'}"
-                            class="px-6 py-3 rounded-xl font-bold text-lg transition-all duration-200 hover:shadow-md flex items-center"
-                            @click="searchType = 'search_by_tags'">
+                            :class="searchType === 'search_by_tags' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_by_tags'">
                             <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
@@ -97,26 +128,23 @@
                 </div>
 
                 <!-- Chapter and Mishna Selection -->
-                <div x-show="searchType === 'search_mishna'" x-cloak
-                    class="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            {{ form.chapter.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
-                            {{ form.chapter(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500
-                            focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg", id="chapter") }}
+                <div x-show="searchType === 'search_mishna'" x-cloak class="search-section-blue p-4 rounded-xl mb-6">
+                    <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
+                        <div class="flex flex-col items-center">
+                            {{ form.chapter.label(class="block text-sm font-bold text-gray-700 mb-2 text-center") }}
+                            {{ form.chapter(class="dropdown-compact", id="chapter") }}
                         </div>
-                        <div class="space-y-2">
-                            {{ form.mishna.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
-                            {{ form.mishna(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500
-                            focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg", id="mishna") }}
+                        <div class="flex flex-col items-center">
+                            {{ form.mishna.label(class="block text-sm font-bold text-gray-700 mb-2 text-center") }}
+                            {{ form.mishna(class="dropdown-compact", id="mishna") }}
                         </div>
                     </div>
                 </div>
 
                 <!-- Free Text Search -->
                 <div x-show="searchType === 'search_free_text'" x-cloak
-                    class="bg-green-50 p-6 rounded-xl border border-green-100 mb-6">
-                    <div class="space-y-3">
+                    class="search-section-parchment p-4 rounded-xl mb-6">
+                    <div class="space-y-2">
                         {{ form.text.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
                         {{ form.text(class="w-full border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
                         focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 text-base
@@ -126,7 +154,7 @@
 
                 <!-- Tag Selection -->
                 <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection"
-                    class="bg-purple-50 p-6 rounded-xl border border-purple-100 mb-6">
+                    class="p-4 rounded-xl border border-purple-100 mb-6">
                     <div class="text-center mb-6">
                         <label for="tag-search"
                             class="block text-sm font-bold text-gray-700 mb-3 flex items-center justify-center">
@@ -138,37 +166,31 @@
                             חפש נושא או בחר מתוך הרשימה
                         </label>
                         <input type="text" id="tag-search" placeholder="חפש נושא או בחר מהרשימה..."
-                            class="border-2 border-gray-200 p-3 md:p-4 w-full max-w-md mx-auto rounded-lg md:rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base md:text-lg"
+                            class="border-2 border-gray-200 p-3 md:p-3 w-full max-w-md mx-auto rounded-lg md:rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base md:text-lg"
                             x-model="tagSearch" @input="filterTags()">
                     </div>
 
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
                         <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
-                            <div
-                                class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-4 h-4 rounded-full mr-3 shadow-sm"
-                                        :style="`background-color: ${getCategoryColor(categoryName)};`"></div>
-                                    <h4 class="text-lg font-bold text-gray-800" x-text="categoryName"></h4>
+                            <div class="p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                                style="background-color: #F5F5DC;">
+                                <div class="flex items-center justify-center mb-4">
+                                    <h4 class="text-lg font-bold text-gray-800 text-center" x-text="categoryName"></h4>
                                 </div>
                                 <div class="flex flex-wrap gap-2 justify-center">
                                     <template x-for="(tag, index) in category" :key="tag.id">
                                         <button type="button" x-show="showAllCategories[categoryName] || index < 3"
-                                            :class="selectedTags.includes(tag.id) ? 'ring-2 ring-purple-400 font-bold transform scale-105' : 'hover:scale-105'"
-                                            class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 transition-all duration-200 hover:shadow-md cursor-pointer"
-                                            :style="`background-color: ${getCategoryColor(categoryName)}; border: 2px solid ${getCategoryBorderColor(categoryName)}20;`"
+                                            :class="selectedTags.includes(tag.id) ? 'category-tag-btn selected' : 'category-tag-btn'"
+                                            :style="`background-color: ${getCategoryColor(categoryName)} !important;`"
                                             @click="toggleTag(tag.id)">
                                             <span x-text="tag.name"></span>
                                         </button>
                                     </template>
                                 </div>
                                 <div class="text-center mt-4">
-                                    <button type="button"
-                                        class="text-purple-600 hover:text-purple-800 font-medium hover:underline transition-colors duration-200"
-                                        x-show="category.length > 3" @click="toggleShowAll(categoryName)">
-                                        <span x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
-                                    </button>
+                                    <span x-show="category.length > 3" @click="toggleShowAll(categoryName)"
+                                        class="cursor-pointer"
+                                        x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
                                 </div>
                             </div>
                         </template>
@@ -180,11 +202,12 @@
 
                 <!-- Search Button -->
                 <div class="text-center mt-8">
-                    <button name="action" :value="searchType"
-                        class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto">
+                    <button name="action" :value="searchType" class="search-button-sand-gold"
+                        style="color: #F5F5DC !important;">
                         <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                style="color: #F5F5DC !important;" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                            </path>
                         </svg>
                         חפש
                     </button>
@@ -199,7 +222,7 @@
             {% if results %}
             <!-- Results Header -->
             <div class="text-center mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 inline-block">
+                <div class="search-section-parchment p-6 rounded-2xl shadow-lg inline-block">
                     <div class="flex items-center justify-center mb-2">
                         <svg class="w-8 h-8 ml-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -213,7 +236,8 @@
                             {% endif %}
                         </h2>
                     </div>
-                    <div class="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 mx-auto rounded-full"></div>
+                    <div class="w-24 h-1 mx-auto rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #B8860B) !important;"></div>
                 </div>
             </div>
 
@@ -221,11 +245,11 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {% for result in results %}
                 <div
-                    class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    class="result-card p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <!-- Chapter and Mishna Header -->
                     <div class="text-center mb-6">
-                        <div
-                            class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl inline-block shadow-md">
+                        <div class="px-6 py-3 rounded-xl inline-block shadow-md"
+                            style="background: linear-gradient(45deg, #DAA520, #B8860B) !important; color: #2D2D2D !important; border: 2px solid rgba(218, 165, 32, 0.4) !important;">
                             <p class="font-bold text-lg flex items-center">
                                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -244,7 +268,7 @@
                             <button
                                 data-mishna-text="פרק {{ result.chapter }} משנה {{ result.mishna }}: {{ result.text_pretty }}"
                                 onclick="copyMishnaTextSimple(this)"
-                                class="mr-3 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 flex-shrink-0 group"
+                                class="mr-3 p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-all duration-200 flex-shrink-0 group"
                                 title="העתק משנה">
                                 <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -282,10 +306,10 @@
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-            <!-- No Results Message -->
+            {% elif request.method == 'POST' %}
+            <!-- No Results Message - Only show after a search was performed -->
             <div class="text-center">
-                <div class="bg-white p-12 rounded-2xl shadow-lg border border-gray-100 max-w-md mx-auto">
+                <div class="search-section-parchment p-12 rounded-2xl shadow-lg max-w-md mx-auto">
                     <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                         <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -296,44 +320,50 @@
                     <p class="text-gray-600">נסה לחפש במילים אחרות או בדוק את הפרמטרים שלך</p>
                 </div>
             </div>
+            {% else %}
+            <!-- Empty space for first page load -->
+            <div class="text-center py-20">
+                <div class="max-w-2xl mx-auto">
+                    <div class="text-center mb-8">
+                    </div>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
 
+
+
     <!-- Footer Section -->
-    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-12 mt-16">
+    <footer class="footer-ancient py-8 mt-0">
         <div class="container mx-auto px-4">
             <div class="text-center">
                 <!-- Logo/Title -->
-                <div class="mb-6">
-                    <h3 class="text-2xl font-bold mb-2 flex items-center justify-center">
-                        <svg class="w-8 h-8 ml-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                            </path>
-                        </svg>
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold mb-1">
                         חיפוש חכם בפרקי אבות
                     </h3>
-                    <div class="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto rounded-full"></div>
+                    <div class="w-20 h-1 mx-auto rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #B8860B) !important;"></div>
                 </div>
 
                 <!-- Description -->
-                <p class="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
-                    כלי חיפוש מתקדם לחקר ולימוד פרקי אבות עם אפשרויות חיפוש מגוונות ותיוג נושאים
+                <p class="mb-4 max-w-2xl mx-auto text-base" style="color: #F5F5DC !important;">
+                    כלי חיפוש מתקדם לחקר ולימוד פרקי אבות עם אפשרויות חיפוש מגוונות
                 </p>
 
                 <!-- Developer Credit -->
-                <div class="bg-gray-700 rounded-2xl p-6 max-w-lg mx-auto">
-                    <p class="text-gray-300 mb-4 flex items-center justify-center">
+                <div class="bg-gray-700 rounded-xl p-4 max-w-lg mx-auto">
+                    <p class="text-gray-300 mb-2 flex items-center justify-center text-sm">
                         <svg class="w-5 h-5 ml-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
                         </svg>
                         פותח על ידי
                     </p>
-                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                    <div class="flex flex-col sm:flex-row gap-2 items-center justify-center">
                         <a href="https://www.linkedin.com/in/moti-shaul" target="_blank" rel="noopener noreferrer"
-                            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-2" fill="currentColor"
                                 viewBox="0 0 24 24">
                                 <path
@@ -342,7 +372,7 @@
                             Moti Shaul
                         </a>
                         <a href="https://buymeacoffee.com/motishaul" target="_blank" rel="noopener noreferrer"
-                            class="inline-flex items-center bg-yellow-400 hover:bg-yellow-500 text-gray-800 px-6 py-3 rounded-xl font-bold transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                            class="inline-flex items-center bg-yellow-400 hover:bg-yellow-500 text-gray-800 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
                             <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 24 24">
                                 <path
                                     d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-.766-1.618a4.85 4.85 0 0 0-1.364-1.2C17.32 2.572 16.669 2.287 15.84 2.287c-.829 0-1.479.285-2.114.644-.635-.359-1.285-.644-2.114-.644-.829 0-1.479.285-2.114.644-.635-.359-1.285-.644-2.114-.644-.83 0-1.48.285-2.115.644C6.635 2.572 5.984 2.287 5.155 2.287c-.829 0-1.479.285-2.114.644a4.85 4.85 0 0 0-1.364 1.2c-.378.455-.647 1.02-.766 1.618L.779 6.415c-.08.4-.098.817-.053 1.234.045.417.142.827.29 1.218.148.391.347.756.593 1.09.246.334.54.635.875.897 1.365 1.064 2.854 1.895 4.437 2.474 1.583.579 3.257.896 4.983.943 1.726-.047 3.4-.364 4.983-.943 1.583-.579 3.072-1.41 4.437-2.474.335-.262.629-.563.875-.897.246-.334.445-.699.593-1.09.148-.391.245-.801.29-1.218.045-.417.027-.834-.053-1.234z" />
@@ -353,268 +383,289 @@
                 </div>
 
                 <!-- Copyright -->
-                <div class="mt-8 pt-6 border-t border-gray-700">
-                    <p class="text-gray-400 text-sm">
+                <div class="mt-4 pt-3 border-t border-gray-700">
+                    <p class="text-gray-400 text-xs">
                         © 2025 חיפוש חכם בפרקי אבות. כל הזכויות שמורות.
                     </p>
                 </div>
             </div>
         </div>
     </footer>
-</body>
 
-</html>
+    <script>
+        // Hebrew Letters Animation
+        const hebrewLetters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ', 'ק', 'ר', 'ש', 'ת'];
+        const container = document.getElementById('hebrewLetters');
 
-<script>
-    const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
-    const chapterSelect = document.getElementById('chapter');
-    const mishnaSelect = document.getElementById('mishna');
+        function createFloatingLetter() {
+            const letter = document.createElement('div');
+            letter.className = 'hebrew-letter';
+            letter.textContent = hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)];
 
-    // Pre-select the chapter and mishna if available
-    const selectedChapter = "{{ selected_chapter | default('') }}";
-    const selectedMishna = "{{ selected_mishna | default('') }}";
+            // Random horizontal position
+            letter.style.left = Math.random() * 100 + '%';
 
-    // Set the initial chapter value
-    if (selectedChapter != 'None') {
-        chapterSelect.value = selectedChapter;
-        updateMishnaOptions(selectedChapter, selectedMishna);
-    } else {
-        chapterSelect.value = 'א'
-    }
+            // Random animation duration between 10-15 seconds
+            const duration = 10 + Math.random() * 5;
+            letter.style.animationDuration = duration + 's';
 
-    // Update mishnayot options based on chapter selection
-    chapterSelect.addEventListener('change', function () {
-        const selectedChapter = chapterSelect.value;
-        updateMishnaOptions(selectedChapter, selectedMishna);
-    });
+            container.appendChild(letter);
 
-    // Function to update the mishna options dropdown based on selected chapter
-    function updateMishnaOptions(chapter, preselectedMishna = null) {
-        const mishnayot = allowedChapters[chapter] || [];
-        mishnaSelect.innerHTML = '';
-
-        // Add 'all option
-        const allOption = document.createElement('option');
-        allOption.value = 'all';
-        allOption.text = 'כל המשניות';
-        mishnaSelect.add(allOption);
-
-        mishnayot.forEach(function (mishna) {
-            const option = document.createElement('option');
-            option.value = mishna;
-            option.text = mishna;
-            if (preselectedMishna && preselectedMishna === mishna) {
-                option.selected = true;
-            }
-            mishnaSelect.add(option);
-        });
-
-        // If preselectedMishna is 'all', select 'כל המשניות'
-        if (preselectedMishna === 'all') {
-            mishnaSelect.value = 'all';
+            // Remove letter after animation completes
+            setTimeout(() => {
+                if (letter.parentNode) {
+                    letter.parentNode.removeChild(letter);
+                }
+            }, duration * 1000);
         }
-    }
 
-    // Trigger the event to populate options if chapter is already selected
-    if (selectedChapter) {
-        chapterSelect.dispatchEvent(new Event('change'));
-    }
-</script>
+        // Create letters periodically - less frequent
+        setInterval(createFloatingLetter, 2000);
 
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('tagSelection', () => ({
-            allTags: {{ all_tags | tojson | safe }},
-        categories: {{ categories | tojson | safe }},
-        tagSearch: '',
-        selectedTags: [],
-        filteredCategories: {},
-        showAllCategories: {},
+        // Create initial letters
+        for (let i = 0; i < 3; i++) {
+            setTimeout(createFloatingLetter, i * 1000);
+        }
+    </script>
 
-        sortedCategories() {
-        const sorted = {};
-        Object.keys(this.filteredCategories)
-            .sort() // Sort categories alphabetically
-            .forEach(categoryName => {
-                sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
-                    a.name.localeCompare(b.name, 'he') // Sort tags alphabetically
-                );
-            });
-        return sorted;
-    },
+    <script>
+        const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
+        const chapterSelect = document.getElementById('chapter');
+        const mishnaSelect = document.getElementById('mishna');
 
-        init() {
-        this.groupTagsByCategory();
-    },
+        // Pre-select the chapter and mishna if available
+        const selectedChapter = "{{ selected_chapter | default('') }}";
+        const selectedMishna = "{{ selected_mishna | default('') }}";
 
-        groupTagsByCategory() {
-        const categories = {};
-        this.allTags.forEach(tag => {
-            const categoryKey = tag.category || "כללי";
-            if (!categories[categoryKey]) {
-                categories[categoryKey] = [];
-                this.showAllCategories[categoryKey] = false;
-            }
-            categories[categoryKey].push(tag);
+        // Set the initial chapter value
+        if (selectedChapter != 'None') {
+            chapterSelect.value = selectedChapter;
+            updateMishnaOptions(selectedChapter, selectedMishna);
+        } else {
+            chapterSelect.value = 'א'
+        }
+
+        // Update mishnayot options based on chapter selection
+        chapterSelect.addEventListener('change', function () {
+            const selectedChapter = chapterSelect.value;
+            updateMishnaOptions(selectedChapter, selectedMishna);
         });
-        this.filteredCategories = categories;
-        console.log('Grouped categories:', this.filteredCategories); // Debug log
-    },
 
-        filterTags() {
-        const search = this.tagSearch.toLowerCase();
-        const categories = {};
-        this.allTags.forEach(tag => {
-            if (tag.name.toLowerCase().includes(search)) {
+        // Function to update the mishna options dropdown based on selected chapter
+        function updateMishnaOptions(chapter, preselectedMishna = null) {
+            const mishnayot = allowedChapters[chapter] || [];
+            mishnaSelect.innerHTML = '';
+
+            // Add 'all option
+            const allOption = document.createElement('option');
+            allOption.value = 'all';
+            allOption.text = 'כל המשניות';
+            mishnaSelect.add(allOption);
+
+            mishnayot.forEach(function (mishna) {
+                const option = document.createElement('option');
+                option.value = mishna;
+                option.text = mishna;
+                if (preselectedMishna && preselectedMishna === mishna) {
+                    option.selected = true;
+                }
+                mishnaSelect.add(option);
+            });
+
+            // If preselectedMishna is 'all', select 'כל המשניות'
+            if (preselectedMishna === 'all') {
+                mishnaSelect.value = 'all';
+            }
+        }
+
+        // Trigger the event to populate options if chapter is already selected
+        if (selectedChapter) {
+            chapterSelect.dispatchEvent(new Event('change'));
+        }
+    </script>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tagSelection', () => ({
+                allTags: {{ all_tags | tojson | safe }},
+            categories: {{ categories | tojson | safe }},
+            tagSearch: '',
+            selectedTags: [],
+            filteredCategories: {},
+            showAllCategories: {},
+
+            sortedCategories() {
+            const sorted = {};
+            Object.keys(this.filteredCategories)
+                .sort() // Sort categories alphabetically
+                .forEach(categoryName => {
+                    sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
+                        a.name.localeCompare(b.name, 'he') // Sort tags alphabetically
+                    );
+                });
+            return sorted;
+        },
+
+            init() {
+            this.groupTagsByCategory();
+        },
+
+            groupTagsByCategory() {
+            const categories = {};
+            this.allTags.forEach(tag => {
                 const categoryKey = tag.category || "כללי";
                 if (!categories[categoryKey]) {
                     categories[categoryKey] = [];
+                    this.showAllCategories[categoryKey] = false;
                 }
                 categories[categoryKey].push(tag);
-            }
-        });
-        this.filteredCategories = categories;
-        console.log('Filtered categories:', this.filteredCategories); // Debug log
-    },
-
-        toggleTag(tagId) {
-        if(this.selectedTags.includes(tagId)) {
-        this.selectedTags = this.selectedTags.filter(id => id !== tagId);
-    } else {
-        this.selectedTags.push(tagId);
-    }
-            },
-
-    toggleShowAll(categoryName) {
-        this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
-    },
-
-    getCategoryColor(categoryName) {
-        // Find the category in the database categories
-        const category = this.categories.find(cat => cat.name === categoryName);
-        if (category) {
-            return category.color;
-        }
-        // Default color for "כללי" or unknown categories
-        return "#F5F5F5";
-    },
-
-    getCategoryBorderColor(categoryName) {
-        // Find the category in the database categories
-        const category = this.categories.find(cat => cat.name === categoryName);
-        if (category) {
-            return category.color;
-        }
-        // Default color for "כללי" or unknown categories
-        return "#F5F5F5";
-    }
-        }));
-    });
-</script>
-
-<script>
-    // Simple copy function that works with Edge and all browsers
-    function copyMishnaTextSimple(button) {
-        const text = button.getAttribute('data-mishna-text');
-
-        // Try modern clipboard API first
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => {
-                showGlobalCopySuccess();
-            }).catch(err => {
-                console.log('Modern clipboard failed, trying fallback:', err);
-                fallbackCopyTextToClipboard(text);
             });
-        } else {
-            // Use fallback method
-            fallbackCopyTextToClipboard(text);
-        }
-    }
+            this.filteredCategories = categories;
+            console.log('Grouped categories:', this.filteredCategories); // Debug log
+        },
 
-    // Fallback copy method for older browsers
-    function fallbackCopyTextToClipboard(text) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) {
-                showGlobalCopySuccess();
-            } else {
-                console.error('Fallback copy failed');
-                alert('לא ניתן להעתיק. אנא העתק ידנית.');
-            }
-        } catch (err) {
-            console.error('Copy error:', err);
-            alert('לא ניתן להעתיק. אנא העתק ידנית.');
-        }
-
-        document.body.removeChild(textArea);
-    }
-
-    // Show global copy success toast message
-    function showGlobalCopySuccess() {
-        // Remove existing toast if any
-        const existingToast = document.getElementById('global-copy-toast');
-        if (existingToast) {
-            existingToast.remove();
-        }
-
-        // Create new toast element
-        const toastDiv = document.createElement('div');
-        toastDiv.id = 'global-copy-toast';
-        toastDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #10b981;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            z-index: 9999;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            opacity: 0;
-            transition: all 0.3s ease;
-        `;
-
-        toastDiv.innerHTML = `
-            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            המשנה הועתקה
-        `;
-
-        document.body.appendChild(toastDiv);
-
-        // Animate in
-        setTimeout(() => {
-            toastDiv.style.opacity = '1';
-            toastDiv.style.transform = 'translateX(-50%) translateY(0)';
-        }, 10);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            toastDiv.style.opacity = '0';
-            toastDiv.style.transform = 'translateX(-50%) translateY(-20px)';
-            setTimeout(() => {
-                if (toastDiv && toastDiv.parentNode) {
-                    toastDiv.remove();
+            filterTags() {
+            const search = this.tagSearch.toLowerCase();
+            const categories = {};
+            this.allTags.forEach(tag => {
+                if (tag.name.toLowerCase().includes(search)) {
+                    const categoryKey = tag.category || "כללי";
+                    if (!categories[categoryKey]) {
+                        categories[categoryKey] = [];
+                    }
+                    categories[categoryKey].push(tag);
                 }
-            }, 300);
-        }, 3000);
-    }
-</script>
+            });
+            this.filteredCategories = categories;
+            console.log('Filtered categories:', this.filteredCategories); // Debug log
+        },
 
+            toggleTag(tagId) {
+            if(this.selectedTags.includes(tagId)) {
+            this.selectedTags = this.selectedTags.filter(id => id !== tagId);
+        } else {
+            this.selectedTags.push(tagId);
+        }
+                },
+
+        toggleShowAll(categoryName) {
+            this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
+        },
+
+        getCategoryColor(categoryName) {
+            // Find the category in the database categories
+            const category = this.categories.find(cat => cat.name === categoryName);
+            if (category) {
+                return category.color;
+            }
+            // Default color for "כללי" or unknown categories
+            return "#F5F5F5";
+        },
+
+        getCategoryBorderColor(categoryName) {
+            // Find the category in the database categories
+            const category = this.categories.find(cat => cat.name === categoryName);
+            if (category) {
+                return category.color;
+            }
+            // Default color for "כללי" or unknown categories
+            return "#F5F5F5";
+        }
+            }));
+        });
+    </script>
+
+    <script>
+        /**
+         * Copies the Mishna text to clipboard when the copy button is clicked
+         * @param {HTMLElement} button - The copy button element that was clicked
+         */
+        function copyMishnaTextSimple(button) {
+            // Get the Mishna text from the button's data attribute
+            const text = button.getAttribute('data-mishna-text');
+
+            // Check if modern clipboard API is available and we're in a secure context
+            if (navigator.clipboard && window.isSecureContext) {
+                // Modern approach using Clipboard API
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopyFeedback(button);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    // Fall back to legacy method if modern API fails
+                    fallbackCopyTextToClipboard(text, button);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                fallbackCopyTextToClipboard(text, button);
+            }
+        }
+
+        /**
+         * Legacy method to copy text to clipboard using document.execCommand
+         * Used as fallback when modern Clipboard API is not available
+         * @param {string} text - The text to copy to clipboard
+         * @param {HTMLElement} button - The copy button element for feedback
+         */
+        function fallbackCopyTextToClipboard(text, button) {
+            // Create a temporary textarea element to hold the text
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // Position the textarea off-screen to avoid visual disruption
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+
+            // Add textarea to DOM, select its content, and copy
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                // Attempt to copy using the legacy execCommand method
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopyFeedback(button);
+                } else {
+                    console.error('Fallback: Could not copy text');
+                }
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+            }
+
+            // Clean up by removing the temporary textarea
+            document.body.removeChild(textArea);
+        }
+
+        /**
+         * Shows visual feedback to the user that the text was successfully copied
+         * Temporarily changes the button's appearance and tooltip
+         * @param {HTMLElement} button - The copy button to show feedback on
+         */
+        function showCopyFeedback(button) {
+            // Store original button state for restoration
+            const originalTitle = button.title;
+            const originalHTML = button.innerHTML;
+
+            // Update button to show success state
+            button.title = 'הועתק!'; // "Copied!" in Hebrew
+            button.innerHTML = `
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            `;
+            button.classList.add('text-green-600');
+
+            // Restore original button state after 2 seconds
+            setTimeout(() => {
+                button.title = originalTitle;
+                button.innerHTML = originalHTML;
+                button.classList.remove('text-green-600');
+            }, 2000);
+        }
+    </script>
 </body>
+
+</html>
+<script>
