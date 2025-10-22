@@ -11,6 +11,7 @@ class Mishna(db.Model):
         id (str): Unique identifier of the mishna, combining chapter and mishna (e.g., '1_1').
         chapter (str): The chapter number of the mishna.
         mishna (str): The mishna number within the chapter.
+        number (int): Unique number for each mishna.
         text_pretty (str): The formatted content of the mishna.
         text_raw (str): The raw content of the mishna.
         interpretation (str): Optional interpretation or commentary for the mishna.
@@ -20,14 +21,16 @@ class Mishna(db.Model):
     id = db.Column(db.String(100), primary_key=True)  # Unique ID combining chapter and mishna
     chapter = db.Column(db.String(50), nullable=False)
     mishna = db.Column(db.String(50), nullable=False)
+    number = db.Column(db.SmallInteger, nullable=False, unique=True)  # Unique number for each mishna
     text_pretty = db.Column(db.String, nullable=False)
     text_raw = db.Column(db.String, nullable=False)
     interpretation = db.Column(db.Text)
     tags = db.relationship('Tag', secondary='mishna_tag', back_populates='mishnaiot')
 
-    def __init__(self, chapter, mishna, text_pretty, text_raw, tags, interpretation=""):
+    def __init__(self, chapter, mishna, number, text_pretty, text_raw, tags, interpretation=""):
         self.chapter = chapter
         self.mishna = mishna
+        self.number = number
         self.text_pretty = text_pretty
         self.text_raw = text_raw
         self.tags = tags

@@ -1955,3 +1955,193 @@ button.search-type-button:hover {
 button.search-type-button.active {
     color: #f4e8d0 !important;
 }
+/* =
+==== FLOATING BACK TO SEARCH BUTTON ===== */
+#backToSearchBtn {
+    background: linear-gradient(135deg, #2876DF 0%, #1E5FBF 100%) !important;
+    color: #f4e8d0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 56px !important;
+    height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 
+        0 8px 24px rgba(40, 118, 223, 0.3),
+        0 4px 12px rgba(40, 118, 223, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+#backToSearchBtn:hover {
+    background: linear-gradient(135deg, #49BFFC 0%, #2876DF 100%) !important;
+    transform: scale(1.1) translateY(-2px) !important;
+    box-shadow: 
+        0 12px 32px rgba(73, 191, 252, 0.4),
+        0 6px 16px rgba(40, 118, 223, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+#backToSearchBtn:active {
+    transform: scale(1.05) translateY(-1px) !important;
+    transition: all 0.1s ease-out !important;
+}
+
+#backToSearchBtn svg {
+    color: #f4e8d0 !important;
+    stroke: #f4e8d0 !important;
+    transition: all 0.3s ease !important;
+}
+
+#backToSearchBtn:hover svg {
+    transform: translateY(-1px) !important;
+}
+
+/* Responsive adjustments for floating button */
+@media (max-width: 768px) {
+    #backToSearchBtn {
+        bottom: 1rem !important;
+        left: 1rem !important;
+        width: 48px !important;
+        height: 48px !important;
+    }
+    
+    #backToSearchBtn svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+/* Ensure button is visible above all content */
+#backToSearchBtn {
+    position: fixed !important;
+    z-index: 9999 !important;
+}
+
+/* Animation for button appearance */
+#backToSearchBtn.opacity-100 {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Smooth transition for button disappearance */
+#backToSearchBtn.opacity-0 {
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out !important;
+}/* =====
+ FLOATING BACK TO SEARCH BUTTON ===== */
+#backToSearchBtn {
+    background: linear-gradient(135deg, #2876DF 0%, #1E5FBF 100%) !important;
+    color: #f4e8d0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 56px !important;
+    height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 
+        0 8px 24px rgba(40, 118, 223, 0.3),
+        0 4px 12px rgba(40, 118, 223, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    z-index: 9999 !important;
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    left: 1.5rem !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+#backToSearchBtn:hover {
+    background: linear-gradient(135deg, #49BFFC 0%, #2876DF 100%) !important;
+    transform: scale(1.1) translateY(-2px) !important;
+    box-shadow: 
+        0 12px 32px rgba(73, 191, 252, 0.4),
+        0 6px 16px rgba(40, 118, 223, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+#backToSearchBtn:active {
+    transform: scale(1.05) translateY(-1px) !important;
+    transition: all 0.1s ease-out !important;
+}
+
+#backToSearchBtn svg {
+    color: #f4e8d0 !important;
+    stroke: #f4e8d0 !important;
+    transition: all 0.3s ease !important;
+}
+
+#backToSearchBtn:hover svg {
+    transform: translateY(-1px) !important;
+}
+
+/* Responsive adjustments for floating button */
+@media (max-width: 768px) {
+    #backToSearchBtn {
+        bottom: 1rem !important;
+        left: 1rem !important;
+        width: 48px !important;
+        height: 48px !important;
+    }
+    
+    #backToSearchBtn svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+/* Animation for button appearance */
+#backToSearchBtn.opacity-100 {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Smooth transition for button disappearance */
+#backToSearchBtn.opacity-0 {
+    transition: opacity 0.3s ease-out, visibility 0.3s ease-out !important;
+}
+
+/* Override Tailwind classes for the button */
+#backToSearchBtn.fixed {
+    position: fixed !important;
+}
+
+#backToSearchBtn.z-50 {
+    z-index: 9999 !important;
+}
+
+/* Make sure button is always visible when it should be */
+#backToSearchBtn.visible {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#backToSearchBtn.invisible {
+    visibility: hidden !important;
+    opacity: 0 !important;
+}

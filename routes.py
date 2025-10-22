@@ -68,7 +68,7 @@ def search_mishna():
                 mishna = mishna_form.mishna.data
                 # If 'כל המשניות' (all) is selected, fetch all mishnas for the chapter
                 if mishna == 'all':
-                    results = Mishna.query.filter_by(chapter=chapter).order_by(Mishna.mishna).all()
+                    results = Mishna.query.filter_by(chapter=chapter).order_by(Mishna.number).all()
                 else:
                     mishna_id = f"{chapter}_{mishna}"
                     results = Mishna.query.filter_by(id=mishna_id).all()
@@ -78,7 +78,7 @@ def search_mishna():
                 query_text = remove_niqqud(mishna_form.text.data.lower())
                 current_app.logger.info(f'Performing free text search with query: {query_text}')
 
-                results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).order_by(Mishna.chapter, Mishna.mishna).all()
+                results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for free text search')
 
             # Tag-based Search
@@ -87,7 +87,7 @@ def search_mishna():
                 selected_tags = [int(tag_id) for tag_id in selected_tags if tag_id.isdigit()]
                 current_app.logger.info(f'Searching by tags: {selected_tags}')
 
-                results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.chapter, Mishna.mishna).all()
+                results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
         return render_template('index.html',

@@ -216,8 +216,34 @@
         </div>
     </div>
 
+    <!-- Floating Back to Top Button -->
+    <button id="backToSearchBtn" onclick="scrollToSearch()" title="חזור לחיפוש" style="
+                position: fixed;
+                bottom: 24px;
+                left: 24px;
+                width: 56px;
+                height: 56px;
+                background: linear-gradient(135deg, #2876DF 0%, #1E5FBF 100%);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                box-shadow: 0 8px 24px rgba(40, 118, 223, 0.3);
+                cursor: pointer;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                opacity: 0;
+                visibility: hidden;
+            ">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+        </svg>
+    </button>
+
     <!-- Results Section -->
-    <div class="container mx-auto px-4 mb-12">
+    <div class="container mx-auto px-4 mb-12" id="results-section">
         <div class="max-w-4xl mx-auto">
             {% if results %}
             <!-- Results Header -->
@@ -339,6 +365,12 @@
         <div class="container mx-auto px-4">
             <div class="text-center">
                 <!-- Logo/Title -->
+                <div class="text-center">
+                    <a href="/" class="inline-block">
+                        <img src="/static/pics/pirkey-avot-online-logo.png" alt="פרקי אבות אונליין"
+                            class="h-24 md:h-32 w-auto object-contain mx-auto logo-animate transition-all duration-500">
+                    </a>
+                </div>
                 <div class="mb-4">
                     <h3 class="text-xl font-bold mb-1">
                         חיפוש חכם בפרקי אבות
@@ -391,6 +423,67 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Auto-scroll to results section after search
+        document.addEventListener('DOMContentLoaded', function () {
+            {% if results %}
+            // If there are search results, scroll to the results section
+            const resultsSection = document.getElementById('results-section');
+            if (resultsSection) {
+                resultsSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+            {% endif %}
+        });
+
+        // Floating back to search button functionality
+        function scrollToSearch() {
+            // Scroll to the top of the page where the search form is
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Show/hide floating button based on scroll position
+        window.addEventListener('scroll', function () {
+            const backToSearchBtn = document.getElementById('backToSearchBtn');
+            const resultsSection = document.getElementById('results-section');
+
+            if (backToSearchBtn && resultsSection) {
+                const scrollPosition = window.pageYOffset;
+                const resultsSectionTop = resultsSection.offsetTop;
+
+                // Show button when user scrolls past 300px or reaches results section
+                if (scrollPosition > 300 || scrollPosition > resultsSectionTop - 200) {
+                    backToSearchBtn.style.opacity = '1';
+                    backToSearchBtn.style.visibility = 'visible';
+                } else {
+                    backToSearchBtn.style.opacity = '0';
+                    backToSearchBtn.style.visibility = 'hidden';
+                }
+            }
+        });
+
+        // Initialize button on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const backToSearchBtn = document.getElementById('backToSearchBtn');
+
+            // Show button immediately if there are results (for testing)
+            {% if results %}
+            if (backToSearchBtn) {
+                setTimeout(function () {
+                    backToSearchBtn.style.opacity = '1';
+                    backToSearchBtn.style.visibility = 'visible';
+                }, 500);
+            }
+            {% endif %}
+        });
+    </script>
+
 
     <script>
         // Hebrew Letters Animation
