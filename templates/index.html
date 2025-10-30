@@ -68,7 +68,7 @@
         <div class="container mx-auto py-4">
             <div class="text-center">
                 <a href="/" class="inline-block">
-                    <img src="/static/pics/pirkey-avot-online-logo.png" alt="פרקי אבות אונליין"
+                    <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
                         class="h-40 md:h-52 w-auto object-contain mx-auto logo-animate transition-all duration-500">
                 </a>
             </div>
@@ -148,7 +148,8 @@
                         {{ form.text.label(class="block text-sm font-bold text-gray-700 flex items-center") }}
                         {{ form.text(class="w-full border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
                         focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 text-base
-                        md:text-lg", placeholder="חפש מילים או ביטויים במשניות...") }}
+                        md:text-lg", placeholder="חפש מילים או ביטויים במשניות...",
+                        oninput="this.value = this.value.replace(/[^\u0590-\u05FF\s]/g, '')") }}
                     </div>
                 </div>
 
@@ -287,7 +288,8 @@
                     </div>
 
                     <!-- Mishna Text -->
-                    <div class="bg-gray-50 p-6 rounded-xl mb-6 border-r-4 border-blue-500 relative">
+                    <div
+                        class="bg-gray-50 p-6 rounded-xl mb-6 border-r-4 border-yellow-600 gold-gradient-border relative">
                         <div class="flex items-start justify-between">
                             <p class="text-lg leading-relaxed text-gray-800 text-center font-medium flex-1">{{
                                 result.text_pretty }}</p>
@@ -367,7 +369,7 @@
                 <!-- Logo/Title -->
                 <div class="text-center">
                     <a href="/" class="inline-block">
-                        <img src="/static/pics/pirkey-avot-online-logo.png" alt="פרקי אבות אונליין"
+                        <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
                             class="h-24 md:h-32 w-auto object-contain mx-auto logo-animate transition-all duration-500">
                     </a>
                 </div>
@@ -404,10 +406,20 @@
                             Moti Shaul
                         </a>
                         <a href="https://buymeacoffee.com/motishaul" target="_blank" rel="noopener noreferrer"
-                            class="inline-flex items-center bg-yellow-400 hover:bg-yellow-500 text-gray-800 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
-                            <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-.766-1.618a4.85 4.85 0 0 0-1.364-1.2C17.32 2.572 16.669 2.287 15.84 2.287c-.829 0-1.479.285-2.114.644-.635-.359-1.285-.644-2.114-.644-.829 0-1.479.285-2.114.644-.635-.359-1.285-.644-2.114-.644-.83 0-1.48.285-2.115.644C6.635 2.572 5.984 2.287 5.155 2.287c-.829 0-1.479.285-2.114.644a4.85 4.85 0 0 0-1.364 1.2c-.378.455-.647 1.02-.766 1.618L.779 6.415c-.08.4-.098.817-.053 1.234.045.417.142.827.29 1.218.148.391.347.756.593 1.09.246.334.54.635.875.897 1.365 1.064 2.854 1.895 4.437 2.474 1.583.579 3.257.896 4.983.943 1.726-.047 3.4-.364 4.983-.943 1.583-.579 3.072-1.41 4.437-2.474.335-.262.629-.563.875-.897.246-.334.445-.699.593-1.09.148-.391.245-.801.29-1.218.045-.417.027-.834-.053-1.234z" />
+                            class="inline-flex items-center bg-yellow-600 hover:bg-yellow-800 text-gray-800 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                            <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 1299.116 1650.7815">
+                                <g>
+                                    <path
+                                        d="M848.1921,1625.3907H163.8249c-31.2681,0-61.2729-12.3401-83.4936-34.3386l-55.3409-54.7876
+                                        c-10.6535-10.547-3.1848-28.7069,11.8064-28.7069h938.4235c14.9912,0,22.4599,18.1599,11.8064,28.7069l-55.3409,54.7876
+                                        C909.465,1613.0507,879.4603,1625.3907,848.1921,1625.3907z M1279.1342,997.0688c0,118.3167-95.9146,214.2313-214.2313,214.2313
+                                        c-42.214,0-81.5712-12.2167-114.7428-33.2972c-22.2216,172.3451-170.5161,306.6359-348.6561,306.6359H410.513
+                                        c-193.3438,0-351.5341-158.1903-351.5341-351.5341V760.0079c0-30.7676,25.1735-55.941,55.941-55.941
+                                        c260.7258,16.6079,521.4515,16.6079,782.1771,0c30.7676,0,55.9411,25.1734,55.9411,55.941v54.3302
+                                        c32.5607-19.9758,70.8651-31.5007,111.8647-31.5007C1183.2196,782.8375,1279.1342,878.7521,1279.1342,997.0688z
+                                         M1210.9926,997.0688c0-80.6831-65.4066-146.0897-146.0897-146.0897c-44.9026,0-85.0662,20.2646-111.8647,52.1398v187.8998
+                                        c26.7986,31.8752,66.9622,52.1399,111.8647,52.1399C1145.5859,1143.1586,1210.9926,1077.752,1210.9926,997.0688z" />
+                                </g>
                             </svg>
                             קנה לי קפה
                         </a>

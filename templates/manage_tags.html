@@ -22,30 +22,54 @@
                 <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
             </div>
             
-            <!-- Color Legend -->
-            <div class="mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                {% include 'color_legend.html' %}
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {% for category in categories %}
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <div class="flex items-center mb-4">
-                            <div class="w-4 h-4 rounded-full mr-3 shadow-sm" style="background-color: {{ category.color }};"></div>
-                            <h4 class="font-bold text-lg text-gray-800">{{ category.name }}</h4>
-                        </div>
+            <!-- Categorized Tag Selection -->
+            <div class="mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for category in categories %}
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-medium mb-2">{{ category.name }}</h4>
                         <div class="flex flex-wrap gap-2">
                             {% for tag in category.tags %}
-                                <span class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105 cursor-pointer"
-                                      style="background-color: {{ category.color }}; border: 2px solid {{ category.color }}20;">
-                                    {{ tag.name }}
-                                </span>
+                            <button type="button"
+                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
+                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                @click="selectedTags.includes({{ tag.id }}) ? 
+                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                                    selectedTags.push({{ tag.id }})">
+                                {{ tag.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                        {% if category.tags|length > 5 %}
+                        <span x-show="category.length > 3"
+                            @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
+                            class="cursor-pointer"
+                            x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'"></span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <!-- Uncategorized Tags -->
+                    {% if uncategorized_tags %}
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-medium mb-2">כללי</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in uncategorized_tags %}
+                            <button type="button"
+                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
+                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                @click="selectedTags.includes({{ tag.id }}) ? 
+                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                                    selectedTags.push({{ tag.id }})">
+                                {{ tag.name }}
+                            </button>
                             {% endfor %}
                         </div>
                     </div>
-                {% endfor %}
+                    {% endif %}
+                </div>
             </div>
-        </div>
 
         <!-- Form to add a new tag -->
         <div class="mb-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">

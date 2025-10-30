@@ -99,7 +99,6 @@
                             {% for tag in uncategorized_tags %}
                             <button type="button"
                                 class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                style="background-color: #F5F5F5; border: 1px solid #F5F5F5;"
                                 :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
                                 @click="selectedTags.includes({{ tag.id }}) ? 
                                                     selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 

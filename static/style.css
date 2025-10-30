@@ -1422,6 +1422,24 @@ body::after {
         0 0 15px rgba(218, 165, 32, 0.2) !important;
 }
 
+/* Custom gold gradient border for result cards */
+.gold-gradient-border {
+    border-right: none !important;
+    position: relative;
+}
+
+.gold-gradient-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(45deg, #DAA520, #B8860B) !important;
+    border-radius: 0 12px 12px 0;
+    z-index: 1;
+}
+
 /* Responsive background adjustments */
 @media (max-width: 768px) {
     body {
@@ -1714,6 +1732,12 @@ llback to ensure tag categories are always visible */
 /* Tag selection buttons in index page */
 .search-section-dark .tag-button {
     transition: all 0.3s ease !important;
+}
+
+/* Fix for tag buttons in manage_mishnas.html - ensure black text is visible */
+.bg-gray-50 button.text-black,
+button.text-black {
+    color: #000000 !important;
 }
 
 .search-section-dark .tag-button:hover {
