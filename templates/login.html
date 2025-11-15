@@ -30,6 +30,7 @@
 
             <!-- Login Form -->
             <form action="/login" method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div>
                     <label for="email" class="block text-sm font-semibold mb-1">אימייל</label>
                     <input type="email" name="email" id="email" placeholder="הכנס אימייל" required
