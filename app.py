@@ -1,7 +1,6 @@
 import os
 
 from flask import Flask
-from flask_wtf.csrf import CSRFProtect
 from models import db
 from config import Config
 from routes import main  # Import the routes blueprint
@@ -12,9 +11,6 @@ app.config.from_object(Config)
 
 # Set up logging
 app = setup_logger(app)
-
-# Initialize CSRF protection
-csrf = CSRFProtect(app)
 
 # Initialize the database
 db.init_app(app)
