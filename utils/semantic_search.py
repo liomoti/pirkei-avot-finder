@@ -1,4 +1,21 @@
 """
+================================================================================
+AI/SEMANTIC SEARCH MODULE - CURRENTLY DISABLED / NOT IN USE
+================================================================================
+
+This module contains the semantic search functionality using AlephBERT and
+sentence-transformers. It has been COMMENTED OUT and is NOT currently in use
+to reduce memory usage and dependencies.
+
+The code is preserved here for future reference or re-enabling if needed.
+
+To re-enable this feature:
+1. Uncomment sentence-transformers in requirements.txt
+2. Uncomment the semantic search imports and code in routes.py
+3. Add the AI search button back to templates/index.html
+
+================================================================================
+
 Semantic Search Module for Mishna Text
 
 This module handles semantic similarity search using sentence transformers
@@ -15,10 +32,10 @@ Key Components:
 from typing import List, Tuple, Optional
 from flask import current_app
 from sqlalchemy import text
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer  # COMMENTED OUT - not in use
 
 from models import db, Mishna, Tag
-from utils.compromise_mode import search_with_compromise
+# from utils.compromise_mode import search_with_compromise  # COMMENTED OUT - not in use
 
 
 class SemanticSearchEngine:
