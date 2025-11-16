@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <style>
         @keyframes float {
 
@@ -52,159 +51,10 @@
             animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
             transform: scale(1.1);
         }
-
-        /* Sparkle and Shine Animations for AI Search */
-        @keyframes sparkle {
-
-            0%,
-            100% {
-                opacity: 0;
-                transform: scale(0) rotate(0deg);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1) rotate(180deg);
-            }
-        }
-
-        @keyframes shine {
-            0% {
-                transform: translateX(-100%) skewX(-15deg);
-            }
-
-            100% {
-                transform: translateX(200%) skewX(-15deg);
-            }
-        }
-
-        @keyframes aiGlow {
-
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(102, 126, 234, 0.4),
-                    0 0 40px rgba(118, 75, 162, 0.3),
-                    inset 0 0 20px rgba(255, 255, 255, 0.1);
-            }
-
-            50% {
-                box-shadow: 0 0 30px rgba(102, 126, 234, 0.6),
-                    0 0 60px rgba(118, 75, 162, 0.5),
-                    inset 0 0 30px rgba(255, 255, 255, 0.2);
-            }
-        }
-
-        .ai-search-container {
-            position: relative;
-            overflow: hidden;
-            animation: aiGlow 3s ease-in-out infinite;
-        }
-
-        .ai-search-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            animation: shine 3s ease-in-out infinite;
-            z-index: 1;
-        }
-
-        .sparkle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: radial-gradient(circle, #fff 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .sparkle:nth-child(1) {
-            top: 10%;
-            left: 15%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 0s;
-        }
-
-        .sparkle:nth-child(2) {
-            top: 20%;
-            right: 20%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 0.5s;
-        }
-
-        .sparkle:nth-child(3) {
-            bottom: 30%;
-            left: 25%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 1s;
-        }
-
-        .sparkle:nth-child(4) {
-            bottom: 15%;
-            right: 15%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 1.5s;
-        }
-
-        .sparkle:nth-child(5) {
-            top: 50%;
-            left: 10%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 0.3s;
-        }
-
-        .sparkle:nth-child(6) {
-            top: 40%;
-            right: 10%;
-            animation: sparkle 2s ease-in-out infinite;
-            animation-delay: 0.8s;
-        }
     </style>
 </head>
 
 <body class="min-h-screen" style="color: #F5F5DC;" x-data="{ showTags: false, selectedTags: [] }">
-    <!-- Lottie Loader -->
-    <div id="lottie-loader" style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 29, 41, 0.95);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 99999;
-        transition: opacity 0.5s ease-out;
-    ">
-        <div id="lottie-animation" style="width: 300px; height: 300px;"></div>
-        <p style="color: #DAA520; font-size: 1.5rem; font-weight: bold; margin-top: 1rem; text-align: center;">טוען...</p>
-    </div>
-
-    <!-- Search Loader -->
-    <div id="searchLoader" style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 29, 41, 0.95);
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 99999;
-        transition: opacity 0.5s ease-out;
-    ">
-        <div id="search-lottie-animation" style="width: 300px; height: 300px;"></div>
-        <p style="color: #DAA520; font-size: 1.5rem; font-weight: bold; margin-top: 1rem; text-align: center;">מחפש...</p>
-    </div>
-
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVH2ZN86" height="0" width="0"
             style="display:none;visibility:hidden"></iframe></noscript>
@@ -231,7 +81,6 @@
             <form method="POST" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100">
                 {{ form.hidden_tag() }}
                 <input type="hidden" name="search_type" :value="searchType">
-                <input type="hidden" name="action" :value="searchType">
 
                 <!-- Search Type Selection -->
                 <div class="text-center mb-8">
@@ -264,16 +113,6 @@
                                 </path>
                             </svg>
                             טקסט חופשי
-                        </button>
-                        <button type="button"
-                            :class="searchType === 'search_semantic' ? 'search-type-button active' : 'search-type-button'"
-                            class="flex items-center" @click="searchType = 'search_semantic'">
-                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
-                                </path>
-                            </svg>
-                            חיפוש AI
                         </button>
                         <button type="button"
                             :class="searchType === 'search_by_tags' ? 'search-type-button active' : 'search-type-button'"
@@ -314,108 +153,68 @@
                     </div>
                 </div>
 
-                <!-- Semantic AI Search -->
-                <div x-show="searchType === 'search_semantic'" x-cloak class="ai-search-container p-4 rounded-xl mb-6"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid rgba(102, 126, 234, 0.3);">
-                    <!-- Sparkle Elements -->
-                    <div class="sparkle"></div>
-                    <div class="sparkle"></div>
-                    <div class="sparkle"></div>
-                    <div class="sparkle"></div>
-                    <div class="sparkle"></div>
-                    <div class="sparkle"></div>
-
-                    <div class="space-y-4 relative z-10"></div>
-                    <div class="text-center mb-4">
-                        <div class="flex items-center justify-center mb-2">
-                            <svg class="w-6 h-6 ml-2 !text-yellow-400" fill="none" viewBox="0 0 24 24" style="color: #FACC15 !important; stroke: #FACC15 !important;">
+                <!-- Tag Selection -->
+                <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection"
+                    class="p-4 rounded-xl border border-purple-100 mb-6">
+                    <div class="text-center mb-6">
+                        <label for="tag-search"
+                            class="block text-sm font-bold text-gray-700 mb-3 flex items-center justify-center">
+                            <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
-                                </path>
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <h4 class="text-lg font-bold" style="color: white !important;">חיפוש AI חכם</h4>
-                        </div>
-                        <p class="text-sm" style="color: white !important;">תאר במילים מה אתה מחפש והמערכת תמצא משניות רלוונטיות</p>
-                        <p class="text-xs mt-2 opacity-80" style="color: white !important;">* המערכת עלולה לטעות באחוז מסוים מהתוצאות</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label for="semantic_query" class="block text-sm font-bold flex items-center" style="color: white !important;">
-                            <svg class="w-4 h-4 ml-2 !text-white" fill="none" viewBox="0 0 24 24" style="color: #FFFFFF !important; stroke: #FFFFFF !important;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                                </path>
-                            </svg>
-                            תאר מה אתה מחפש
+                            חפש נושא או בחר מתוך הרשימה
                         </label>
-                        <input type="text" name="semantic_query" id="semantic_query" class="w-full border-2 border-purple-300 p-3 md:p-4 rounded-lg md:rounded-xl
-                                focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base
-                                md:text-lg bg-white text-gray-800"
-                            placeholder="לדוגמה: משניות על כבוד האדם, חכמה ולמידה, יחסים בין אנשים..."
-                            oninput="this.value = this.value.replace(/[^\u0590-\u05FF\s]/g, '')">
+                        <input type="text" id="tag-search" placeholder="חפש נושא או בחר מהרשימה..."
+                            class="border-2 border-gray-200 p-3 md:p-3 w-full max-w-md mx-auto rounded-lg md:rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base md:text-lg"
+                            x-model="tagSearch" @input="filterTags()">
                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                        <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
+                            <div class="p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                                style="background-color: #F5F5DC;">
+                                <div class="flex items-center justify-center mb-4">
+                                    <h4 class="text-lg font-bold text-gray-800 text-center" x-text="categoryName"></h4>
+                                </div>
+                                <div class="flex flex-wrap gap-2 justify-center">
+                                    <template x-for="(tag, index) in category" :key="tag.id">
+                                        <button type="button" x-show="showAllCategories[categoryName] || index < 3"
+                                            :class="selectedTags.includes(tag.id) ? 'category-tag-btn selected' : 'category-tag-btn'"
+                                            :style="`background-color: ${getCategoryColor(categoryName)} !important;`"
+                                            @click="toggleTag(tag.id)">
+                                            <span x-text="tag.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <span x-show="category.length > 3" @click="toggleShowAll(categoryName)"
+                                        class="cursor-pointer"
+                                        x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Ensure the hidden input field is properly bound to selectedTags -->
+                    <input type="hidden" name="tags" :value="selectedTags.join(',')" />
                 </div>
 
-        <!-- Tag Selection -->
-        <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection"
-            class="p-4 rounded-xl border border-purple-100 mb-6">
-            <div class="text-center mb-6">
-                <label for="tag-search"
-                    class="block text-sm font-bold text-gray-700 mb-3 flex items-center justify-center">
-                    <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    חפש נושא או בחר מתוך הרשימה
-                </label>
-                <input type="text" id="tag-search" placeholder="חפש נושא או בחר מהרשימה..."
-                    class="border-2 border-gray-200 p-3 md:p-3 w-full max-w-md mx-auto rounded-lg md:rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base md:text-lg"
-                    x-model="tagSearch" @input="filterTags()">
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
-                <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
-                    <div class="p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
-                        style="background-color: #F5F5DC;">
-                        <div class="flex items-center justify-center mb-4">
-                            <h4 class="text-lg font-bold text-gray-800 text-center" x-text="categoryName"></h4>
-                        </div>
-                        <div class="flex flex-wrap gap-2 justify-center">
-                            <template x-for="(tag, index) in category" :key="tag.id">
-                                <button type="button" x-show="showAllCategories[categoryName] || index < 3"
-                                    :class="selectedTags.includes(tag.id) ? 'category-tag-btn selected' : 'category-tag-btn'"
-                                    :style="`background-color: ${getCategoryColor(categoryName)} !important;`"
-                                    @click="toggleTag(tag.id)">
-                                    <span x-text="tag.name"></span>
-                                </button>
-                            </template>
-                        </div>
-                        <div class="text-center mt-4">
-                            <span x-show="category.length > 3" @click="toggleShowAll(categoryName)"
-                                class="cursor-pointer"
-                                x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <!-- Ensure the hidden input field is properly bound to selectedTags -->
-            <input type="hidden" name="tags" :value="selectedTags.join(',')" />
+                <!-- Search Button -->
+                <div class="text-center mt-8">
+                    <button name="action" :value="searchType" class="search-button-sand-gold"
+                        style="color: #F5F5DC !important;">
+                        <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                style="color: #F5F5DC !important;" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                            </path>
+                        </svg>
+                        חפש
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <!-- Search Button -->
-        <div class="text-center mt-8">
-            <button type="submit" name="action" :value="searchType" class="search-button-sand-gold"
-                style="color: #F5F5DC !important;" id="searchButton">
-                <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        style="color: #F5F5DC !important;" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
-                    </path>
-                </svg>
-                חפש
-            </button>
-        </div>
-        </form>
-    </div>
     </div>
 
     <!-- Floating Back to Top Button -->
@@ -462,12 +261,7 @@
                             {% else %}
                             נמצאו {{ results|length }} משניות
                             {% endif %}
-                            {% if search_query %}
-                            <br>
-                             עבור הערך: "{{ search_query }}"
-                            {% endif %}
                         </h2>
-
                     </div>
                     <div class="w-24 h-1 mx-auto rounded-full"
                         style="background: linear-gradient(45deg, #DAA520, #B8860B) !important;"></div>
@@ -492,43 +286,6 @@
                             </p>
                         </div>
                     </div>
-
-                    <!-- Similarity Score (AI Search Only) -->
-                    {% if is_semantic_search and result.similarity_score is defined %}
-                    <div class="mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-bold text-gray-700 flex items-center">
-                                <svg class="w-4 h-4 ml-1 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                רמת התאמה:
-                            </span>
-                            <span class="text-sm font-semibold" style="color: {{ 'rgb(34, 197, 94)' if result.similarity_score >= 90 else ('rgb(234, 179, 8)' if result.similarity_score >= 45 else 'rgb(249, 115, 22)') }};">
-                                {% if result.similarity_score >= 90 %}
-                                מצוין
-                                {% elif result.similarity_score >= 70 %}
-                                טוב מאוד
-                                {% elif result.similarity_score >= 45 %}
-                                טוב
-                                {% elif result.similarity_score >= 27 %}
-                                בינוני
-                                {% else %}
-                                נמוך
-                                {% endif %}
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                            <div class="h-full rounded-full transition-all duration-500 flex items-center justify-end px-1"
-                                style="width: {{ result.similarity_score | round }}%; 
-                                       background: linear-gradient(90deg, 
-                                       {% if result.similarity_score >= 77 %}rgb(34, 197, 94), rgb(74, 222, 128)
-                                       {% elif result.similarity_score >= 45 %}rgb(234, 179, 8), rgb(250, 204, 21)
-                                       {% else %}rgb(249, 115, 22), rgb(251, 146, 60){% endif %});">
-                                <span class="text-xs font-bold text-white drop-shadow">{{ result.similarity_score | round }}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
 
                     <!-- Mishna Text -->
                     <div
@@ -1012,53 +769,6 @@
                 button.classList.remove('text-green-600');
             }, 2000);
         }
-
-        // Lottie Loader Initialization
-        document.addEventListener('DOMContentLoaded', function() {
-            const loaderElement = document.getElementById('lottie-loader');
-            const animationContainer = document.getElementById('lottie-animation');
-            
-            // Initialize Lottie animation
-            const animation = lottie.loadAnimation({
-                container: animationContainer,
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: '/static/pics/open-book-loader.json'
-            });
-
-            // Hide loader when page is fully loaded
-            window.addEventListener('load', function() {
-                setTimeout(function() {
-
-                    loaderElement.style.opacity = '0';
-                    setTimeout(function() {
-                        loaderElement.style.display = 'none';
-                    }, 500);
-                }, 500); // Show loader for at least 500ms
-            });
-
-            // Search form submission loader
-            const searchForm = document.querySelector('form');
-            const searchLoader = document.getElementById('searchLoader');
-            const searchAnimationContainer = document.getElementById('search-lottie-animation');
-            
-            if (searchForm && searchLoader) {
-                searchForm.addEventListener('submit', function(e) {
-                    // Show the search loader
-                    searchLoader.style.display = 'flex';
-                    
-                    // Initialize search Lottie animation
-                    lottie.loadAnimation({
-                        container: searchAnimationContainer,
-                        renderer: 'svg',
-                        loop: true,
-                        autoplay: true,
-                        path: '/static/pics/open-book-loader.json'
-                    });
-                });
-            }
-        });
     </script>
 </body>
 

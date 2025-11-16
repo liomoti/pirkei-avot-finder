@@ -21,10 +21,6 @@ class Config:
 
     # Security
     SECRET_KEY = os.getenv('SECRET_KEY', 'fallback_secret_key_for_development')
-    
-    # CSRF Protection
-    WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = None  # No time limit for CSRF tokens (or set to seconds like 3600)
 
     # SQLAlchemy Configuration
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -41,9 +37,3 @@ class Config:
             'sslmode': 'require'
         }
     }
-
-    # Rate Limiting Configuration
-    RATE_LIMIT_ENABLED = True
-    RATE_LIMIT_SEARCH = 20  # requests per minute for search
-    RATE_LIMIT_SEMANTIC = 10  # requests per minute for semantic search (more expensive)
-    RATE_LIMIT_WINDOW = 60  # seconds
