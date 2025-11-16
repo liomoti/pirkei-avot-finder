@@ -5,6 +5,16 @@ from dotenv import load_dotenv
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+# ============================================================================
+# NOTE: AI/Semantic Search Feature - Currently Disabled
+# ============================================================================
+# The semantic search functionality using AlephBERT and sentence-transformers
+# has been commented out to reduce memory usage and dependencies.
+# Related files: utils/semantic_search.py, routes.py (search_semantic action)
+# To re-enable: uncomment sentence-transformers in requirements.txt and
+# uncomment the semantic search code in routes.py
+# ============================================================================
+
 
 class Config:
     # SECRET_KEY = ''

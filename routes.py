@@ -11,23 +11,30 @@ from models import db, Mishna, Tag, Category
 from utils.text_utils import remove_niqqud
 from utils.rate_limiter import rate_limit
 
-# Semantic search imports
-from sentence_transformers import SentenceTransformer
-from utils.semantic_search import SemanticSearchEngine
+# ============================================================================
+# AI/Semantic Search - COMMENTED OUT (not in use)
+# ============================================================================
+# The semantic search functionality has been disabled to reduce memory usage.
+# To re-enable: uncomment the code below and install sentence-transformers
+# ============================================================================
 
-# Lazy-load the model only when needed to save memory
-_model = None
-_semantic_search_engine = None
-
-def get_semantic_search_engine():
-    """Lazy-load the semantic search engine to save memory."""
-    global _model, _semantic_search_engine
-    if _semantic_search_engine is None:
-        current_app.logger.info('Loading AlephBERT model for semantic search...')
-        _model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
-        _semantic_search_engine = SemanticSearchEngine(_model)
-        current_app.logger.info('Model loaded successfully')
-    return _semantic_search_engine
+# # Semantic search imports
+# from sentence_transformers import SentenceTransformer
+# from utils.semantic_search import SemanticSearchEngine
+# 
+# # Lazy-load the model only when needed to save memory
+# _model = None
+# _semantic_search_engine = None
+# 
+# def get_semantic_search_engine():
+#     """Lazy-load the semantic search engine to save memory."""
+#     global _model, _semantic_search_engine
+#     if _semantic_search_engine is None:
+#         current_app.logger.info('Loading AlephBERT model for semantic search...')
+#         _model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
+#         _semantic_search_engine = SemanticSearchEngine(_model)
+#         current_app.logger.info('Model loaded successfully')
+#     return _semantic_search_engine
 
 # Define the blueprint
 main = Blueprint('main', __name__)
@@ -112,42 +119,50 @@ def search_mishna():
                 results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
-            # Semantic AI Search
-            elif action == 'search_semantic':
-                query_text = request.form.get('semantic_query', '').strip()
-                current_app.logger.info(f'Performing semantic search with query length: {len(query_text)} characters')
-                
-                # Additional rate limiting for expensive semantic search
-                from utils.rate_limiter import rate_limiter
-                from utils.search_cache import search_cache
-                
-                key = request.remote_addr or 'unknown'
-                if not rate_limiter.is_allowed(key + '_semantic', 10, 60):
-                    current_app.logger.warning(f'Semantic search rate limit exceeded for {key}')
-                    return render_template('error.html', 
-                                         error="חרגת ממגבלת החיפוש הסמנטי. מותרות 10 בקשות בדקה. אנא נסה שוב בעוד מספר שניות.")
-                
-                # Check cache first
-                cached_results = search_cache.get(query_text)
-                if cached_results is not None:
-                    current_app.logger.info(f'Cache hit for query: {query_text[:50]}...')
-                    results, compromise_info = cached_results
-                else:
-                    current_app.logger.info(f'Cache miss - performing semantic search')
-                    # Lazy-load the model only when needed
-                    engine = get_semantic_search_engine()
-                    results, compromise_info = engine.search_with_compromise(query_text)
-                    # Cache the results
-                    search_cache.set(query_text, (results, compromise_info))
-                
-                # Log compromise mode status
-                if compromise_info['is_active']:
-                    current_app.logger.info(
-                        f'Compromise mode was activated: '
-                        f'Found results at {compromise_info["current_threshold"]}% '
-                        f'(initial: {compromise_info["initial_threshold"]}%, '
-                        f'attempts: {compromise_info["attempts"]})'
-                    )
+            # ============================================================================
+            # AI/Semantic Search - COMMENTED OUT (not in use)
+            # ============================================================================
+            # This search functionality has been disabled to reduce memory usage.
+            # The route handler remains here but will not be called since the UI
+            # button has been removed from index.html
+            # ============================================================================
+            
+            # # Semantic AI Search
+            # elif action == 'search_semantic':
+            #     query_text = request.form.get('semantic_query', '').strip()
+            #     current_app.logger.info(f'Performing semantic search with query length: {len(query_text)} characters')
+            #     
+            #     # Additional rate limiting for expensive semantic search
+            #     from utils.rate_limiter import rate_limiter
+            #     from utils.search_cache import search_cache
+            #     
+            #     key = request.remote_addr or 'unknown'
+            #     if not rate_limiter.is_allowed(key + '_semantic', 10, 60):
+            #         current_app.logger.warning(f'Semantic search rate limit exceeded for {key}')
+            #         return render_template('error.html', 
+            #                              error="חרגת ממגבלת החיפוש הסמנטי. מותרות 10 בקשות בדקה. אנא נסה שוב בעוד מספר שניות.")
+            #     
+            #     # Check cache first
+            #     cached_results = search_cache.get(query_text)
+            #     if cached_results is not None:
+            #         current_app.logger.info(f'Cache hit for query: {query_text[:50]}...')
+            #         results, compromise_info = cached_results
+            #     else:
+            #         current_app.logger.info(f'Cache miss - performing semantic search')
+            #         # Lazy-load the model only when needed
+            #         engine = get_semantic_search_engine()
+            #         results, compromise_info = engine.search_with_compromise(query_text)
+            #         # Cache the results
+            #         search_cache.set(query_text, (results, compromise_info))
+            #     
+            #     # Log compromise mode status
+            #     if compromise_info['is_active']:
+            #         current_app.logger.info(
+            #             f'Compromise mode was activated: '
+            #             f'Found results at {compromise_info["current_threshold"]}% '
+            #             f'(initial: {compromise_info["initial_threshold"]}%, '
+            #             f'attempts: {compromise_info["attempts"]})'
+            #         )
 
         # Capture search query for display
         search_query = None
@@ -155,9 +170,9 @@ def search_mishna():
         if request.method == 'POST':
             if action == 'search_free_text':
                 search_query = mishna_form.text.data
-            elif action == 'search_semantic':
-                search_query = request.form.get('semantic_query', '').strip()
-                is_semantic_search = True
+            # elif action == 'search_semantic':  # COMMENTED OUT - AI search disabled
+            #     search_query = request.form.get('semantic_query', '').strip()
+            #     is_semantic_search = True
 
         return render_template('index.html',
                                form=mishna_form,
