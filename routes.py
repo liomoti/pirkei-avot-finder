@@ -1,12 +1,33 @@
 from functools import wraps
 from flask import Blueprint, render_template, request, current_app, redirect, session
+from flask_wtf.csrf import generate_csrf
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 from api.supabase_client import supabase
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
 from models import db, Mishna, Tag, Category
 from utils.text_utils import remove_niqqud
+from utils.rate_limiter import rate_limit
+
+# Semantic search imports
+from sentence_transformers import SentenceTransformer
+from utils.semantic_search import SemanticSearchEngine
+
+# Lazy-load the model only when needed to save memory
+_model = None
+_semantic_search_engine = None
+
+def get_semantic_search_engine():
+    """Lazy-load the semantic search engine to save memory."""
+    global _model, _semantic_search_engine
+    if _semantic_search_engine is None:
+        current_app.logger.info('Loading AlephBERT model for semantic search...')
+        _model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
+        _semantic_search_engine = SemanticSearchEngine(_model)
+        current_app.logger.info('Model loaded successfully')
+    return _semantic_search_engine
 
 # Define the blueprint
 main = Blueprint('main', __name__)
@@ -42,6 +63,7 @@ def logout():
     return redirect("/", code=302)
 
 @main.route('/', methods=['GET', 'POST'])
+@rate_limit(max_requests=20, window_seconds=60)  # 20 requests per minute
 def search_mishna():
     """Handle mishna search functionality."""
     try:
@@ -76,7 +98,7 @@ def search_mishna():
             # Free Text Search
             elif action == 'search_free_text':
                 query_text = remove_niqqud(mishna_form.text.data.lower())
-                current_app.logger.info(f'Performing free text search with query: {query_text}')
+                current_app.logger.info(f'Performing free text search with query length: {len(query_text)} characters')
 
                 results = Mishna.query.filter(Mishna.text_raw.ilike(f"%{query_text}%")).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for free text search')
@@ -90,10 +112,59 @@ def search_mishna():
                 results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
+            # Semantic AI Search
+            elif action == 'search_semantic':
+                query_text = request.form.get('semantic_query', '').strip()
+                current_app.logger.info(f'Performing semantic search with query length: {len(query_text)} characters')
+                
+                # Additional rate limiting for expensive semantic search
+                from utils.rate_limiter import rate_limiter
+                from utils.search_cache import search_cache
+                
+                key = request.remote_addr or 'unknown'
+                if not rate_limiter.is_allowed(key + '_semantic', 10, 60):
+                    current_app.logger.warning(f'Semantic search rate limit exceeded for {key}')
+                    return render_template('error.html', 
+                                         error="חרגת ממגבלת החיפוש הסמנטי. מותרות 10 בקשות בדקה. אנא נסה שוב בעוד מספר שניות.")
+                
+                # Check cache first
+                cached_results = search_cache.get(query_text)
+                if cached_results is not None:
+                    current_app.logger.info(f'Cache hit for query: {query_text[:50]}...')
+                    results, compromise_info = cached_results
+                else:
+                    current_app.logger.info(f'Cache miss - performing semantic search')
+                    # Lazy-load the model only when needed
+                    engine = get_semantic_search_engine()
+                    results, compromise_info = engine.search_with_compromise(query_text)
+                    # Cache the results
+                    search_cache.set(query_text, (results, compromise_info))
+                
+                # Log compromise mode status
+                if compromise_info['is_active']:
+                    current_app.logger.info(
+                        f'Compromise mode was activated: '
+                        f'Found results at {compromise_info["current_threshold"]}% '
+                        f'(initial: {compromise_info["initial_threshold"]}%, '
+                        f'attempts: {compromise_info["attempts"]})'
+                    )
+
+        # Capture search query for display
+        search_query = None
+        is_semantic_search = False
+        if request.method == 'POST':
+            if action == 'search_free_text':
+                search_query = mishna_form.text.data
+            elif action == 'search_semantic':
+                search_query = request.form.get('semantic_query', '').strip()
+                is_semantic_search = True
+
         return render_template('index.html',
                                form=mishna_form,
                                results=results,
                                searchType=search_type,
+                               search_query=search_query,
+                               is_semantic_search=is_semantic_search,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
                                all_tags=tags_with_categories,
                                categories=categories_serialized,

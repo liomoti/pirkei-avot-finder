@@ -25,9 +25,11 @@ class Config:
     # SQLAlchemy Configuration
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Connection Pooling
-    SQLALCHEMY_POOL_SIZE = 10
-    SQLALCHEMY_MAX_OVERFLOW = 20
+    # Connection Pooling - optimized for low-memory environments
+    SQLALCHEMY_POOL_SIZE = 2
+    SQLALCHEMY_MAX_OVERFLOW = 3
+    SQLALCHEMY_POOL_RECYCLE = 300  # Recycle connections after 5 minutes
+    SQLALCHEMY_POOL_PRE_PING = True  # Verify connections before using
 
     # SSL Configuration for cloud databases
     SQLALCHEMY_ENGINE_OPTIONS = {
