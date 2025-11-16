@@ -171,9 +171,15 @@ class SemanticSearchEngine:
                 current_app.logger.info('No tags found in database')
                 return []
             
-            # Encode all tag names
+            # Encode all tag names in smaller batches to reduce memory usage
             tag_names = [tag.name for tag in all_tags]
-            tag_vectors = self.model.encode(tag_names)
+            batch_size = 10
+            tag_vectors = []
+            
+            for i in range(0, len(tag_names), batch_size):
+                batch = tag_names[i:i + batch_size]
+                batch_vectors = self.model.encode(batch, show_progress_bar=False)
+                tag_vectors.extend(batch_vectors)
             
             # Calculate cosine distances between query and each tag
             from numpy import dot

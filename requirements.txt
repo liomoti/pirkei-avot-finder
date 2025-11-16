@@ -1,12 +1,26 @@
-flask==3.1.0
-flask-sqlalchemy==3.1.1
-flask-wtf==1.2.1
-gunicorn==21.2.0
-python-dotenv==1.0.0
-psycopg2-binary==2.9.9
-sqlalchemy==2.0.35
-wtforms==3.1.2
-supabase==1.0.3
-Flask-Session==0.5.0
-sentence-transformers==3.3.1
-pgvector==0.2.4
+# Web Framework
+flask==3.1.0                    # Core web framework
+gunicorn==21.2.0                # Production WSGI server
+
+# Database & ORM
+flask-sqlalchemy==3.1.1         # Flask SQLAlchemy integration
+sqlalchemy==2.0.35              # SQL toolkit and ORM
+psycopg2-binary==2.9.9          # PostgreSQL adapter
+pgvector==0.2.4                 # PostgreSQL vector extension for similarity search
+
+# Forms & Validation
+flask-wtf==1.2.1                # Flask WTForms integration
+wtforms==3.1.2                  # Form validation and rendering
+
+# Session Management
+Flask-Session==0.5.0            # Server-side session support
+
+# External Services
+supabase==1.0.3                 # Supabase client for database and auth
+
+# AI & Semantic Search
+sentence-transformers==3.3.1    # Sentence embeddings for semantic search
+
+# Configuration & Utilities
+python-dotenv==1.0.0            # Environment variable management
+psutil==5.9.8                   # System and process monitoring

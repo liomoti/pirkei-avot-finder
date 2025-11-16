@@ -15,9 +15,19 @@ from utils.rate_limiter import rate_limit
 from sentence_transformers import SentenceTransformer
 from utils.semantic_search import SemanticSearchEngine
 
-# Initialize the model globally (loaded once)
-model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
-semantic_search_engine = SemanticSearchEngine(model)
+# Lazy-load the model only when needed to save memory
+_model = None
+_semantic_search_engine = None
+
+def get_semantic_search_engine():
+    """Lazy-load the semantic search engine to save memory."""
+    global _model, _semantic_search_engine
+    if _semantic_search_engine is None:
+        current_app.logger.info('Loading AlephBERT model for semantic search...')
+        _model = SentenceTransformer('imvladikon/sentence-transformers-alephbert')
+        _semantic_search_engine = SemanticSearchEngine(_model)
+        current_app.logger.info('Model loaded successfully')
+    return _semantic_search_engine
 
 # Define the blueprint
 main = Blueprint('main', __name__)
@@ -124,7 +134,9 @@ def search_mishna():
                     results, compromise_info = cached_results
                 else:
                     current_app.logger.info(f'Cache miss - performing semantic search')
-                    results, compromise_info = semantic_search_engine.search_with_compromise(query_text)
+                    # Lazy-load the model only when needed
+                    engine = get_semantic_search_engine()
+                    results, compromise_info = engine.search_with_compromise(query_text)
                     # Cache the results
                     search_cache.set(query_text, (results, compromise_info))
                 
