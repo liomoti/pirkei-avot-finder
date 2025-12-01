@@ -2169,3 +2169,79 @@ button.search-type-button.active {
     visibility: hidden !important;
     opacity: 0 !important;
 }
+
+
+/* ===== LOADER OVERLAY STYLES ===== */
+#loaderOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 0;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+#lottieLoader {
+    width: 300px;
+    height: 300px;
+    filter: drop-shadow(0 8px 24px rgba(255, 215, 0, 0.3));
+    margin-bottom: -30px;
+}
+
+#loaderText {
+    color: #FFD700;
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 0;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* Responsive adjustments for loader */
+@media (max-width: 768px) {
+    #lottieLoader {
+        width: 200px;
+        height: 200px;
+        margin-bottom: -20px;
+    }
+    
+    #loaderText {
+        font-size: 20px;
+        margin-top: 0;
+    }
+}
+
+/* Ensure loader is always on top */
+#loaderOverlay {
+    z-index: 99999 !important;
+}

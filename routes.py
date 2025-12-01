@@ -5,11 +5,13 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 
 from api.supabase_client import supabase
+from api.aws_search_client import AWSSemanticSearchClient, AWSSearchError
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
 from models import db, Mishna, Tag, Category
 from utils.text_utils import remove_niqqud
 from utils.rate_limiter import rate_limit
+import os
 
 # ============================================================================
 # AI/Semantic Search - COMMENTED OUT (not in use)
@@ -35,6 +37,35 @@ from utils.rate_limiter import rate_limit
 #         _semantic_search_engine = SemanticSearchEngine(_model)
 #         current_app.logger.info('Model loaded successfully')
 #     return _semantic_search_engine
+
+# ============================================================================
+# AWS Semantic Search Client - Lazy Loading Singleton
+# ============================================================================
+
+_aws_search_client = None
+
+def get_aws_search_client() -> AWSSemanticSearchClient:
+    """
+    Lazy-load AWS search client singleton.
+    
+    Returns:
+        Initialized AWSSemanticSearchClient instance
+        
+    Raises:
+        ValueError: If AWS_SEARCH_AI_KEY environment variable is not set
+    """
+    global _aws_search_client
+    if _aws_search_client is None:
+        api_key = os.getenv('AWS_SEARCH_AI_KEY')
+        if not api_key:
+            raise ValueError('AWS_SEARCH_AI_KEY environment variable not set')
+        
+        api_url = os.getenv('AWS_SEARCH_API_URL', 
+                           'https://default-api-gateway-url.amazonaws.com/search')
+        
+        _aws_search_client = AWSSemanticSearchClient(api_key, api_url)
+    
+    return _aws_search_client
 
 # Define the blueprint
 main = Blueprint('main', __name__)
@@ -119,6 +150,27 @@ def search_mishna():
                 results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
+            # AWS Semantic Search
+            elif action == 'search_aws_semantic':
+                query_text = request.form.get('aws_semantic_query', '').strip()
+                current_app.logger.info(f'Performing AWS semantic search with query length: {len(query_text)} characters')
+                
+                try:
+                    # Initialize client (lazy loading)
+                    client = get_aws_search_client()
+                    results = client.search(query_text)
+                    
+                    current_app.logger.info(f'AWS semantic search returned {len(results)} results')
+                    
+                except AWSSearchError as e:
+                    current_app.logger.error(f'AWS search failed: {str(e)}')
+                    return render_template('error.html', 
+                                         error="חיפוש סמנטי נכשל. אנא נסה שוב מאוחר יותר.")
+                except ValueError as e:
+                    current_app.logger.error(f'AWS search configuration error: {str(e)}')
+                    return render_template('error.html', 
+                                         error="חיפוש סמנטי אינו מוגדר כראוי. אנא פנה למנהל המערכת.")
+
             # ============================================================================
             # AI/Semantic Search - COMMENTED OUT (not in use)
             # ============================================================================
@@ -166,10 +218,15 @@ def search_mishna():
 
         # Capture search query for display
         search_query = None
+        aws_semantic_query = None
         is_semantic_search = False
         if request.method == 'POST':
             if action == 'search_free_text':
                 search_query = mishna_form.text.data
+            elif action == 'search_aws_semantic':
+                aws_semantic_query = request.form.get('aws_semantic_query', '').strip()
+                search_query = aws_semantic_query
+                is_semantic_search = True
             # elif action == 'search_semantic':  # COMMENTED OUT - AI search disabled
             #     search_query = request.form.get('semantic_query', '').strip()
             #     is_semantic_search = True
@@ -179,6 +236,7 @@ def search_mishna():
                                results=results,
                                searchType=search_type,
                                search_query=search_query,
+                               aws_semantic_query=aws_semantic_query,
                                is_semantic_search=is_semantic_search,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
                                all_tags=tags_with_categories,

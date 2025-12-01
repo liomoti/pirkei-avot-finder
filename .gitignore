@@ -64,3 +64,6 @@ dist/
 *.bak
 *.orig
 *.rej
+/scripts/mishnayot_files
+/.kiro/specs
+scripts/pirkei-avot-raw-text.txt
