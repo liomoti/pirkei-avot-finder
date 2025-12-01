@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <style>
         @keyframes float {
 
@@ -60,6 +61,12 @@
             style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 0;">
+        <div id="lottieLoader" style="width: 300px; height: 300px; margin-bottom: -30px;"></div>
+        <div id="loaderText" style="color: #FFD700; font-size: 24px; font-weight: bold; margin-top: 0; text-align: center; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);">טוען את הדף</div>
+    </div>
+
     <!-- Hebrew Letters Background Animation -->
     <div class="hebrew-letters" id="hebrewLetters"></div>
 
@@ -78,7 +85,7 @@
     <!-- Main Search Container -->
     <div class="container mx-auto px-4 mb-12">
         <div class="max-w-3xl mx-auto" x-data="{ searchType: '{{ searchType }}'}">
-            <form method="POST" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100">
+            <form method="POST" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100" onsubmit="showLoader('מחפש משניות')">
                 {{ form.hidden_tag() }}
                 <input type="hidden" name="search_type" :value="searchType">
 
@@ -123,6 +130,16 @@
                                 </path>
                             </svg>
                             נושא
+                        </button>
+                        <button type="button"
+                            :class="searchType === 'search_aws_semantic' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_aws_semantic'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
+                            </svg>
+                            חיפוש AI
                         </button>
                     </div>
                 </div>
@@ -199,6 +216,28 @@
 
                     <!-- Ensure the hidden input field is properly bound to selectedTags -->
                     <input type="hidden" name="tags" :value="selectedTags.join(',')" />
+                </div>
+
+                <!-- AWS Semantic Search -->
+                <div x-show="searchType === 'search_aws_semantic'" x-cloak
+                    class="search-section-parchment p-4 rounded-xl mb-6">
+                    <div class="space-y-2">
+                        <label for="aws_semantic_query" class="block text-sm font-bold text-gray-700 flex items-center">
+                            <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
+                            </svg>
+                            חיפוש AI מבוסס למידת מכונה
+                        </label>
+                        <input type="text" id="aws_semantic_query" name="aws_semantic_query" 
+                            value="{{ aws_semantic_query if aws_semantic_query else '' }}"
+                            class="w-full border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
+                            focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base
+                            md:text-lg" placeholder="חפש לפי משמעות - למשל: 'חשיבות הלימוד' או 'יחס לזולת'...">
+                        <p class="text-sm text-gray-600 mt-2">
+                            חיפוש AI מוצא משניות לפי המשמעות, לא רק לפי מילים מדויקות, כלי החיפוש עדיין בשלבי פיתוח וייתכן ויתקבלו תוצאות לא רלוונטיות לעתים.
+                    </div>
                 </div>
 
                 <!-- Search Button -->
@@ -437,6 +476,62 @@
     </footer>
 
     <script>
+        // Loader functionality
+        let lottieAnimation;
+        
+        function showLoader(text) {
+            const overlay = document.getElementById('loaderOverlay');
+            const loaderText = document.getElementById('loaderText');
+            loaderText.textContent = text;
+            overlay.style.display = 'flex';
+            
+            // Initialize Lottie animation if not already done
+            if (!lottieAnimation) {
+                lottieAnimation = lottie.loadAnimation({
+                    container: document.getElementById('lottieLoader'),
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: '/static/pics/open-book-loader.json'
+                });
+            } else {
+                lottieAnimation.play();
+            }
+        }
+        
+        function hideLoader() {
+            const overlay = document.getElementById('loaderOverlay');
+            overlay.style.display = 'none';
+            if (lottieAnimation) {
+                lottieAnimation.pause();
+            }
+        }
+        
+        // Show loader immediately when page starts loading
+        (function() {
+            const overlay = document.getElementById('loaderOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                document.getElementById('loaderText').textContent = 'טוען את הדף';
+            }
+        })();
+        
+        // Hide loader when page is fully loaded
+        window.addEventListener('load', function() {
+            // Initialize Lottie animation first
+            if (!lottieAnimation) {
+                lottieAnimation = lottie.loadAnimation({
+                    container: document.getElementById('lottieLoader'),
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    path: '/static/pics/open-book-loader.json'
+                });
+            }
+            // Hide loader after a short delay to ensure smooth transition
+            setTimeout(hideLoader, 500);
+        });
+
         // Auto-scroll to results section after search
         document.addEventListener('DOMContentLoaded', function () {
             {% if results %}
