@@ -506,31 +506,6 @@
                 lottieAnimation.pause();
             }
         }
-        
-        // Show loader immediately when page starts loading
-        (function() {
-            const overlay = document.getElementById('loaderOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-                document.getElementById('loaderText').textContent = 'טוען את הדף';
-            }
-        })();
-        
-        // Hide loader when page is fully loaded
-        window.addEventListener('load', function() {
-            // Initialize Lottie animation first
-            if (!lottieAnimation) {
-                lottieAnimation = lottie.loadAnimation({
-                    container: document.getElementById('lottieLoader'),
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: '/static/pics/open-book-loader.json'
-                });
-            }
-            // Hide loader after a short delay to ensure smooth transition
-            setTimeout(hideLoader, 500);
-        });
 
         // Auto-scroll to results section after search
         document.addEventListener('DOMContentLoaded', function () {
