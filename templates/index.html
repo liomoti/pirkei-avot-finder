@@ -362,8 +362,11 @@
                         <div class="flex flex-wrap gap-2">
                             {% for tag in result.tags %}
                             <span
-                                class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200"
-                                style="background-color: {{ tag.category.color if tag.category else '#F5F5F5' }}; border: 2px solid {{ tag.category.color if tag.category else '#F5F5F5' }}20;">
+                                class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 shadow-sm hover:shadow-lg cursor-pointer transition-all duration-200 transform hover:scale-105"
+                                style="background-color: {{ tag.category.color if tag.category else '#F5F5F5' }}; border: 2px solid {{ tag.category.color if tag.category else '#F5F5F5' }}20;"
+                                onclick="searchByTag({{ tag.id }}, '{{ tag.name }}')"
+                                data-tag-id="{{ tag.id }}"
+                                title="חפש משניות נוספות בנושא זה">
                                 {{ tag.name }}
                             </span>
                             {% endfor %}
@@ -505,6 +508,58 @@
             if (lottieAnimation) {
                 lottieAnimation.pause();
             }
+        }
+
+        /**
+         * Search for mishnayot by clicking on a tag
+         * @param {number} tagId - The ID of the tag to search for
+         * @param {string} tagName - The name of the tag (for display purposes)
+         */
+        function searchByTag(tagId, tagName) {
+            // Show loader with tag name
+            showLoader(`מחפש משניות בנושא: ${tagName}`);
+            
+            // Get the form element
+            const form = document.querySelector('form');
+            
+            // Set the search type to tag search
+            const searchTypeInput = form.querySelector('input[name="search_type"]');
+            if (searchTypeInput) {
+                searchTypeInput.value = 'search_by_tags';
+            }
+            
+            // Set the Alpine.js search type (for UI state)
+            const alpineElement = form.closest('[x-data]');
+            if (alpineElement && alpineElement.__x) {
+                alpineElement.__x.$data.searchType = 'search_by_tags';
+            }
+            
+            // Find or create the hidden tags input
+            let tagsInput = form.querySelector('input[name="tags"]');
+            if (!tagsInput) {
+                tagsInput = document.createElement('input');
+                tagsInput.type = 'hidden';
+                tagsInput.name = 'tags';
+                form.appendChild(tagsInput);
+            }
+            
+            // Set the tag ID value
+            tagsInput.value = tagId.toString();
+            
+            // Find or create the hidden action input
+            let actionInput = form.querySelector('input[name="action"]');
+            if (!actionInput) {
+                actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                form.appendChild(actionInput);
+            }
+            
+            // Set the action value to search_by_tags
+            actionInput.value = 'search_by_tags';
+            
+            // Submit the form
+            form.submit();
         }
 
         // Auto-scroll to results section after search
