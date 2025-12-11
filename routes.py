@@ -171,6 +171,25 @@ def search_mishna():
                     return render_template('error.html', 
                                          error="חיפוש סמנטי אינו מוגדר כראוי. אנא פנה למנהל המערכת.")
 
+            # Navigate by Mishna Number
+            elif action == 'navigate_by_number':
+                mishna_number = request.form.get('mishna_number')
+                current_app.logger.info(f'Navigating to mishna number: {mishna_number}')
+                
+                if mishna_number and mishna_number.isdigit():
+                    number = int(mishna_number)
+                    # Validate number is in valid range
+                    if 1 <= number <= 108:
+                        result = Mishna.query.filter_by(number=number).first()
+                        results = [result] if result else []
+                        current_app.logger.info(f'Found mishna with number {number}: {bool(result)}')
+                    else:
+                        current_app.logger.warning(f'Invalid mishna number: {number}')
+                        results = []
+                else:
+                    current_app.logger.warning(f'Invalid mishna number format: {mishna_number}')
+                    results = []
+
             # ============================================================================
             # AI/Semantic Search - COMMENTED OUT (not in use)
             # ============================================================================

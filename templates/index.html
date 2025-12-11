@@ -373,6 +373,39 @@
                         </div>
                     </div>
                     {% endif %}
+
+                    <!-- Navigation Buttons (only when single result) -->
+                    {% if results|length == 1 %}
+                    <div class="border-t pt-4 mt-4">
+                        <div class="flex justify-center gap-4">
+                            {% if result.number > 1 %}
+                            <button 
+                                onclick="navigateToMishna({{ result.number - 1 }}, 'previous')"
+                                class="flex items-center px-6 py-3 rounded-xl font-bold text-base shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                style="background: linear-gradient(45deg, #DAA520, #B8860B); color: #2D2D2D;"
+                                title="עבור למשנה הקודמת">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                                משנה קודמת
+                            </button>
+                            {% endif %}
+                            
+                            {% if result.number < 108 %}
+                            <button 
+                                onclick="navigateToMishna({{ result.number + 1 }}, 'next')"
+                                class="flex items-center px-6 py-3 rounded-xl font-bold text-base shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                style="background: linear-gradient(45deg, #DAA520, #B8860B); color: #2D2D2D;"
+                                title="עבור למשנה הבאה">
+                                משנה הבאה
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -557,6 +590,47 @@
             
             // Set the action value to search_by_tags
             actionInput.value = 'search_by_tags';
+            
+            // Submit the form
+            form.submit();
+        }
+
+        /**
+         * Navigate to a specific mishna by its number
+         * @param {number} mishnaNumber - The number of the mishna to navigate to (1-108)
+         * @param {string} direction - The direction of navigation ('next' or 'previous')
+         */
+        function navigateToMishna(mishnaNumber, direction) {
+            // Show loader with appropriate message
+            const loaderText = direction === 'next' ? 'טוען את המשנה הבאה' : 'טוען את המשנה הקודמת';
+            showLoader(loaderText);
+            
+            // Get the form element
+            const form = document.querySelector('form');
+            
+            // Find or create the hidden mishna_number input
+            let mishnaNumberInput = form.querySelector('input[name="mishna_number"]');
+            if (!mishnaNumberInput) {
+                mishnaNumberInput = document.createElement('input');
+                mishnaNumberInput.type = 'hidden';
+                mishnaNumberInput.name = 'mishna_number';
+                form.appendChild(mishnaNumberInput);
+            }
+            
+            // Set the mishna number value
+            mishnaNumberInput.value = mishnaNumber.toString();
+            
+            // Find or create the hidden action input
+            let actionInput = form.querySelector('input[name="action"]');
+            if (!actionInput) {
+                actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                form.appendChild(actionInput);
+            }
+            
+            // Set the action value to navigate_by_number
+            actionInput.value = 'navigate_by_number';
             
             // Submit the form
             form.submit();
