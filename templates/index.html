@@ -85,9 +85,10 @@
     <!-- Main Search Container -->
     <div class="container mx-auto px-4 mb-12">
         <div class="max-w-3xl mx-auto" x-data="{ searchType: '{{ searchType }}'}">
-            <form method="POST" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100" onsubmit="return handleFormSubmit(event)">
+            <form method="POST" id="searchForm" class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100" onsubmit="return validateAndSubmit(event)">
                 {{ form.hidden_tag() }}
-                <input type="hidden" name="search_type" :value="searchType">
+                <input type="hidden" id="searchTypeInput" name="search_type" x-model="searchType">
+                <input type="hidden" id="actionInput" name="action" x-model="searchType">
 
                 <!-- Search Type Selection -->
                 <div class="text-center mb-8">
@@ -152,26 +153,24 @@
                 <div x-show="searchType === 'search_smart'" x-cloak
                     class="search-section-parchment p-4 rounded-xl mb-6">
                     <div class="space-y-3">
-                        <!-- Flex container for toggle and input on same line -->
-                        <div style="display: flex; align-items: center; gap: 15px;">
+                        <!-- Flex container - changes layout based on screen size -->
+                        <div class="flex flex-col md:flex-row md:items-center gap-4">
                             <!-- Search Input (takes remaining space) -->
                             <input type="text" id="search_query" name="search_query" 
                                 value="{{ search_query if search_query else '' }}"
-                                style="flex-grow: 1;"
-                                class="border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
+                                class="flex-grow border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
                                 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base
                                 md:text-lg" placeholder="חפש לפי נושא, משמעות או ביטוי..."
-                                oninput="validateHebrewInput(this)"
-                                required>
+                                oninput="validateHebrewInput(this)">
                             
-                            <!-- Toggle Switch (on the left visually in RTL) -->
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <!-- Toggle Switch (below on mobile, on the left in desktop RTL) -->
+                            <div class="flex items-center justify-center gap-3 md:flex-col md:gap-2">
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="exact_match" name="exact_match" 
                                         {% if is_exact_match %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <label for="exact_match" class="text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+                                <label for="exact_match" class="text-xs md:text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">
                                     חפש מילים מדויקות
                                 </label>
                             </div>
@@ -238,7 +237,7 @@
 
                 <!-- Search Button -->
                 <div class="text-center mt-8">
-                    <button name="action" :value="searchType" class="search-button-sand-gold"
+                    <button type="submit" class="search-button-sand-gold"
                         style="color: #F5F5DC !important;">
                         <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -574,45 +573,50 @@
         }
 
         /**
-         * Handles form submission with validation
+         * Validates the form and submits it
          * @param {Event} event - The form submit event
          */
-        function handleFormSubmit(event) {
-            const form = event.target;
-            const searchType = form.querySelector('input[name="search_type"]').value;
+        function validateAndSubmit(event) {
+            const searchType = document.getElementById('actionInput').value;
+            
+            console.log('validateAndSubmit - searchType:', searchType); // Debug
             
             // Only validate for smart search
             if (searchType === 'search_smart') {
                 const searchInput = document.getElementById('search_query');
-                const value = searchInput.value.trim();
-                
-                // Check if empty
-                if (value === '') {
-                    event.preventDefault();
-                    const errorDiv = document.getElementById('hebrew-validation-error');
-                    errorDiv.textContent = '⚠️ אנא הזן טקסט לחיפוש';
-                    errorDiv.style.display = 'block';
-                    searchInput.style.borderColor = '#DC2626';
-                    searchInput.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.1)';
-                    searchInput.focus();
-                    return false;
-                }
-                
-                // Check if Hebrew only
-                const hebrewRegex = /^[\u0590-\u05FF\s.,?!״׳\-\"\'\(\)]+$/;
-                if (!hebrewRegex.test(value)) {
-                    event.preventDefault();
-                    const errorDiv = document.getElementById('hebrew-validation-error');
-                    errorDiv.textContent = '⚠️ אנא הזן טקסט בעברית בלבד';
-                    errorDiv.style.display = 'block';
-                    searchInput.style.borderColor = '#DC2626';
-                    searchInput.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.1)';
-                    searchInput.focus();
-                    return false;
+                if (searchInput) {
+                    const value = searchInput.value.trim();
+                    
+                    // Check if empty
+                    if (value === '') {
+                        event.preventDefault();
+                        const errorDiv = document.getElementById('hebrew-validation-error');
+                        if (errorDiv) {
+                            errorDiv.textContent = '⚠️ אנא הזן טקסט לחיפוש';
+                            errorDiv.style.display = 'block';
+                        }
+                        searchInput.style.borderColor = '#DC2626';
+                        searchInput.focus();
+                        return false;
+                    }
+                    
+                    // Check if Hebrew only
+                    const hebrewRegex = /^[\u0590-\u05FF\s.,?!״׳\-\"\'\(\)]+$/;
+                    if (!hebrewRegex.test(value)) {
+                        event.preventDefault();
+                        const errorDiv = document.getElementById('hebrew-validation-error');
+                        if (errorDiv) {
+                            errorDiv.textContent = '⚠️ אנא הזן טקסט בעברית בלבד';
+                            errorDiv.style.display = 'block';
+                        }
+                        searchInput.style.borderColor = '#DC2626';
+                        searchInput.focus();
+                        return false;
+                    }
                 }
             }
             
-            // If validation passed, show loader
+            // Show loader and allow form to submit
             showLoader('מחפש משניות');
             return true;
         }
