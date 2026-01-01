@@ -133,7 +133,43 @@ def search_mishna():
                     mishna_id = f"{chapter}_{mishna}"
                     results = Mishna.query.filter_by(id=mishna_id).all()
 
-            # Free Text Search
+            # Smart Search - Unified Free Text and AI Search
+            elif action == 'search_smart':
+                query_text = request.form.get('search_query', '').strip()
+                is_exact_match = request.form.get('exact_match') == 'on'
+                
+                current_app.logger.info(f'Smart search initiated. Query: {query_text}, Exact Match: {is_exact_match}')
+                
+                if is_exact_match:
+                    # LOGIC A: Exact Match - Use SQL/Supabase search
+                    query_text_normalized = remove_niqqud(query_text.lower())
+                    current_app.logger.info(f'Performing exact match search with normalized query length: {len(query_text_normalized)} characters')
+                    
+                    results = Mishna.query.filter(
+                        Mishna.text_raw.ilike(f"%{query_text_normalized}%")
+                    ).order_by(Mishna.number).all()
+                    current_app.logger.info(f'Found {len(results)} results for exact match search')
+                else:
+                    # LOGIC B: AI Search - Use AWS Semantic Search
+                    current_app.logger.info(f'Performing AWS semantic search with query length: {len(query_text)} characters')
+                    
+                    try:
+                        # Initialize client (lazy loading)
+                        client = get_aws_search_client()
+                        results = client.search(query_text)
+                        
+                        current_app.logger.info(f'AWS semantic search returned {len(results)} results')
+                        
+                    except AWSSearchError as e:
+                        current_app.logger.error(f'AWS search failed: {str(e)}')
+                        return render_template('error.html', 
+                                             error="חיפוש סמנטי נכשל. אנא נסה שוב מאוחר יותר.")
+                    except ValueError as e:
+                        current_app.logger.error(f'AWS search configuration error: {str(e)}')
+                        return render_template('error.html', 
+                                             error="חיפוש סמנטי אינו מוגדר כראוי. אנא פנה למנהל המערכת.")
+
+            # Free Text Search (DEPRECATED - kept for backward compatibility)
             elif action == 'search_free_text':
                 query_text = remove_niqqud(mishna_form.text.data.lower())
                 current_app.logger.info(f'Performing free text search with query length: {len(query_text)} characters')
@@ -150,7 +186,7 @@ def search_mishna():
                 results = Mishna.query.filter(Mishna.tags.any(Tag.id.in_(selected_tags))).order_by(Mishna.number).all()
                 current_app.logger.info(f'Found {len(results)} results for tag-based search')
 
-            # AWS Semantic Search
+            # AWS Semantic Search (DEPRECATED - kept for backward compatibility)
             elif action == 'search_aws_semantic':
                 query_text = request.form.get('aws_semantic_query', '').strip()
                 current_app.logger.info(f'Performing AWS semantic search with query length: {len(query_text)} characters')
@@ -239,6 +275,8 @@ def search_mishna():
         search_query = None
         aws_semantic_query = None
         is_semantic_search = False
+        is_exact_match = False
+        
         if request.method == 'POST':
             if action == 'search_free_text':
                 search_query = mishna_form.text.data
@@ -246,6 +284,10 @@ def search_mishna():
                 aws_semantic_query = request.form.get('aws_semantic_query', '').strip()
                 search_query = aws_semantic_query
                 is_semantic_search = True
+            elif action == 'search_smart':
+                search_query = request.form.get('search_query', '').strip()
+                is_exact_match = request.form.get('exact_match') == 'on'
+                is_semantic_search = not is_exact_match  # It's semantic if not exact match
             # elif action == 'search_semantic':  # COMMENTED OUT - AI search disabled
             #     search_query = request.form.get('semantic_query', '').strip()
             #     is_semantic_search = True
@@ -257,6 +299,7 @@ def search_mishna():
                                search_query=search_query,
                                aws_semantic_query=aws_semantic_query,
                                is_semantic_search=is_semantic_search,
+                               is_exact_match=is_exact_match,
                                ALLOWED_CHAPTERS=ALLOWED_CHAPTERS,
                                all_tags=tags_with_categories,
                                categories=categories_serialized,
