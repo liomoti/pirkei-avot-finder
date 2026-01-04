@@ -2256,9 +2256,12 @@ button.search-type-button.active {
 }
 
 .toggle-switch input[type="checkbox"] {
+    position: absolute;
     opacity: 0;
     width: 0;
     height: 0;
+    margin: 0;
+    padding: 0;
 }
 
 .toggle-slider {
@@ -2268,10 +2271,9 @@ button.search-type-button.active {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: white;
+    background-color: #D1D5DB;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 34px;
-    border: 2px solid #ccc;
 }
 
 .toggle-slider:before {
@@ -2281,7 +2283,7 @@ button.search-type-button.active {
     width: 20px;
     left: 2px;
     bottom: 2px;
-    background-color: #ccc;
+    background-color: white;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -2289,7 +2291,6 @@ button.search-type-button.active {
 
 .toggle-switch input:checked + .toggle-slider {
     background-color: #2876DF;
-    border-color: #2876DF;
 }
 
 .toggle-switch input:focus + .toggle-slider {

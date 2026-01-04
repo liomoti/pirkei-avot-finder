@@ -165,11 +165,11 @@
                             
                             <!-- Toggle Switch (below on mobile, on the left in desktop RTL) -->
                             <div class="flex items-center justify-center gap-3 md:flex-col md:gap-2">
-                                <div class="toggle-switch">
+                                <label for="exact_match" class="toggle-switch">
                                     <input type="checkbox" id="exact_match" name="exact_match" 
                                         {% if is_exact_match %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
-                                </div>
+                                </label>
                                 <label for="exact_match" class="text-xs md:text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">
                                     חפש מילים מדויקות
                                 </label>
