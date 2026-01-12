@@ -1,390 +1,440 @@
 <!-- templates/manage_tags.html -->
-<div class="max-w-4xl mx-auto bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl mb-8 border border-gray-100" x-data="{ showTags: false }">
+<div x-data="{ 
+    showAddTag: false, 
+    showAddCategory: false, 
+    showEditTag: false, 
+    showDeleteTag: false 
+}">
+    
+    <!-- Section Header -->
     <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold mb-2 gold-text">ניהול נושאים</h2>
-        <div class="w-24 h-1 mx-auto rounded-full gold-divider"></div>
+        <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+            <svg class="w-8 h-8 inline-block ml-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+            </svg>
+            ניהול נושאים
+        </h2>
+        <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
     </div>
 
-    <!-- Button to toggle tags display -->
-    <form method="POST" id="tag_form" class="mb-4">
+    <form method="POST" id="tag_form">
         {{ tag_form.hidden_tag() }}
         
-        <!-- Categories Section -->
-        <div class="mb-10">
+        <!-- View All Tags Section (Always Visible) -->
+        <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
             <div class="flex items-center justify-center mb-6">
                 <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
-                <h3 class="text-2xl font-bold text-gray-800 mx-6 flex items-center">
+                <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
                     <svg class="w-6 h-6 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                     </svg>
-                    קטגוריות
+                    צפייה בנושאים לפי קטגוריות
                 </h3>
                 <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
             </div>
             
-            <!-- Categorized Tag Selection -->
-            <div class="mb-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {% for category in categories %}
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-medium mb-2">{{ category.name }}</h4>
-                        <div class="flex flex-wrap gap-2">
-                            {% for tag in category.tags %}
-                            <button type="button"
-                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
-                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
-                                @click="selectedTags.includes({{ tag.id }}) ? 
-                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
-                                                    selectedTags.push({{ tag.id }})">
-                                {{ tag.name }}
-                            </button>
-                            {% endfor %}
-                        </div>
-                        {% if category.tags|length > 5 %}
-                        <span x-show="category.length > 3"
-                            @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
-                            class="cursor-pointer"
-                            x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'"></span>
-                        {% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for category in categories %}
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-bold mb-3 text-gray-800 flex items-center">
+                        <span class="w-3 h-3 rounded-full ml-2" style="background-color: {{ category.color }};"></span>
+                        {{ category.name }}
+                    </h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag in category.tags %}
+                        <span class="px-3 py-1 rounded-lg text-black text-sm font-medium"
+                              style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};">
+                            {{ tag.name }}
+                        </span>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                </div>
+                {% endfor %}
 
-                    <!-- Uncategorized Tags -->
-                    {% if uncategorized_tags %}
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-medium mb-2">כללי</h4>
-                        <div class="flex flex-wrap gap-2">
-                            {% for tag in uncategorized_tags %}
-                            <button type="button"
-                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
-                                @click="selectedTags.includes({{ tag.id }}) ? 
-                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
-                                                    selectedTags.push({{ tag.id }})">
-                                {{ tag.name }}
-                            </button>
-                            {% endfor %}
-                        </div>
+                <!-- Uncategorized Tags -->
+                {% if uncategorized_tags %}
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-bold mb-3 text-gray-800 flex items-center">
+                        <span class="w-3 h-3 rounded-full bg-gray-400 ml-2"></span>
+                        כללי
+                    </h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag in uncategorized_tags %}
+                        <span class="px-3 py-1 rounded-lg bg-gray-300 text-black text-sm font-medium border border-gray-400">
+                            {{ tag.name }}
+                        </span>
+                        {% endfor %}
                     </div>
-                    {% endif %}
                 </div>
-            </div>
-
-        <!-- Form to add a new tag -->
-        <div class="mb-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-center mb-6">
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
-                <h3 class="text-2xl font-bold text-gray-800 mx-6 flex items-center">
-                    <svg class="w-6 h-6 ml-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    הוספת נושא חדש
-                </h3>
-                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="space-y-2">
-                    <label class="block text-sm font-bold text-gray-700 flex items-center">
-                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                        </svg>
-                        שם הנושא
-                    </label>
-                    {{ tag_form.name(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg", placeholder="הכנס שם נושא חדש...") }}
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-bold text-gray-700 flex items-center">
-                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        קטגוריה
-                    </label>
-                    {{ tag_form.category_id(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-lg") }}
-                </div>
-            </div>
-            
-            <div class="text-center">
-                <button type="submit"
-                        class="main-search-btn px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto"
-                        id="add_tag"
-                        name="action"
-                        value="add_tag">
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    הוסף נושא
-                </button>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Form to add a new category -->
-        <div class="mb-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-center mb-6">
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
-                <h3 class="text-2xl font-bold text-gray-800 mx-6 flex items-center">
-                    <svg class="w-6 h-6 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Add New Tag - Collapsible -->
+        <div class="mb-6">
+            <div @click="showAddTag = !showAddTag" 
+                 class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 ml-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">הוספת נושא חדש</h3>
+                </div>
+                <svg :class="{'rotate-180': showAddTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </div>
+            
+            <div x-show="showAddTag" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            שם הנושא
+                        </label>
+                        {{ tag_form.name(class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200", placeholder="הכנס שם נושא חדש...") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            קטגוריה
+                        </label>
+                        {{ tag_form.category_id(class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200") }}
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit"
+                            class="main-search-btn px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
+                            name="action"
+                            value="add_tag">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        הוסף נושא
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Category - Collapsible -->
+        <div class="mb-6">
+            <div @click="showAddCategory = !showAddCategory" 
+                 class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 ml-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    הוספת קטגוריה חדשה
-                </h3>
-                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">הוספת קטגוריה חדשה</h3>
+                </div>
+                <svg :class="{'rotate-180': showAddCategory}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="space-y-2">
-                    <label class="block text-sm font-bold text-gray-700 flex items-center">
-                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        שם הקטגוריה
-                    </label>
-                    {{ tag_form.new_category_name(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-lg", placeholder="הכנס שם קטגוריה חדשה...") }}
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-bold text-gray-700 flex items-center">
-                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M13 5l4 4"></path>
-                        </svg>
-                        צבע הקטגוריה
-                    </label>
-                    <div class="flex items-center gap-3">
-                        {{ tag_form.new_category_color(class="w-20 h-12 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-purple-500 transition-all duration-200", type="color", value="#F5F5F5") }}
-                        <span class="text-sm text-gray-600 flex-1">בחר צבע או השאר ברירת מחדל</span>
+            <div x-show="showAddCategory" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            שם הקטגוריה
+                        </label>
+                        {{ tag_form.new_category_name(class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200", placeholder="הכנס שם קטגוריה חדשה...") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M13 5l4 4"></path>
+                            </svg>
+                            צבע הקטגוריה
+                        </label>
+                        <div class="flex items-center gap-3">
+                            {{ tag_form.new_category_color(class="w-16 h-10 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition-all duration-200", type="color", id="new_category_color", value="#F5F5F5") }}
+                            <span class="text-sm text-gray-600 flex-1">בחר צבע מועדף</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="mb-6 bg-gray-50 p-6 rounded-xl">
-                <label class="block text-sm font-bold text-gray-700 mb-4 text-center flex items-center justify-center">
-                    <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M13 5l4 4"></path>
-                    </svg>
-                    צבעים מומלצים
-                </label>
-                <div class="flex justify-center gap-3 flex-wrap">
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #A5D6A7;" 
-                            onclick="document.getElementById('new_category_color').value='#A5D6A7'"
-                            title="ירוק בהיר - בין אדם לחברו"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #90CAF9;" 
-                            onclick="document.getElementById('new_category_color').value='#90CAF9'"
-                            title="כחול בהיר - בין אדם למקום"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #FFD180;" 
-                            onclick="document.getElementById('new_category_color').value='#FFD180'"
-                            title="כתום בהיר - עבודת המידות"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #E1BEE7;" 
-                            onclick="document.getElementById('new_category_color').value='#E1BEE7'"
-                            title="סגול בהיר"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #FFCDD2;" 
-                            onclick="document.getElementById('new_category_color').value='#FFCDD2'"
-                            title="ורוד בהיר"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #C8E6C9;" 
-                            onclick="document.getElementById('new_category_color').value='#C8E6C9'"
-                            title="ירוק בהיר נוסף"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #FFF9C4;" 
-                            onclick="document.getElementById('new_category_color').value='#FFF9C4'"
-                            title="צהוב בהיר"></button>
-                    <button type="button" class="w-12 h-12 rounded-xl border-3 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
-                            style="background-color: #F5F5F5;" 
-                            onclick="document.getElementById('new_category_color').value='#F5F5F5'"
-                            title="אפור בהיר - כללי"></button>
+                
+                <!-- Color Presets -->
+                <div class="mb-6 bg-gray-50 p-4 rounded-xl">
+                    <label class="block text-sm font-bold text-gray-700 mb-3 text-center">צבעים מומלצים</label>
+                    <div class="flex justify-center gap-2 flex-wrap">
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #A5D6A7;" 
+                                onclick="document.getElementById('new_category_color').value='#A5D6A7'"
+                                title="ירוק בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #90CAF9;" 
+                                onclick="document.getElementById('new_category_color').value='#90CAF9'"
+                                title="כחול בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #FFD180;" 
+                                onclick="document.getElementById('new_category_color').value='#FFD180'"
+                                title="כתום בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #E1BEE7;" 
+                                onclick="document.getElementById('new_category_color').value='#E1BEE7'"
+                                title="סגול בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #FFCDD2;" 
+                                onclick="document.getElementById('new_category_color').value='#FFCDD2'"
+                                title="ורוד בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #C8E6C9;" 
+                                onclick="document.getElementById('new_category_color').value='#C8E6C9'"
+                                title="ירוק נוסף"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #FFF9C4;" 
+                                onclick="document.getElementById('new_category_color').value='#FFF9C4'"
+                                title="צהוב בהיר"></button>
+                        <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg" 
+                                style="background-color: #F5F5F5;" 
+                                onclick="document.getElementById('new_category_color').value='#F5F5F5'"
+                                title="אפור - כללי"></button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="text-center">
-                <button type="submit"
-                        class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto"
-                        id="add_category"
-                        name="action"
-                        value="add_category">
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    הוסף קטגוריה
-                </button>
+                
+                <div class="text-center">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
+                            name="action"
+                            value="add_category">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        הוסף קטגוריה
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Form to edit existing tag -->
-        <div class="mb-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-center mb-6">
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
-                <h3 class="text-2xl font-bold text-gray-800 mx-6 flex items-center">
-                    <svg class="w-6 h-6 ml-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Edit Existing Tag - Collapsible -->
+        <div class="mb-6">
+            <div @click="showEditTag = !showEditTag" 
+                 class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 ml-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
-                    עריכת נושא קיים
-                </h3>
-                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">עריכת נושא קיים</h3>
+                </div>
+                <svg :class="{'rotate-180': showEditTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="space-y-2">
-                    <label for="tagToEdit" class="block text-sm font-bold text-gray-700 flex items-center">
-                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                        </svg>
-                        בחר נושא לעריכה
-                    </label>
-                    <select id="tagToEdit" name="tag_to_edit" class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200 text-lg">
-                        {% for category in categories %}
-                            <optgroup label="{{ category.name }}">
-                                {% for tag in category.tags %}
-                                    <option value="{{ tag.id }}" data-category="{{ category.id }}">{{ tag.name }}</option>
+            <div x-show="showEditTag" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="tagToEdit" class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            בחר נושא לעריכה
+                        </label>
+                        <select id="tagToEdit" name="tag_to_edit" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200" onchange="updateTagName(this)">
+                            {% for category in categories %}
+                                <optgroup label="{{ category.name }}">
+                                    {% for tag in category.tags %}
+                                        <option value="{{ tag.id }}" data-category="{{ category.id }}" data-tag-name="{{ tag.name }}">{{ tag.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                            {% if uncategorized_tags %}
+                            <optgroup label="כללי">
+                                {% for tag in uncategorized_tags %}
+                                    <option value="{{ tag.id }}" data-category="0" data-tag-name="{{ tag.name }}">{{ tag.name }}</option>
                                 {% endfor %}
                             </optgroup>
-                        {% endfor %}
-                        <optgroup label="כללי">
-                            {% for tag in uncategorized_tags %}
-                                <option value="{{ tag.id }}" data-category="0">{{ tag.name }}</option>
-                            {% endfor %}
-                        </optgroup>
-                    </select>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="newTagName" class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
+                            <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            שם חדש לנושא
+                        </label>
+                        <input type="text" id="newTagName" name="new_tag_name" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200" placeholder="הכנס שם חדש...">
+                    </div>
                 </div>
-                <div class="space-y-2">
-                    <label for="newCategory" class="block text-sm font-bold text-gray-700 flex items-center">
+                
+                <div class="mb-6">
+                    <label for="newCategory" class="block text-sm font-bold mb-2 flex items-center" style="color: #1F2937;">
                         <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
                         קטגוריה חדשה
                     </label>
-                    <select id="newCategory" name="new_category_id" class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200 text-lg">
+                    <select id="newCategory" name="new_category_id" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
                         <option value="0">כללי</option>
                         {% for category in categories %}
                             <option value="{{ category.id }}">{{ category.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-            </div>
 
-            <!-- Confirmation Dialog for Editing -->
-            <div x-data="{ showEditConfirm: false }" class="text-center">
-                <button type="button"
-                        class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto"
-                        @click="showEditConfirm = true"
-                        id="edit_tag">
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    עדכן נושא
-                </button>
+                <div x-data="{ showEditConfirm: false }" class="text-center">
+                    <button type="button"
+                            class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
+                            @click="showEditConfirm = true">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        עדכן נושא
+                    </button>
 
-                <!-- Edit Confirmation Modal -->
-                <div x-show="showEditConfirm" 
-                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
-                     @click.away="showEditConfirm = false">
-                    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-auto border border-gray-100">
-                        <div class="text-center mb-6">
-                            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
-                            </div>
+                    <!-- Edit Confirmation Modal -->
+                    <div x-show="showEditConfirm" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+                         style="z-index: 10000;"
+                         @click.away="showEditConfirm = false">
+                        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border border-gray-100"
+                             @click.stop>
+                            <div class="text-center mb-6">
+                                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
                             <p class="text-xl font-bold text-gray-800 mb-2">אישור עריכה</p>
-                            <p class="text-gray-600">האם אתה בטוח שברצונך לשנות את קטגוריית הנושא?</p>
-                        </div>
-                        <div class="flex justify-center gap-4">
-                            <button type="submit"
-                                    class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200"
-                                    name="action"
-                                    value="edit_tag"
-                                    @click="showEditConfirm = false">
-                                אישור
-                            </button>
-                            <button type="button"
-                                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200"
-                                    @click="showEditConfirm = false">
-                                ביטול
-                            </button>
+                            <p class="text-gray-600">האם אתה בטוח שברצונך לעדכן את הנושא?</p>
+                            </div>
+                            <div class="flex justify-center gap-4">
+                                <button type="submit"
+                                        class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200"
+                                        name="action"
+                                        value="edit_tag"
+                                        @click="showEditConfirm = false">
+                                    אישור
+                                </button>
+                                <button type="button"
+                                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200"
+                                        @click="showEditConfirm = false">
+                                    ביטול
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Form to delete a tag -->
-        <div class="mb-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-center mb-6">
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
-                <h3 class="text-2xl font-bold text-gray-800 mx-6 flex items-center">
-                    <svg class="w-6 h-6 ml-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Delete Tag - Collapsible -->
+        <div class="mb-6">
+            <div @click="showDeleteTag = !showDeleteTag" 
+                 class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 ml-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
-                    מחיקת נושא
-                </h3>
-                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">מחיקת נושא</h3>
+                </div>
+                <svg :class="{'rotate-180': showDeleteTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
             </div>
             
-            <div class="mb-6">
-                <label for="tagToDelete" class="block text-sm font-bold text-gray-700 mb-3 flex items-center">
-                    <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                    </svg>
-                    בחר נושא למחיקה
-                </label>
-                <select id="tagToDelete" name="tag_to_delete" class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 text-lg">
-                    {% for category in categories %}
-                        <optgroup label="{{ category.name }}">
-                            {% for tag in category.tags %}
+            <div x-show="showDeleteTag" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                
+                <div class="mb-6">
+                    <label for="tagToDelete" class="block text-sm font-bold mb-3 flex items-center" style="color: #1F2937;">
+                        <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        </svg>
+                        בחר נושא למחיקה
+                    </label>
+                    <select id="tagToDelete" name="tag_to_delete" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200">
+                        {% for category in categories %}
+                            <optgroup label="{{ category.name }}">
+                                {% for tag in category.tags %}
+                                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                        {% if uncategorized_tags %}
+                        <optgroup label="כללי">
+                            {% for tag in uncategorized_tags %}
                                 <option value="{{ tag.id }}">{{ tag.name }}</option>
                             {% endfor %}
                         </optgroup>
-                    {% endfor %}
-                    <optgroup label="כללי">
-                        {% for tag in uncategorized_tags %}
-                            <option value="{{ tag.id }}">{{ tag.name }}</option>
-                        {% endfor %}
-                    </optgroup>
-                </select>
-            </div>
+                        {% endif %}
+                    </select>
+                </div>
 
-            <!-- Confirmation Dialog for Deletion -->
-            <div x-data="{ showDeleteConfirm: false }" class="text-center">
-                <button type="button"
-                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center mx-auto"
-                        @click="showDeleteConfirm = true"
-                        id="delete_tag">
-                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                    מחק נושא
-                </button>
+                <div x-data="{ showDeleteConfirm: false }" class="text-center">
+                    <button type="button"
+                            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
+                            @click="showDeleteConfirm = true">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        מחק נושא
+                    </button>
 
-                <!-- Delete Confirmation Modal -->
-                <div x-show="showDeleteConfirm" 
-                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
-                     @click.away="showDeleteConfirm = false">
-                    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-auto border border-gray-100">
-                        <div class="text-center mb-6">
-                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
+                    <!-- Delete Confirmation Modal -->
+                    <div x-show="showDeleteConfirm" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+                         style="z-index: 10000;"
+                         @click.away="showDeleteConfirm = false">
+                        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border border-gray-100"
+                             @click.stop>
+                            <div class="text-center mb-6">
+                                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-xl font-bold text-gray-800 mb-2">אישור מחיקה</p>
+                                <p class="text-gray-600">האם אתה בטוח שברצונך למחוק את הנושא? פעולה זו אינה ניתנת לביטול.</p>
                             </div>
-                            <p class="text-xl font-bold text-gray-800 mb-2">אישור מחיקה</p>
-                            <p class="text-gray-600">האם אתה בטוח שברצונך למחוק את הנושא? פעולה זו אינה ניתנת לביטול.</p>
-                        </div>
-                        <div class="flex justify-center gap-4">
-                            <button type="submit"
-                                    class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200"
-                                    name="action"
-                                    value="delete_tag"
-                                    @click="showDeleteConfirm = false">
-                                מחק
-                            </button>
-                            <button type="button"
-                                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200"
-                                    @click="showDeleteConfirm = false">
-                                ביטול
-                            </button>
+                            <div class="flex justify-center gap-4">
+                                <button type="submit"
+                                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200"
+                                        name="action"
+                                        value="delete_tag"
+                                        @click="showDeleteConfirm = false">
+                                    מחק
+                                </button>
+                                <button type="button"
+                                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200"
+                                        @click="showDeleteConfirm = false">
+                                    ביטול
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -394,62 +444,89 @@
 
     <!-- Messages -->
     {% if tag_message %}
-    <div x-data="{ showTagMsg: true }">
-        <div x-show="showTagMsg" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-auto border border-gray-100">
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <p class="text-xl font-bold text-gray-800 mb-2">הודעה</p>
-                    <p class="text-gray-600">{{ tag_message }}</p>
-                </div>
-                <div class="flex justify-center">
-                    <button type="button" class="main-search-btn px-6 py-3 rounded-xl font-bold transition-all duration-200" @click="showTagMsg = false">סגור</button>
-                </div>
+    <div x-data="{ showTagMsg: true }" 
+         x-show="showTagMsg"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         class="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-blue-600 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-blue-800 font-semibold">{{ tag_message }}</p>
             </div>
+            <button @click="showTagMsg = false" class="text-blue-600 hover:text-blue-800 font-bold text-xl">×</button>
         </div>
     </div>
     {% endif %}
 </div>
 
 <script>
-// Client-side validation for tag/category forms
-const tagForm = document.getElementById('tag_form');
-tagForm.addEventListener('submit', function(e) {
-    const action = document.activeElement.value;
-    if (action === 'add_tag') {
-        const tagName = tagForm.querySelector('[name="name"]').value.trim();
-        if (!tagName) {
-            e.preventDefault();
-            showTagPopup('אנא מלא את שם הנושא.');
-            return;
-        }
+// Update tag name field when selecting a tag to edit
+function updateTagName(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const tagName = selectedOption.getAttribute('data-tag-name');
+    const newTagNameInput = document.getElementById('newTagName');
+    if (newTagNameInput && tagName) {
+        newTagNameInput.value = tagName;
     }
-    if (action === 'add_category') {
-        const catName = tagForm.querySelector('[name="new_category_name"]').value.trim();
-        if (!catName) {
-            e.preventDefault();
-            showTagPopup('אנא מלא את שם הקטגוריה.');
-            return;
-        }
-        
-        // Validate color format (optional - if provided, must be valid hex)
-        const catColor = tagForm.querySelector('[name="new_category_color"]').value.trim();
-        if (catColor && !/^#[0-9A-F]{6}$/i.test(catColor)) {
-            e.preventDefault();
-            showTagPopup('אנא בחר צבע תקין בפורמט #RRGGBB.');
-            return;
-        }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const tagToEditSelect = document.getElementById('tagToEdit');
+    if (tagToEditSelect) {
+        updateTagName(tagToEditSelect);
     }
 });
+
+// Client-side validation for tag/category forms
+const tagForm = document.getElementById('tag_form');
+if (tagForm) {
+    tagForm.addEventListener('submit', function(e) {
+        const action = document.activeElement.value;
+        if (action === 'add_tag') {
+            const tagName = tagForm.querySelector('[name="name"]').value.trim();
+            if (!tagName) {
+                e.preventDefault();
+                showTagPopup('אנא מלא את שם הנושא.');
+                return;
+            }
+        }
+        if (action === 'add_category') {
+            const catName = tagForm.querySelector('[name="new_category_name"]').value.trim();
+            if (!catName) {
+                e.preventDefault();
+                showTagPopup('אנא מלא את שם הקטגוריה.');
+                return;
+            }
+            
+            // Validate color format (optional - if provided, must be valid hex)
+            const catColor = tagForm.querySelector('[name="new_category_color"]').value.trim();
+            if (catColor && !/^#[0-9A-F]{6}$/i.test(catColor)) {
+                e.preventDefault();
+                showTagPopup('אנא בחר צבע תקין בפורמט #RRGGBB.');
+                return;
+            }
+        }
+        if (action === 'edit_tag') {
+            const newTagName = tagForm.querySelector('[name="new_tag_name"]').value.trim();
+            if (!newTagName) {
+                e.preventDefault();
+                showTagPopup('אנא מלא את השם החדש לנושא.');
+                return;
+            }
+        }
+    });
+}
+
 function showTagPopup(message) {
     let popup = document.createElement('div');
     popup.innerHTML = `
-        <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-            <div class='bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-auto border border-gray-100'>
+        <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center' style='z-index: 10001;'>
+            <div class='bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border-2 border-red-200'>
                 <div class='text-center mb-6'>
                     <div class='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
                         <svg class='w-8 h-8 text-red-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>

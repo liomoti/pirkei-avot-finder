@@ -455,17 +455,32 @@ def manage_content():
             elif action == "edit_tag":
                 tag_id = request.form.get('tag_to_edit')
                 new_category_id = request.form.get('new_category_id')
+                new_tag_name = request.form.get('new_tag_name')
                 current_app.logger.info(f'Attempting to edit tag ID: {tag_id}')
 
                 if tag_id:
                     try:
                         tag = Tag.query.get(tag_id)
                         if tag:
-                            # Convert '0' to None for uncategorized tags
-                            tag.category_id = None if new_category_id == '0' else int(new_category_id)
-                            db.session.commit()
-                            tag_message = "קטגורית הנושא עודכנה בהצלחה!"
-                            current_app.logger.info(f'Successfully updated tag ID: {tag_id}')
+                            # Check if new name already exists (if name is being changed)
+                            if new_tag_name and new_tag_name.strip() != tag.name:
+                                existing_tag = Tag.query.filter_by(name=new_tag_name.strip()).first()
+                                if existing_tag and existing_tag.id != int(tag_id):
+                                    tag_message = "שם הנושא כבר קיים במערכת."
+                                    current_app.logger.warning(f'Tag name already exists: {new_tag_name}')
+                                else:
+                                    tag.name = new_tag_name.strip()
+                                    # Convert '0' to None for uncategorized tags
+                                    tag.category_id = None if new_category_id == '0' else int(new_category_id)
+                                    db.session.commit()
+                                    tag_message = "הנושא עודכן בהצלחה!"
+                                    current_app.logger.info(f'Successfully updated tag ID: {tag_id}')
+                            else:
+                                # Only update category
+                                tag.category_id = None if new_category_id == '0' else int(new_category_id)
+                                db.session.commit()
+                                tag_message = "קטגורית הנושא עודכנה בהצלחה!"
+                                current_app.logger.info(f'Successfully updated tag category ID: {tag_id}')
                         else:
                             current_app.logger.warning(f'Tag not found for editing: {tag_id}')
                             tag_message = "לא הצלחנו למצוא את הנושא במאגר."

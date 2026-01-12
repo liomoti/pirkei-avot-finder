@@ -1,108 +1,124 @@
-<!DOCTYPE html>
-<html lang="he">
+<!-- Mishna Management Section -->
+<div x-data="{
+    selectedTags: {{ selected_tags | tojson }},
+    mishnaSelected: {{ 'true' if selected_mishna else 'false' }},
+    showAllCategories: {}
+}">
+    
+    <!-- Section Header -->
+    <div class="text-center mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+            <svg class="w-8 h-8 inline-block ml-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            ניהול משניות
+        </h2>
+        <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+    </div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>הוספת מִשׁנָה</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            direction: rtl;
-        }
+    <form method="POST" id="mishna_form">
+        {{ mishna_form.hidden_tag() }}
 
-        .inline {
-            display: inline-block;
-        }
+        <!-- Search & Select Mishna Card -->
+        <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
+            <div class="flex items-center justify-center mb-6">
+                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
+                <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
+                    <svg class="w-6 h-6 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    חיפוש משנה
+                </h3>
+                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+            </div>
 
-        .short-input {
-            width: 45%;
-        }
-    </style>
-</head>
-
-<body class="bg-gray-100 p-6">
-    <div class="max-w-lg mx-auto bg-white p-6 rounded shadow">
-        <h1 class="text-2xl font-bold mb-4 text-center">הוספת מִשׁנָה</h1>
-
-        <form method="POST" id="mishna_form" x-data="{
-              selectedTags: {{ selected_tags | tojson }},
-              mishnaSelected: {{ 'true' if selected_mishna else 'false' }},
-              showAllCategories: {}
-              }">
-            {{ mishna_form.hidden_tag() }}
-
-            <!-- Chapter and Mishna in the same line -->
-            <div class="mb-4">
-                <div class="inline short-input">
-                    {{ mishna_form.chapter.label(class="block text-sm font-semibold mb-1") }}
-                    {{ mishna_form.chapter(class="border p-2 w-full", id="chapter") }}
+            <!-- Chapter and Mishna Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    {{ mishna_form.chapter.label(class="block text-sm font-bold mb-2", style="color: #1F2937;") }}
+                    {{ mishna_form.chapter(class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200", id="chapter") }}
                 </div>
-                <div class="inline short-input">
-                    {{ mishna_form.mishna.label(class="block text-sm font-semibold mb-1") }}
-                    {{ mishna_form.mishna(class="border p-2 w-full", id="mishna") }}
+                <div>
+                    {{ mishna_form.mishna.label(class="block text-sm font-bold mb-2", style="color: #1F2937;") }}
+                    {{ mishna_form.mishna(class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200", id="mishna") }}
                 </div>
             </div>
 
             <!-- Search Button -->
-            <div class="mb-4 text-center">
-                <button class="search-button-sand-gold" id="search_mishna" name="action" value="search_mishna">
-                    <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <div class="text-center">
+                <button type="submit" class="search-button-sand-gold inline-flex items-center" id="search_mishna" name="action" value="search_mishna">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    חפש
+                    חפש משנה
                 </button>
+            </div>
+        </div>
+
+        <!-- Edit Mishna Content Card (shown after search) -->
+        <div x-show="mishnaSelected" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
+            
+            <div class="flex items-center justify-center mb-6">
+                <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
+                <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
+                    <svg class="w-6 h-6 ml-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    עריכת תוכן המשנה
+                </h3>
+                <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
             </div>
 
             <!-- Textarea for Mishna content -->
-            <div class="mb-4">
-                {{ mishna_form.text.label(class="block text-sm font-semibold mb-1") }}
-                {{ mishna_form.text(class="border p-2 w-full", rows="4") }}
+            <div class="mb-6">
+                {{ mishna_form.text.label(class="block text-sm font-bold mb-2", style="color: #1F2937;") }}
+                {{ mishna_form.text(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 font-hebrew", rows="6", style="line-height: 1.8; font-size: 1.05rem;") }}
             </div>
 
-            <!-- Categorized Tag Selection -->
-            <div class="mb-4" x-show="mishnaSelected">
-                <label class="block text-sm font-semibold mb-1">בחר תגיות</label>
+            <!-- Tag Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold mb-4 flex items-center" style="color: #1F2937;">
+                    <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    </svg>
+                    בחירת נושאים
+                </label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% for category in categories %}
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-medium mb-2">{{ category.name }}</h4>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h4 class="font-bold mb-3 text-gray-800">{{ category.name }}</h4>
                         <div class="flex flex-wrap gap-2">
                             {% for tag in category.tags %}
                             <button type="button"
-                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                style="background-color: {{ category.color }}; border: 1px solid {{ category.color }};"
-                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                class="px-3 py-2 rounded-lg text-black font-medium transition-all duration-200 hover:shadow-md"
+                                style="background-color: {{ category.color }}; border: 2px solid {{ category.color }};"
+                                :class="{ 'opacity-100 ring-2 ring-offset-2': selectedTags.includes({{ tag.id }}), 'opacity-60': !selectedTags.includes({{ tag.id }}) }"
                                 @click="selectedTags.includes({{ tag.id }}) ? 
-                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
-                                                    selectedTags.push({{ tag.id }})">
+                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                    selectedTags.push({{ tag.id }})">
                                 {{ tag.name }}
                             </button>
                             {% endfor %}
                         </div>
-                        {% if category.tags|length > 5 %}
-                        <span x-show="category.length > 3"
-                            @click="showAllCategories['{{ category.name }}'] = !showAllCategories['{{ category.name }}']"
-                            class="cursor-pointer"
-                            x-text="showAllCategories['{{ category.name }}'] ? 'הסתר' : 'הצג עוד'"></span>
-                        {% endif %}
                     </div>
                     {% endfor %}
 
                     <!-- Uncategorized Tags -->
                     {% if uncategorized_tags %}
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-medium mb-2">כללי</h4>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h4 class="font-bold mb-3 text-gray-800">כללי</h4>
                         <div class="flex flex-wrap gap-2">
                             {% for tag in uncategorized_tags %}
                             <button type="button"
-                                class="px-2 py-1 rounded text-black font-medium transition-all duration-200 hover:shadow-md"
-                                :class="{ 'opacity-100': selectedTags.includes({{ tag.id }}), 'opacity-50': !selectedTags.includes({{ tag.id }}) }"
+                                class="px-3 py-2 rounded-lg bg-gray-300 text-black font-medium transition-all duration-200 hover:shadow-md border-2 border-gray-400"
+                                :class="{ 'opacity-100 ring-2 ring-offset-2 ring-gray-500': selectedTags.includes({{ tag.id }}), 'opacity-60': !selectedTags.includes({{ tag.id }}) }"
                                 @click="selectedTags.includes({{ tag.id }}) ? 
-                                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
-                                                    selectedTags.push({{ tag.id }})">
+                                    selectedTags.splice(selectedTags.indexOf({{ tag.id }}), 1) : 
+                                    selectedTags.push({{ tag.id }})">
                                 {{ tag.name }}
                             </button>
                             {% endfor %}
@@ -114,26 +130,39 @@
                 <input type="hidden" name="tags" :value="selectedTags.join(',')">
             </div>
 
-            <!-- Action button (עדכן משנה or הוסף משנה) -->
-            <div class="mb-4 text-center">
-                <button
-                    class="bg-yellow-500 text-black px-6 py-3 rounded-lg font-bold text-lg shadow-lg border-2 border-yellow-700 transition duration-200 transform hover:scale-105 hover:bg-yellow-600 hover:text-white"
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit"
+                    class="main-search-btn px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
                     id="submit_mishna" name="action" value="submit_mishna">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
                     {{ button_label }}
                 </button>
             </div>
-        </form>
-
-        <!-- Messages -->
-        {% if mishna_message %}
-        <div class="mt-4 text-lg text-center font-bold text-blue-700 bg-blue-100 border border-blue-300 rounded p-3">
-            {{ mishna_message }}
         </div>
-        {% endif %}
-    </div>
-</body>
+    </form>
 
-</html>
+    <!-- Messages -->
+    {% if mishna_message %}
+    <div x-data="{ showMsg: true }" x-show="showMsg" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         class="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-blue-600 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-blue-800 font-semibold">{{ mishna_message }}</p>
+            </div>
+            <button @click="showMsg = false" class="text-blue-600 hover:text-blue-800 font-bold text-xl">×</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
 
 <script>
     const allowedChapters = JSON.parse('{{ ALLOWED_CHAPTERS | tojson | safe }}');
@@ -154,17 +183,18 @@
     const selectedMishna = "{{ selected_mishna | default('') }}";
 
     // Set the initial chapter value
-    if (selectedChapter != 'None') {
+    if (selectedChapter != 'None' && selectedChapter != '') {
         chapterSelect.value = selectedChapter;
         updateMishnaOptions(selectedChapter, selectedMishna);
     } else {
         chapterSelect.value = 'א'
+        updateMishnaOptions('א', null);
     }
 
     // Update mishnayot options based on chapter selection
     chapterSelect.addEventListener('change', function () {
         const selectedChapter = chapterSelect.value;
-        updateMishnaOptions(selectedChapter, selectedMishna);
+        updateMishnaOptions(selectedChapter, null);
     });
 
     // Function to update the mishna options dropdown based on selected chapter
@@ -212,11 +242,18 @@
     function showPopup(message) {
         let popup = document.createElement('div');
         popup.innerHTML = `
-            <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-                <div class='bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto'>
-                    <p class='text-lg mb-4 text-center'>${message}</p>
+            <div class='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' style='z-index: 10000;'>
+                <div class='bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-auto border-2 border-red-200'>
+                    <div class='text-center mb-6'>
+                        <div class='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                            <svg class='w-8 h-8 text-red-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'></path>
+                            </svg>
+                        </div>
+                        <p class='text-lg mb-4 text-gray-800 font-semibold'>${message}</p>
+                    </div>
                     <div class='flex justify-center'>
-                        <button type='button' class='bg-blue-500 text-white px-4 py-2 rounded' onclick='this.closest(".fixed").remove()'>סגור</button>
+                        <button type='button' class='main-search-btn px-6 py-3 rounded-xl font-bold' onclick='this.closest(".fixed").remove()'>סגור</button>
                     </div>
                 </div>
             </div>
