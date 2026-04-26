@@ -25,9 +25,10 @@ class Mishna(db.Model):
     text_pretty = db.Column(db.String, nullable=False)
     text_raw = db.Column(db.String, nullable=False)
     interpretation = db.Column(db.Text)
+    pirush_url = db.Column(db.Text, nullable=True, default=None)
     tags = db.relationship('Tag', secondary='mishna_tag', back_populates='mishnaiot')
 
-    def __init__(self, chapter, mishna, number, text_pretty, text_raw, tags, interpretation=""):
+    def __init__(self, chapter, mishna, number, text_pretty, text_raw, tags, interpretation="", pirush_url=None):
         self.chapter = chapter
         self.mishna = mishna
         self.number = number
@@ -35,6 +36,7 @@ class Mishna(db.Model):
         self.text_raw = text_raw
         self.tags = tags
         self.interpretation = interpretation
+        self.pirush_url = pirush_url or None
         # Create a unique id by combining chapter and mishna
         self.id = f"{chapter}_{mishna}"
 
@@ -68,6 +70,46 @@ class Tag(db.Model):
     @property
     def category_name(self):
         return self.category.name if self.category else "כללי"
+
+
+class SiteSetting(db.Model):
+    """
+    Model for storing site-wide configuration as key-value pairs.
+
+    Attributes:
+        key (str): The setting key (primary key).
+        value (str): The setting value.
+    """
+    __tablename__ = 'site_setting'
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.String(255), nullable=False)
+
+
+def get_pirush_settings():
+    """Fetch pirush settings in a single DB query + config read.
+
+    Returns:
+        dict with keys 'pirush_enabled' (bool) and 'pirush_attribution_url' (str).
+    """
+    from flask import current_app
+    setting = SiteSetting.query.filter_by(key='pirush_enabled').first()
+    pirush_enabled = (setting.value == 'true') if setting else True
+    pirush_attribution_url = current_app.config.get('PIRUSH_ATTRIBUTION_URL', '')
+    return {
+        'pirush_enabled': pirush_enabled,
+        'pirush_attribution_url': pirush_attribution_url,
+    }
+
+
+def set_pirush_enabled(enabled):
+    """Upsert the pirush_enabled setting."""
+    setting = SiteSetting.query.filter_by(key='pirush_enabled').first()
+    if setting is None:
+        setting = SiteSetting(key='pirush_enabled', value='true' if enabled else 'false')
+        db.session.add(setting)
+    else:
+        setting.value = 'true' if enabled else 'false'
+    db.session.commit()
 
 
 # Association table for the many-to-many relationship between Mishna and Tag

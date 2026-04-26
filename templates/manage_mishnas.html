@@ -16,6 +16,28 @@
         <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
     </div>
 
+    <!-- Global Pirush Toggle Section -->
+    <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+        <form method="POST" id="pirush_toggle_form">
+            {{ mishna_form.hidden_tag() }}
+            <input type="hidden" name="action" value="toggle_pirush">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 ml-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <label class="text-lg font-bold cursor-pointer" for="pirush_enabled_toggle" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="pirush_enabled_toggle" name="pirush_enabled"
+                        {% if pirush_enabled %}checked{% endif %}
+                        onchange="document.getElementById('pirush_toggle_form').submit()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </form>
+    </div>
+
     <form method="POST" id="mishna_form">
         {{ mishna_form.hidden_tag() }}
 
@@ -77,6 +99,15 @@
             <div class="mb-6">
                 {{ mishna_form.text.label(class="block text-sm font-bold mb-2", style="color: #1F2937;") }}
                 {{ mishna_form.text(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 font-hebrew", rows="6", style="line-height: 1.8; font-size: 1.05rem;") }}
+            </div>
+
+            <!-- Pirush URL Input -->
+            <div class="mb-6">
+                {{ mishna_form.pirush_url.label(class="block text-sm font-bold mb-2", style="color: #1F2937;") }}
+                {{ mishna_form.pirush_url(class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200", id="pirush_url", placeholder="https://example.com/pirush.pdf") }}
+                <div id="pirush-url-warning" style="display: none; color: #DC2626;" class="text-sm mt-2 font-semibold">
+                    ⚠️ הקישור צריך להסתיים ב-.pdf
+                </div>
             </div>
 
             <!-- Tag Selection -->
@@ -238,7 +269,20 @@
         }
     });
 
-    // Function to show popup for validation errors
+    // Pirush URL client-side validation
+    const pirushUrlInput = document.getElementById('pirush_url');
+    if (pirushUrlInput) {
+        pirushUrlInput.addEventListener('input', function () {
+            const warning = document.getElementById('pirush-url-warning');
+            const val = this.value.trim();
+            if (val && !val.toLowerCase().endsWith('.pdf')) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+        });
+    }
+
     function showPopup(message) {
         let popup = document.createElement('div');
         popup.innerHTML = `

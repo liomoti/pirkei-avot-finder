@@ -8,7 +8,7 @@ from api.supabase_client import supabase
 from api.aws_search_client import AWSSemanticSearchClient, AWSSearchError
 from constants import ALLOWED_CHAPTERS
 from forms import MishnaForm, TagForm
-from models import db, Mishna, Tag, Category
+from models import db, Mishna, Tag, Category, get_pirush_settings, set_pirush_enabled, SiteSetting
 from utils.text_utils import remove_niqqud
 from utils.rate_limiter import rate_limit
 import os
@@ -292,6 +292,7 @@ def search_mishna():
             #     search_query = request.form.get('semantic_query', '').strip()
             #     is_semantic_search = True
 
+        pirush = get_pirush_settings()
         return render_template('index.html',
                                form=mishna_form,
                                results=results,
@@ -305,7 +306,9 @@ def search_mishna():
                                categories=categories_serialized,
                                selected_tags=selected_tags,
                                selected_chapter=mishna_form.chapter.data,
-                               selected_mishna=mishna_form.mishna.data)
+                               selected_mishna=mishna_form.mishna.data,
+                               pirush_enabled=pirush['pirush_enabled'],
+                               pirush_attribution_url=pirush['pirush_attribution_url'])
 
     except Exception as e:
         current_app.logger.error(f'Error in search_mishna: {str(e)}', exc_info=True)
@@ -347,11 +350,13 @@ def manage_content():
                 if existing_mishna:
                     mishna_form.text.data = existing_mishna.text_pretty
                     selected_tags = [tag.id for tag in existing_mishna.tags]
+                    mishna_form.pirush_url.data = existing_mishna.pirush_url or ''
                     mishna_message = f"מִשׁנָה בפרק {chapter} משנה {mishna} קיימת במאגר."
                     button_label = 'עדכן משנה'
                     current_app.logger.info(f'Found existing Mishna: {mishna_id}')
                 else:
                     mishna_form.text.data = ''
+                    mishna_form.pirush_url.data = ''
                     selected_tags = []
                     mishna_message = f"מִשׁנָה בפרק {chapter} משנה {mishna} לא קיימת במאגר."
                     current_app.logger.info(f'Mishna not found: {mishna_id}')
@@ -363,6 +368,7 @@ def manage_content():
                     mishna = mishna_form.mishna.data
                     text_pretty = mishna_form.text.data
                     text_raw = remove_niqqud(text_pretty)
+                    pirush_url = mishna_form.pirush_url.data.strip() or None
                     current_app.logger.info(
                         f'Attempting to submit/update Mishna - Chapter: {chapter}, Mishna: {mishna}')
 
@@ -379,6 +385,7 @@ def manage_content():
                         existing_mishna.text_pretty = text_pretty
                         existing_mishna.text_raw = text_raw
                         existing_mishna.tags = new_tags
+                        existing_mishna.pirush_url = pirush_url
                         mishna_message = "המִשׁנָה עודכנה בהצלחה!"
                     else:
                         current_app.logger.info(f'Creating new Mishna: {mishna_id}')
@@ -387,7 +394,8 @@ def manage_content():
                                             text_pretty=text_pretty,
                                             text_raw=text_raw,
                                             tags=new_tags,
-                                            interpretation="")
+                                            interpretation="",
+                                            pirush_url=pirush_url)
                         db.session.add(new_mishna)
                         mishna_message = "המִשׁנָה הוספה בהצלחה!"
 
@@ -492,6 +500,18 @@ def manage_content():
                     current_app.logger.warning('No tag ID provided for editing')
                     tag_message = "בחר נושא לעריכה."
 
+            elif action == 'toggle_pirush':
+                enabled = request.form.get('pirush_enabled') == 'on'
+                current_app.logger.info(f'Toggling pirush_enabled to: {enabled}')
+                try:
+                    set_pirush_enabled(enabled)
+                    mishna_message = 'כפתור הפירוש הופעל' if enabled else 'כפתור הפירוש בוטל'
+                    current_app.logger.info(f'pirush_enabled set to {enabled}')
+                except SQLAlchemyError as e:
+                    db.session.rollback()
+                    current_app.logger.error(f'Database error while toggling pirush: {str(e)}', exc_info=True)
+                    mishna_message = 'אירעה שגיאה בשמירת ההגדרה'
+
             elif action == "delete_tag":
                 tag_id_to_delete = request.form.get('tag_to_delete')
                 current_app.logger.info(f'Attempting to delete tag ID: {tag_id_to_delete}')
@@ -515,6 +535,7 @@ def manage_content():
                     current_app.logger.warning('No tag ID provided for deletion')
                     tag_message = "בחר תגית למחיקה."
 
+        pirush = get_pirush_settings()
         return render_template('manage_content.html',
                                mishna_form=mishna_form,
                                tag_form=tag_form,
@@ -527,7 +548,9 @@ def manage_content():
                                uncategorized_tags=uncategorized_tags,
                                selected_tags=selected_tags,
                                selected_chapter=mishna_form.chapter.data,
-                               selected_mishna=mishna_form.mishna.data)
+                               selected_mishna=mishna_form.mishna.data,
+                               pirush_enabled=pirush['pirush_enabled'],
+                               pirush_attribution_url=pirush['pirush_attribution_url'])
 
     except Exception as e:
         current_app.logger.error(f'Unexpected error in manage_content: {str(e)}', exc_info=True)

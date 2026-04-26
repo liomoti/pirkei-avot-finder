@@ -47,3 +47,10 @@ class Config:
             'sslmode': 'require'
         }
     }
+
+    # =========================================================================
+    # Pirush Feature Settings
+    # =========================================================================
+    # Attribution link shown in the pirush modal footer.
+    # Change this URL to update the credit link site-wide — no DB change needed.
+    PIRUSH_ATTRIBUTION_URL = 'https://www.veten.co.il'
