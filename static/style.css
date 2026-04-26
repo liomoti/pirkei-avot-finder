@@ -2333,3 +2333,161 @@ button.search-type-button.active {
         transform: translateX(24px);
     }
 }
+
+
+/* ===== PIRUSH BUTTON & MODAL STYLES ===== */
+
+/* Pirush Button */
+.pirush-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%) !important;
+    color: #2D2D2D !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 10px 24px !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 12px rgba(218, 165, 32, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    text-shadow: none !important;
+}
+
+.pirush-btn:hover {
+    background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%) !important;
+    color: #2D2D2D !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(218, 165, 32, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.pirush-btn:focus-visible {
+    outline: 2px solid #DAA520 !important;
+    outline-offset: 2px !important;
+}
+
+.pirush-btn svg {
+    color: #2D2D2D !important;
+    stroke: #2D2D2D !important;
+}
+
+/* Pirush Modal Content */
+.pirush-modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    height: 85vh;
+    background: rgba(15, 25, 40, 0.92) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(218, 165, 32, 0.3) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(218, 165, 32, 0.15) !important;
+    overflow: hidden;
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .pirush-modal-content {
+        width: 95% !important;
+        height: 90vh !important;
+        border-radius: 16px !important;
+    }
+}
+
+/* Pirush Modal Header */
+.pirush-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.25) 0%, rgba(184, 134, 11, 0.2) 100%) !important;
+    border-bottom: 1px solid rgba(218, 165, 32, 0.3) !important;
+    flex-shrink: 0;
+    color: #F5F5DC !important;
+}
+
+.pirush-modal-header h3 {
+    color: #FFD700 !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+    margin: 0 !important;
+}
+
+/* Pirush Modal Close Button */
+.pirush-modal-close {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(218, 165, 32, 0.3) !important;
+    border-radius: 8px !important;
+    color: #F5F5DC !important;
+    padding: 6px 10px !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    line-height: 1 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+.pirush-modal-close:hover {
+    background: rgba(218, 165, 32, 0.25) !important;
+    color: #FFD700 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Pirush Modal Footer (Attribution) */
+.pirush-modal-footer {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-top: 1px solid rgba(218, 165, 32, 0.4) !important;
+    color: #DAA520 !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+
+/* Open-in-new-tab link inside pirush modal */
+.pirush-open-link {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #DAA520 !important;
+    border: 1px solid rgba(218, 165, 32, 0.4) !important;
+    border-radius: 8px !important;
+    padding: 4px 12px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    backdrop-filter: blur(6px) !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+.pirush-open-link:hover {
+    background: rgba(218, 165, 32, 0.2) !important;
+    color: #FFD700 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.pirush-open-link svg {
+    color: #DAA520 !important;
+    stroke: #DAA520 !important;
+}
+
+/* Attribution link in pirush modal footer */
+.pirush-attribution-link {
+    color: #DAA520 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px !important;
+    transition: color 0.2s ease !important;
+}
+
+.pirush-attribution-link:hover {
+    color: #FFD700 !important;
+}

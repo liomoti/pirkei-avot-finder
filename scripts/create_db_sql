@@ -7,7 +7,8 @@ CREATE TABLE mishna (
     mishna VARCHAR(50) NOT NULL,
     text_pretty TEXT NOT NULL,
     text_raw TEXT NOT NULL,
-    interpretation TEXT
+    interpretation TEXT,
+    pirush_url TEXT DEFAULT NULL -- URL to pirush PDF (nullable)
 );
 
 -- Table: tag
@@ -29,3 +30,12 @@ CREATE TABLE mishna_tag (
 CREATE INDEX idx_mishna_chapter ON mishna (chapter);
 CREATE INDEX idx_mishna_mishna ON mishna (mishna);
 CREATE INDEX idx_tag_name ON tag (name);
+
+-- Table: site_setting (key-value store for site-wide configuration)
+CREATE TABLE site_setting (
+    key VARCHAR(100) PRIMARY KEY,
+    value VARCHAR(255) NOT NULL
+);
+
+-- Default: pirush button enabled
+INSERT INTO site_setting (key, value) VALUES ('pirush_enabled', 'true');

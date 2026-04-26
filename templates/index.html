@@ -343,6 +343,21 @@
                         </div>
                     </div>
 
+                    <!-- Pirush Button -->
+                    {% if pirush_enabled and result.pirush_url %}
+                    <div class="text-center my-4">
+                        <button type="button"
+                            @click="$dispatch('open-pirush', { url: '{{ result.pirush_url }}', chapter: '{{ result.chapter }}', mishna: '{{ result.mishna }}' })"
+                            class="pirush-btn"
+                            aria-label="פתח פירוש למשנה">
+                            <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            פירוש
+                        </button>
+                    </div>
+                    {% endif %}
+
                     <!-- Tags -->
                     {% if result.tags %}
                     <div class="border-t pt-4">
@@ -432,6 +447,50 @@
     </div>
 
 
+
+    <!-- Pirush Modal -->
+    <div x-data="pirushModal()"
+         @open-pirush.window="open($event.detail.url, $event.detail.chapter, $event.detail.mishna)"
+         @keydown.escape.window="close()"
+         x-show="isOpen"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center"
+         style="background: rgba(0, 0, 0, 0.7);"
+         role="dialog"
+         aria-modal="true"
+         :aria-label="'פירוש — פרק ' + chapter + ' משנה ' + mishna">
+
+        <!-- Backdrop -->
+        <div class="absolute inset-0" @click="close()"></div>
+
+        <!-- Modal Content -->
+        <div class="relative pirush-modal-content" @click.stop>
+            <!-- Header -->
+            <div class="pirush-modal-header">
+                <h3 class="font-bold text-lg" x-text="'פירוש — פרק ' + chapter + ' משנה ' + mishna"></h3>
+                <button @click="close()" class="pirush-modal-close" aria-label="סגור">✕</button>
+            </div>
+
+            <!-- PDF iframe via Google Docs Viewer (bypasses X-Frame-Options) -->
+            <div class="flex-1 relative" style="min-height: 0;">
+                <iframe :src="'https://docs.google.com/viewer?url=' + encodeURIComponent(pdfUrl) + '&embedded=true'"
+                        class="w-full h-full"
+                        style="border: none; display: block;"
+                        title="פירוש"></iframe>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="pirush-modal-footer">
+                {% if pirush_attribution_url %}
+                <a :href="'{{ pirush_attribution_url }}'" target="_blank" rel="noopener noreferrer" class="pirush-attribution-link">
+                    הפירוש באדיבות פרויקט ״ותן חלקנו״
+                </a>
+                {% else %}
+                הפירוש באדיבות פרויקט ״ותן חלקנו״
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
     <!-- Footer Section -->
     <footer class="footer-ancient py-8 mt-0">
@@ -858,6 +917,29 @@
 
     <script>
         document.addEventListener('alpine:init', () => {
+            Alpine.data('pirushModal', () => ({
+                isOpen: false,
+                pdfUrl: '',
+                chapter: '',
+                mishna: '',
+                open(url, chapter, mishna) {
+                    this.pdfUrl = url;
+                    this.chapter = chapter;
+                    this.mishna = mishna;
+                    this.isOpen = true;
+                    document.body.style.overflow = 'hidden';
+                    this.$nextTick(() => {
+                        const modal = this.$el.querySelector('.pirush-modal-content');
+                        if (modal) modal.focus();
+                    });
+                },
+                close() {
+                    this.isOpen = false;
+                    this.pdfUrl = '';
+                    document.body.style.overflow = '';
+                }
+            }));
+
             Alpine.data('tagSelection', () => ({
                 allTags: {{ all_tags | tojson | safe }},
             categories: {{ categories | tojson | safe }},

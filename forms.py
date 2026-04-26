@@ -10,6 +10,7 @@ class MishnaForm(FlaskForm):
     text = TextAreaField('טקסט המִשׁנָה')
     semantic_text = TextAreaField('טקסט סמנטי')
     tags = SelectMultipleField('תגיות', choices=[], coerce=int)
+    pirush_url = StringField('קישור לפירוש (PDF)')
     submit = SubmitField('הוסף מִשׁנָה')
 
     def __init__(self, *args, **kwargs):
