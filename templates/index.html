@@ -473,7 +473,28 @@
 
             <!-- PDF iframe via Google Docs Viewer (bypasses X-Frame-Options) -->
             <div class="flex-1 relative" style="min-height: 0;">
-                <iframe :src="'https://docs.google.com/viewer?url=' + encodeURIComponent(pdfUrl) + '&embedded=true'"
+                <!-- Loading overlay -->
+                <div x-show="loading" class="absolute inset-0 flex items-center justify-center" style="background: #f5f5f0; z-index: 10;">
+                    <div class="text-center">
+                        <svg x-show="!showRetry" class="animate-spin mx-auto mb-3" style="width: 40px; height: 40px; color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p x-show="!showRetry" style="color: #2D2D2D; font-size: 1rem;">טוען פירוש...</p>
+                        <div x-show="showRetry" x-cloak>
+                            <p style="color: #2D2D2D; font-size: 1rem; margin-bottom: 12px;">הטעינה לוקחת יותר מדי זמן</p>
+                            <button @click="retry()" style="background: #1e3a5f; color: #f4e8d0; padding: 8px 24px; border-radius: 16px; border: none; cursor: pointer; font-size: 0.95rem; transition: background 0.2s;">
+                                <svg class="inline-block ml-1" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                נסו שוב
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <iframe x-ref="pirushIframe"
+                        :src="iframeSrc"
+                        @load="onIframeLoad()"
                         class="w-full h-full"
                         style="border: none; display: block;"
                         title="פירוש"></iframe>
@@ -558,6 +579,17 @@
     <script>
         // Loader functionality
         let lottieAnimation;
+
+        // Preload Lottie animation on page load so it's ready instantly when needed
+        document.addEventListener('DOMContentLoaded', function () {
+            lottieAnimation = lottie.loadAnimation({
+                container: document.getElementById('lottieLoader'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: false,
+                path: '/static/pics/open-book-loader.json'
+            });
+        });
         
         function showLoader(text) {
             const overlay = document.getElementById('loaderOverlay');
@@ -565,17 +597,8 @@
             loaderText.textContent = text;
             overlay.style.display = 'flex';
             
-            // Initialize Lottie animation if not already done
-            if (!lottieAnimation) {
-                lottieAnimation = lottie.loadAnimation({
-                    container: document.getElementById('lottieLoader'),
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    path: '/static/pics/open-book-loader.json'
-                });
-            } else {
-                lottieAnimation.play();
+            if (lottieAnimation) {
+                lottieAnimation.goToAndPlay(0, true);
             }
         }
         
@@ -920,22 +943,82 @@
             Alpine.data('pirushModal', () => ({
                 isOpen: false,
                 pdfUrl: '',
+                iframeSrc: '',
+                loading: true,
+                showRetry: false,
                 chapter: '',
                 mishna: '',
+                _retryTimer: null,
+                _loadedCache: {},
                 open(url, chapter, mishna) {
                     this.pdfUrl = url;
                     this.chapter = chapter;
                     this.mishna = mishna;
                     this.isOpen = true;
+                    this.showRetry = false;
+                    this.iframeSrc = '';
                     document.body.style.overflow = 'hidden';
+
+                    const viewerUrl = 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+                    const cached = this._loadedCache[url];
+
                     this.$nextTick(() => {
                         const modal = this.$el.querySelector('.pirush-modal-content');
                         if (modal) modal.focus();
+
+                        if (cached) {
+                            // PDF was loaded before — set src immediately, skip loading state
+                            this.loading = false;
+                            this.iframeSrc = viewerUrl;
+                        } else {
+                            this.loading = true;
+                            setTimeout(() => {
+                                this.iframeSrc = viewerUrl;
+                                this._startRetryTimer();
+                            }, 100);
+                        }
                     });
                 },
+                _startRetryTimer() {
+                    this._clearRetryTimer();
+                    this._retryTimer = setTimeout(() => {
+                        if (this.loading && this.isOpen) {
+                            this.showRetry = true;
+                        }
+                    }, 4000);
+                },
+                _clearRetryTimer() {
+                    if (this._retryTimer) {
+                        clearTimeout(this._retryTimer);
+                        this._retryTimer = null;
+                    }
+                },
+                retry() {
+                    this.showRetry = false;
+                    this.loading = true;
+                    const url = this.iframeSrc;
+                    this.iframeSrc = '';
+                    this.$nextTick(() => {
+                        this.iframeSrc = url;
+                        this._startRetryTimer();
+                    });
+                },
+                onIframeLoad() {
+                    this._clearRetryTimer();
+                    this.loading = false;
+                    this.showRetry = false;
+                    // Mark this PDF as successfully loaded
+                    if (this.pdfUrl) {
+                        this._loadedCache[this.pdfUrl] = true;
+                    }
+                },
                 close() {
+                    this._clearRetryTimer();
                     this.isOpen = false;
                     this.pdfUrl = '';
+                    this.iframeSrc = '';
+                    this.loading = true;
+                    this.showRetry = false;
                     document.body.style.overflow = '';
                 }
             }));
