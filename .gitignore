@@ -1,3 +1,12 @@
+# Old repo
+monolith/
+
+# SAM deployment config (contains secrets)
+samconfig.toml
+
+# SAM build artifacts
+.aws-sam/
+
 # Byte-compiled / optimized / DLL files
 *.pyc
 *.pyo

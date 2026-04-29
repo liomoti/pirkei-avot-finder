@@ -9,8 +9,9 @@ Validates: Requirements 3.1, 3.4
 """
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 import requests
+from flask import Flask
 from api.aws_search_client import AWSSemanticSearchClient, AWSSearchError
 
 
@@ -18,10 +19,20 @@ class TestAWSSearchClientNetworkErrors(unittest.TestCase):
     """Test suite for network error handling in AWS search client."""
     
     def setUp(self):
-        """Set up test fixtures."""
+        """Set up test fixtures with a minimal Flask app context."""
         self.api_key = "test-api-key-12345"
         self.api_url = "https://test-api.example.com/search"
+
+        # Create a minimal Flask app to provide current_app context
+        self.app = Flask(__name__)
+        self.ctx = self.app.app_context()
+        self.ctx.push()
+
         self.client = AWSSemanticSearchClient(self.api_key, self.api_url)
+
+    def tearDown(self):
+        """Pop the Flask app context."""
+        self.ctx.pop()
     
     @patch('api.aws_search_client.requests.post')
     def test_timeout_handling(self, mock_post):
@@ -50,7 +61,7 @@ class TestAWSSearchClientNetworkErrors(unittest.TestCase):
         call_args = mock_post.call_args
         
         # Verify headers include API key
-        self.assertEqual(call_args.kwargs['headers']['x-api-key'], self.api_key)
+        self.assertEqual(call_args.kwargs['headers']['X-API-Key'], self.api_key)
         self.assertEqual(call_args.kwargs['headers']['Content-Type'], 'application/json')
         
         # Verify timeout was set

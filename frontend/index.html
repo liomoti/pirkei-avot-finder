@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-WVH2ZN86');</script>
+    <!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חיפוש מִשׁנָה</title>
+    <link rel="icon" type="image/png" href="/static/pics/pirkei-avot-online-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.8)); }
+        }
+        .logo-animate {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+        }
+        .logo-animate:hover {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen" style="color: #F5F5DC;" x-data="searchApp()">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WVH2ZN86" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 0;">
+        <div id="lottieLoader" style="width: 300px; height: 300px; margin-bottom: -30px;"></div>
+        <div id="loaderText" style="color: #FFD700; font-size: 24px; font-weight: bold; margin-top: 0; text-align: center; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);">טוען את הדף</div>
+    </div>
+
+    <!-- Hebrew Letters Background Animation -->
+    <div class="hebrew-letters" id="hebrewLetters"></div>
+
+    <!-- Header Section -->
+    <header class="header-mystical border-b border-gray-100 mb-4">
+        <div class="container mx-auto py-4">
+            <div class="text-center">
+                <a href="/" class="inline-block">
+                    <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
+                        class="h-40 md:h-52 w-auto object-contain mx-auto logo-animate transition-all duration-500">
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Search Container -->
+    <div class="container mx-auto px-4 mb-12">
+        <div class="max-w-3xl mx-auto">
+            <div class="content-overlay p-5 rounded-2xl shadow-xl border border-gray-100">
+
+                <!-- Search Type Selection -->
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-bold mb-4 flex items-center justify-center">
+                        <span
+                            style="background: linear-gradient(45deg, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 2px 8px rgba(25, 25, 112, 0.4);">חיפוש
+                            חכם בפרקי אבות</span>
+                    </h3>
+                    <p class="text-lg text-gray-600 mb-6 max-w-2xl mx-auto" style="color: #F5F5DC !important;">כלי חיפוש
+                        מתקדם לחקר ולימוד פרקי אבות עם
+                        אפשרויות חיפוש מגוונות</p>
+                    <div class="w-24 h-1 mx-auto mb-6 rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <button type="button"
+                            :class="searchType === 'search_mishna' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_mishna'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                            </svg>
+                            פרק ומשנה
+                        </button>
+                        <button type="button"
+                            :class="searchType === 'search_by_tags' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_by_tags'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                </path>
+                            </svg>
+                            נושא
+                        </button>
+                        <button type="button"
+                            :class="searchType === 'search_smart' ? 'search-type-button active' : 'search-type-button'"
+                            class="flex items-center" @click="searchType = 'search_smart'">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
+                            </svg>
+                            חיפוש חכם
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chapter and Mishna Selection -->
+                <div x-show="searchType === 'search_mishna'" x-cloak class="search-section-blue p-4 rounded-xl mb-6">
+                    <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2 text-center" for="chapter">פרק</label>
+                            <select id="chapter" class="dropdown-compact" x-model="selectedChapter" @change="updateMishnaOptions()">
+                                <template x-for="ch in chapterKeys" :key="ch">
+                                    <option :value="ch" x-text="ch"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-bold text-gray-700 mb-2 text-center" for="mishna">משנה</label>
+                            <select id="mishna" class="dropdown-compact" x-model="selectedMishna">
+                                <option value="all">כל המשניות</option>
+                                <template x-for="m in mishnaOptions" :key="m">
+                                    <option :value="m" x-text="m"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Smart Search -->
+                <div x-show="searchType === 'search_smart'" x-cloak
+                    class="search-section-parchment p-4 rounded-xl mb-6">
+                    <div class="space-y-3">
+                        <div class="flex flex-col md:flex-row md:items-center gap-4">
+                            <input type="text" id="search_query"
+                                x-model="searchQuery"
+                                class="flex-grow border-2 border-gray-200 p-3 md:p-4 rounded-lg md:rounded-xl
+                                focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base
+                                md:text-lg" placeholder="חפש לפי נושא, משמעות או ביטוי..."
+                                @input="validateHebrewInput($event.target)">
+                            <div class="flex items-center justify-center gap-3 md:flex-col md:gap-2">
+                                <label for="exact_match" class="toggle-switch">
+                                    <input type="checkbox" id="exact_match" x-model="exactMatch">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <label for="exact_match" class="text-xs md:text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+                                    חפש מילים מדויקות
+                                </label>
+                            </div>
+                        </div>
+                        <div id="hebrew-validation-error" style="display: none; color: #DC2626; font-size: 0.875rem; font-weight: 600; text-align: center; margin-top: 8px;">
+                            ⚠️ אנא הזן טקסט בעברית בלבד
+                        </div>
+                        <p class="text-xs text-gray-600 opacity-75" style="text-align: center;">
+                            חיפוש חכם משתמש ב-AI למציאת משניות לפי משמעות.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tag Selection -->
+                <div x-show="searchType === 'search_by_tags'" x-cloak x-data="tagSelection()"
+                    class="p-4 rounded-xl border border-purple-100 mb-6">
+                    <div class="text-center mb-6">
+                        <label for="tag-search"
+                            class="block text-sm font-bold text-gray-700 mb-3 flex items-center justify-center">
+                            <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חפש נושא או בחר מתוך הרשימה
+                        </label>
+                        <input type="text" id="tag-search" placeholder="חפש נושא או בחר מהרשימה..."
+                            class="border-2 border-gray-200 p-3 md:p-3 w-full max-w-md mx-auto rounded-lg md:rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 text-base md:text-lg"
+                            x-model="tagSearch" @input="filterTags()">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                        <template x-for="(category, categoryName) in sortedCategories()" :key="categoryName">
+                            <div class="p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                                style="background-color: #F5F5DC;">
+                                <div class="flex items-center justify-center mb-4">
+                                    <h4 class="text-lg font-bold text-gray-800 text-center" x-text="categoryName"></h4>
+                                </div>
+                                <div class="flex flex-wrap gap-2 justify-center">
+                                    <template x-for="(tag, index) in category" :key="tag.id">
+                                        <button type="button" x-show="showAllCategories[categoryName] || index < 3"
+                                            :class="selectedTags.includes(tag.id) ? 'category-tag-btn selected' : 'category-tag-btn'"
+                                            :style="`background-color: ${getCategoryColor(categoryName)} !important;`"
+                                            @click="toggleTag(tag.id)">
+                                            <span x-text="tag.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <span x-show="category.length > 3" @click="toggleShowAll(categoryName)"
+                                        class="cursor-pointer"
+                                        x-text="showAllCategories[categoryName] ? 'הסתר' : 'הצג עוד'"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Search Button -->
+                <div class="text-center mt-8">
+                    <button type="button" @click="performSearch()" class="search-button-sand-gold"
+                        style="color: #F5F5DC !important;">
+                        <svg class="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                style="color: #F5F5DC !important;" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                            </path>
+                        </svg>
+                        חפש
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Back to Top Button -->
+    <button id="backToSearchBtn" @click="scrollToSearch()" title="חזור לחיפוש" style="
+                position: fixed;
+                bottom: 24px;
+                left: 24px;
+                width: 56px;
+                height: 56px;
+                background: linear-gradient(135deg, #2876DF 0%, #1E5FBF 100%);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                box-shadow: 0 8px 24px rgba(40, 118, 223, 0.3);
+                cursor: pointer;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                opacity: 0;
+                visibility: hidden;
+            ">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+        </svg>
+    </button>
+
+    <!-- Results Section -->
+    <div class="container mx-auto px-4 mb-12" id="results-section">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Results Header -->
+            <template x-if="hasSearched && results.length > 0">
+                <div>
+                    <div class="text-center mb-8">
+                        <div class="search-section-parchment p-6 rounded-2xl shadow-lg inline-block">
+                            <div class="flex items-center justify-center mb-2">
+                                <svg class="w-8 h-8 ml-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <h2 class="text-2xl font-bold text-gray-800">
+                                    <span x-text="results.length === 1 ? 'נמצאה משנה אחת בלבד' : 'נמצאו ' + results.length + ' משניות'"></span>
+                                </h2>
+                            </div>
+                            <div class="w-24 h-1 mx-auto rounded-full"
+                                style="background: linear-gradient(45deg, #DAA520, #B8860B) !important;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Results Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <template x-for="result in results" :key="result.id">
+                            <div class="result-card p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                                <!-- Chapter and Mishna Header -->
+                                <div class="text-center mb-6">
+                                    <div class="px-6 py-3 rounded-xl inline-block shadow-md"
+                                        style="background: linear-gradient(45deg, #DAA520, #B8860B) !important; color: #2D2D2D !important; border: 2px solid rgba(218, 165, 32, 0.4) !important;">
+                                        <p class="font-bold text-lg flex items-center">
+                                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                                            </svg>
+                                            <span x-text="'פרק ' + result.chapter + ' • משנה ' + result.mishna"></span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Mishna Text -->
+                                <div class="bg-gray-50 p-6 rounded-xl mb-6 border-r-4 border-yellow-600 gold-gradient-border relative">
+                                    <div class="flex items-start justify-between">
+                                        <p class="text-lg leading-relaxed text-gray-800 text-center font-medium flex-1" x-text="result.text_pretty"></p>
+                                        <button
+                                            :data-mishna-text="'פרק ' + result.chapter + ' משנה ' + result.mishna + ': ' + result.text_pretty"
+                                            @click="copyMishnaText($event.currentTarget)"
+                                            class="mr-3 p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-all duration-200 flex-shrink-0 group"
+                                            title="העתק משנה">
+                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Pirush Button -->
+                                <template x-if="pirushEnabled && result.pirush_url">
+                                    <div class="text-center my-4">
+                                        <button type="button"
+                                            @click="$dispatch('open-pirush', { url: result.pirush_url, chapter: result.chapter, mishna: result.mishna })"
+                                            class="pirush-btn"
+                                            aria-label="פתח פירוש למשנה">
+                                            <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                            </svg>
+                                            פירוש
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <!-- Tags -->
+                                <template x-if="result.tags && result.tags.length > 0">
+                                    <div class="border-t pt-4">
+                                        <div class="flex items-center mb-3">
+                                            <svg class="w-5 h-5 ml-2 text-gray-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-bold text-gray-600">נושאים:</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="tag in result.tags" :key="tag.id">
+                                                <span
+                                                    class="px-3 py-2 rounded-full text-sm font-medium text-gray-700 shadow-sm hover:shadow-lg cursor-pointer transition-all duration-200 transform hover:scale-105"
+                                                    :style="`background-color: ${tag.category_color || '#F5F5F5'}; border: 2px solid ${tag.category_color || '#F5F5F5'}20;`"
+                                                    @click="searchByTag(tag.id, tag.name)"
+                                                    :title="'חפש משניות נוספות בנושא זה'"
+                                                    x-text="tag.name">
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Navigation Buttons (only when single result) -->
+                                <template x-if="results.length === 1">
+                                    <div class="border-t pt-4 mt-4">
+                                        <div class="flex justify-center gap-4">
+                                            <template x-if="result.number > 1">
+                                                <button
+                                                    @click="navigateToMishna(result.number - 1, 'previous')"
+                                                    class="flex items-center px-6 py-3 rounded-xl font-bold text-base shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                                    style="background: linear-gradient(45deg, #DAA520, #B8860B); color: #2D2D2D;"
+                                                    title="עבור למשנה הקודמת">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                    </svg>
+                                                    משנה קודמת
+                                                </button>
+                                            </template>
+                                            <template x-if="result.number < 108">
+                                                <button
+                                                    @click="navigateToMishna(result.number + 1, 'next')"
+                                                    class="flex items-center px-6 py-3 rounded-xl font-bold text-base shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                                    style="background: linear-gradient(45deg, #DAA520, #B8860B); color: #2D2D2D;"
+                                                    title="עבור למשנה הבאה">
+                                                    משנה הבאה
+                                                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                    </svg>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- No Results Message -->
+            <template x-if="hasSearched && results.length === 0">
+                <div class="text-center">
+                    <div class="search-section-parchment p-12 rounded-2xl shadow-lg max-w-md mx-auto">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">לא נמצאו תוצאות</h3>
+                        <p class="text-gray-600">נסה לחפש במילים אחרות או בדוק את הפרמטרים שלך</p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Empty space for first page load -->
+            <template x-if="!hasSearched">
+                <div class="text-center py-20">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="text-center mb-8"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Pirush Modal -->
+    <div x-data="pirushModal()"
+         @open-pirush.window="open($event.detail.url, $event.detail.chapter, $event.detail.mishna)"
+         @keydown.escape.window="close()"
+         x-show="isOpen"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center"
+         style="background: rgba(0, 0, 0, 0.7);"
+         role="dialog"
+         aria-modal="true"
+         :aria-label="'פירוש — פרק ' + chapter + ' משנה ' + mishna">
+
+        <!-- Backdrop -->
+        <div class="absolute inset-0" @click="close()"></div>
+
+        <!-- Modal Content -->
+        <div class="relative pirush-modal-content" @click.stop>
+            <!-- Header -->
+            <div class="pirush-modal-header">
+                <h3 class="font-bold text-lg" x-text="'פירוש — פרק ' + chapter + ' משנה ' + mishna"></h3>
+                <button @click="close()" class="pirush-modal-close" aria-label="סגור">✕</button>
+            </div>
+
+            <!-- PDF iframe via Google Docs Viewer -->
+            <div class="flex-1 relative" style="min-height: 0;">
+                <!-- Loading overlay -->
+                <div x-show="loading" class="absolute inset-0 flex items-center justify-center" style="background: #f5f5f0; z-index: 10;">
+                    <div class="text-center">
+                        <svg x-show="!showRetry" class="animate-spin mx-auto mb-3" style="width: 40px; height: 40px; color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p x-show="!showRetry" style="color: #2D2D2D; font-size: 1rem;">טוען פירוש...</p>
+                        <div x-show="showRetry" x-cloak>
+                            <p style="color: #2D2D2D; font-size: 1rem; margin-bottom: 12px;">הטעינה לוקחת יותר מדי זמן</p>
+                            <button @click="retry()" style="background: #1e3a5f; color: #f4e8d0; padding: 8px 24px; border-radius: 16px; border: none; cursor: pointer; font-size: 0.95rem; transition: background 0.2s;">
+                                <svg class="inline-block ml-1" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                נסו שוב
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <iframe x-ref="pirushIframe"
+                        :src="iframeSrc"
+                        @load="onIframeLoad()"
+                        class="w-full h-full"
+                        style="border: none; display: block;"
+                        title="פירוש"></iframe>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="pirush-modal-footer">
+                <template x-if="pirushAttributionUrl">
+                    <a :href="pirushAttributionUrl" target="_blank" rel="noopener noreferrer" class="pirush-attribution-link">
+                        הפירוש מתוך פרויקט ״ותן חלקנו״
+                    </a>
+                </template>
+                <template x-if="!pirushAttributionUrl">
+                    <span>הפירוש מתוך פרויקט ״ותן חלקנו״</span>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="footer-ancient py-8 mt-0">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <!-- Logo/Title -->
+                <div class="text-center">
+                    <a href="/" class="inline-block">
+                        <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
+                            class="h-24 md:h-32 w-auto object-contain mx-auto logo-animate transition-all duration-500">
+                    </a>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold mb-1">
+                        חיפוש חכם בפרקי אבות
+                    </h3>
+                    <div class="w-20 h-1 mx-auto rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #B8860B) !important;"></div>
+                </div>
+
+                <!-- Description -->
+                <p class="mb-4 max-w-2xl mx-auto text-base" style="color: #F5F5DC !important;">
+                    כלי חיפוש מתקדם לחקר ולימוד פרקי אבות עם אפשרויות חיפוש מגוונות
+                </p>
+
+                <!-- Developer Credit -->
+                <div class="bg-gray-700 rounded-xl p-4 max-w-lg mx-auto">
+                    <p class="text-gray-300 mb-2 flex items-center justify-center text-sm">
+                        <svg class="w-5 h-5 ml-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                        פותח על ידי
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-2 items-center justify-center">
+                        <a href="https://www.linkedin.com/in/moti-shaul" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 ml-2" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M22.225 0H1.771C.791 0 0 .776 0 1.729v20.543C0 23.214.792 24 1.77 24h20.453C23.208 24 24 23.214 24 22.272V1.729C24 .776 23.208 0 22.225 0zM7.119 20.459H3.56V9h3.558v11.459zM5.341 7.447c-1.134 0-2.054-.91-2.054-2.032a2.054 2.054 0 1 1 4.109 0c0 1.122-.92 2.032-2.055 2.032zM20.453 20.459h-3.558v-5.661c0-1.35-.027-3.086-1.885-3.086-1.889 0-2.178 1.476-2.178 3v5.747h-3.557V9h3.417v1.561h.049c.476-.9 1.633-1.848 3.36-1.848 3.593 0 4.257 2.364 4.257 5.435v6.311z" />
+                            </svg>
+                            Moti Shaul
+                        </a>
+                        <a href="https://buymeacoffee.com/motishaul" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white px-5 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
+                            <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                            </svg>
+                            תמוך באתר
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Copyright -->
+                <div class="mt-4 pt-3 border-t border-gray-700">
+                    <p class="text-gray-400 text-xs">
+                        © 2026 חיפוש חכם בפרקי אבות. כל הזכויות שמורות.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* ===== ALLOWED_CHAPTERS constant ===== */
+        const ALLOWED_CHAPTERS = {
+            'א': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח'],
+            'ב': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז'],
+            'ג': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח'],
+            'ד': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט', 'כ', 'כא', 'כב'],
+            'ה': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט', 'כ', 'כא', 'כב', 'כג'],
+            'ו': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא'],
+        };
+
+        /* ===== API Communication Helpers ===== */
+        async function apiGet(path) {
+            const response = await fetch('/api' + path);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({ error: 'שגיאת שרת' }));
+                throw new Error(err.error || 'שגיאת שרת');
+            }
+            return response.json();
+        }
+
+        /* ===== Loader functionality ===== */
+        let lottieAnimation;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            lottieAnimation = lottie.loadAnimation({
+                container: document.getElementById('lottieLoader'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: false,
+                path: '/static/pics/open-book-loader.json'
+            });
+        });
+
+        function showLoader(text) {
+            const overlay = document.getElementById('loaderOverlay');
+            const loaderText = document.getElementById('loaderText');
+            loaderText.textContent = text;
+            overlay.style.display = 'flex';
+            if (lottieAnimation) {
+                lottieAnimation.goToAndPlay(0, true);
+            }
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loaderOverlay');
+            overlay.style.display = 'none';
+            if (lottieAnimation) {
+                lottieAnimation.pause();
+            }
+        }
+
+        /* ===== Hebrew Input Validation ===== */
+        function validateHebrewInput(input) {
+            const errorDiv = document.getElementById('hebrew-validation-error');
+            const value = input.value;
+
+            if (value === '') {
+                errorDiv.style.display = 'none';
+                input.style.borderColor = '#E5E7EB';
+                return true;
+            }
+
+            // Hebrew characters range: U+0590-U+05FF
+            // Also allow spaces and common punctuation: . , ? ! - " ' ( ) ״ ׳
+            const hebrewRegex = /^[\u0590-\u05FF\s.,?!״׳\-\"\'\(\)]+$/;
+
+            if (!hebrewRegex.test(value)) {
+                errorDiv.style.display = 'block';
+                input.style.borderColor = '#DC2626';
+                input.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.1)';
+                return false;
+            } else {
+                errorDiv.style.display = 'none';
+                input.style.borderColor = '#10B981';
+                input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                return true;
+            }
+        }
+
+        /**
+         * Returns true if the string is valid Hebrew-only input.
+         * Accepts Hebrew chars (U+0590–U+05FF), spaces, and common punctuation.
+         * Rejects any Latin a-z/A-Z.
+         */
+        function isValidHebrewInput(value) {
+            if (!value || value.trim() === '') return false;
+            const hebrewRegex = /^[\u0590-\u05FF\s.,?!״׳\-\"\'\(\)]+$/;
+            return hebrewRegex.test(value);
+        }
+
+        /* ===== Copy Mishna Text ===== */
+        function copyMishnaTextToClipboard(button) {
+            const text = button.getAttribute('data-mishna-text');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopyFeedback(button);
+                }).catch(() => {
+                    fallbackCopyText(text, button);
+                });
+            } else {
+                fallbackCopyText(text, button);
+            }
+        }
+
+        function fallbackCopyText(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) showCopyFeedback(button);
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyFeedback(button) {
+            const originalTitle = button.title;
+            const originalHTML = button.innerHTML;
+            button.title = 'הועתק!';
+            button.innerHTML = '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            button.classList.add('text-green-600');
+            setTimeout(() => {
+                button.title = originalTitle;
+                button.innerHTML = originalHTML;
+                button.classList.remove('text-green-600');
+            }, 2000);
+        }
+
+        /* ===== Scroll / Back to Search ===== */
+        function scrollToSearch() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.addEventListener('scroll', function () {
+            const backToSearchBtn = document.getElementById('backToSearchBtn');
+            const resultsSection = document.getElementById('results-section');
+            if (backToSearchBtn && resultsSection) {
+                const scrollPosition = window.pageYOffset;
+                const resultsSectionTop = resultsSection.offsetTop;
+                if (scrollPosition > 300 || scrollPosition > resultsSectionTop - 200) {
+                    backToSearchBtn.style.opacity = '1';
+                    backToSearchBtn.style.visibility = 'visible';
+                } else {
+                    backToSearchBtn.style.opacity = '0';
+                    backToSearchBtn.style.visibility = 'hidden';
+                }
+            }
+        });
+
+        /* ===== Hebrew Letters Background Animation ===== */
+        const hebrewLetters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ', 'ק', 'ר', 'ש', 'ת'];
+
+        function createFloatingLetter() {
+            const container = document.getElementById('hebrewLetters');
+            if (!container) return;
+            const letter = document.createElement('div');
+            letter.className = 'hebrew-letter';
+            letter.textContent = hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)];
+            letter.style.left = Math.random() * 100 + '%';
+            const duration = 10 + Math.random() * 5;
+            letter.style.animationDuration = duration + 's';
+            container.appendChild(letter);
+            setTimeout(() => {
+                if (letter.parentNode) letter.parentNode.removeChild(letter);
+            }, duration * 1000);
+        }
+
+        setInterval(createFloatingLetter, 2000);
+        for (let i = 0; i < 3; i++) {
+            setTimeout(createFloatingLetter, i * 1000);
+        }
+    </script>
+
+    <script>
+        /* ===== Main searchApp() Alpine.js Component ===== */
+        function searchApp() {
+            return {
+                searchType: 'search_mishna',
+                selectedChapter: 'א',
+                selectedMishna: 'all',
+                chapterKeys: Object.keys(ALLOWED_CHAPTERS),
+                mishnaOptions: ALLOWED_CHAPTERS['א'],
+                searchQuery: '',
+                exactMatch: false,
+                results: [],
+                hasSearched: false,
+                pirushEnabled: false,
+                pirushAttributionUrl: '',
+                errorMessage: '',
+
+                init() {
+                    this.updateMishnaOptions();
+                    this.fetchSettings();
+                },
+
+                updateMishnaOptions() {
+                    this.mishnaOptions = ALLOWED_CHAPTERS[this.selectedChapter] || [];
+                    // Reset mishna selection if current value is not in new options
+                    if (this.selectedMishna !== 'all' && !this.mishnaOptions.includes(this.selectedMishna)) {
+                        this.selectedMishna = 'all';
+                    }
+                },
+
+                async fetchSettings() {
+                    try {
+                        const data = await apiGet('/settings');
+                        this.pirushEnabled = data.pirush_enabled || false;
+                        this.pirushAttributionUrl = data.pirush_attribution_url || '';
+                    } catch (e) {
+                        console.error('Failed to fetch settings:', e);
+                    }
+                },
+
+                async performSearch() {
+                    this.errorMessage = '';
+
+                    if (this.searchType === 'search_smart') {
+                        const value = this.searchQuery.trim();
+                        if (value === '') {
+                            const errorDiv = document.getElementById('hebrew-validation-error');
+                            if (errorDiv) {
+                                errorDiv.textContent = '⚠️ אנא הזן טקסט לחיפוש';
+                                errorDiv.style.display = 'block';
+                            }
+                            const input = document.getElementById('search_query');
+                            if (input) {
+                                input.style.borderColor = '#DC2626';
+                                input.focus();
+                            }
+                            return;
+                        }
+                        if (!isValidHebrewInput(value)) {
+                            const errorDiv = document.getElementById('hebrew-validation-error');
+                            if (errorDiv) {
+                                errorDiv.textContent = '⚠️ אנא הזן טקסט בעברית בלבד';
+                                errorDiv.style.display = 'block';
+                            }
+                            const input = document.getElementById('search_query');
+                            if (input) {
+                                input.style.borderColor = '#DC2626';
+                                input.focus();
+                            }
+                            return;
+                        }
+                    }
+
+                    showLoader('מחפש משניות');
+
+                    try {
+                        let data;
+                        if (this.searchType === 'search_mishna') {
+                            const params = new URLSearchParams({
+                                chapter: this.selectedChapter,
+                                mishna: this.selectedMishna
+                            });
+                            data = await apiGet('/search/mishna?' + params.toString());
+                        } else if (this.searchType === 'search_smart') {
+                            const params = new URLSearchParams({
+                                q: this.searchQuery.trim(),
+                                exact_match: this.exactMatch.toString()
+                            });
+                            data = await apiGet('/search/smart?' + params.toString());
+                        } else if (this.searchType === 'search_by_tags') {
+                            // Collect selected tags from the tagSelection component
+                            const tagSelEl = document.querySelector('[x-data*="tagSelection"]');
+                            let selectedTagIds = [];
+                            if (tagSelEl && tagSelEl.__x) {
+                                selectedTagIds = tagSelEl.__x.$data.selectedTags || [];
+                            } else if (tagSelEl && tagSelEl._x_dataStack) {
+                                const tagData = tagSelEl._x_dataStack.find(d => d.selectedTags);
+                                if (tagData) selectedTagIds = tagData.selectedTags;
+                            }
+                            if (selectedTagIds.length === 0) {
+                                hideLoader();
+                                return;
+                            }
+                            const params = new URLSearchParams({ ids: selectedTagIds.join(',') });
+                            data = await apiGet('/search/tags?' + params.toString());
+                        }
+
+                        this.results = Array.isArray(data) ? data : [];
+                        this.hasSearched = true;
+
+                        // Scroll to results
+                        this.$nextTick(() => {
+                            const resultsSection = document.getElementById('results-section');
+                            if (resultsSection) {
+                                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Search error:', e);
+                        this.results = [];
+                        this.hasSearched = true;
+                        this.errorMessage = e.message || 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
+                    } finally {
+                        hideLoader();
+                    }
+                },
+
+                async searchByTag(tagId, tagName) {
+                    showLoader('מחפש משניות בנושא: ' + tagName);
+                    try {
+                        const params = new URLSearchParams({ ids: tagId.toString() });
+                        const data = await apiGet('/search/tags?' + params.toString());
+                        this.results = Array.isArray(data) ? data : [];
+                        this.hasSearched = true;
+                        this.$nextTick(() => {
+                            const resultsSection = document.getElementById('results-section');
+                            if (resultsSection) {
+                                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Tag search error:', e);
+                        this.results = [];
+                        this.hasSearched = true;
+                    } finally {
+                        hideLoader();
+                    }
+                },
+
+                async navigateToMishna(mishnaNumber, direction) {
+                    const loaderText = direction === 'next' ? 'טוען את המשנה הבאה' : 'טוען את המשנה הקודמת';
+                    showLoader(loaderText);
+                    try {
+                        const data = await apiGet('/search/number/' + mishnaNumber);
+                        this.results = data ? [data] : [];
+                        this.hasSearched = true;
+                        this.$nextTick(() => {
+                            const resultsSection = document.getElementById('results-section');
+                            if (resultsSection) {
+                                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Navigate error:', e);
+                    } finally {
+                        hideLoader();
+                    }
+                },
+
+                copyMishnaText(button) {
+                    copyMishnaTextToClipboard(button);
+                },
+
+                scrollToSearch() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+        }
+
+        /* ===== tagSelection() Alpine.js Component ===== */
+        function tagSelection() {
+            return {
+                allTags: [],
+                categories: [],
+                tagSearch: '',
+                selectedTags: [],
+                filteredCategories: {},
+                showAllCategories: {},
+
+                init() {
+                    this.fetchTags();
+                },
+
+                async fetchTags() {
+                    try {
+                        const data = await apiGet('/search/tags/all');
+                        // Expect { tags: [...], categories: [...] }
+                        this.allTags = data.tags || [];
+                        this.categories = data.categories || [];
+                        this.groupTagsByCategory();
+                    } catch (e) {
+                        console.error('Failed to fetch tags:', e);
+                        // Fallback: try alternate endpoint structure
+                        this.allTags = [];
+                        this.categories = [];
+                    }
+                },
+
+                sortedCategories() {
+                    const sorted = {};
+                    Object.keys(this.filteredCategories)
+                        .sort()
+                        .forEach(categoryName => {
+                            sorted[categoryName] = this.filteredCategories[categoryName].sort((a, b) =>
+                                a.name.localeCompare(b.name, 'he')
+                            );
+                        });
+                    return sorted;
+                },
+
+                groupTagsByCategory() {
+                    const cats = {};
+                    this.allTags.forEach(tag => {
+                        const categoryKey = tag.category || 'כללי';
+                        if (!cats[categoryKey]) {
+                            cats[categoryKey] = [];
+                            this.showAllCategories[categoryKey] = false;
+                        }
+                        cats[categoryKey].push(tag);
+                    });
+                    this.filteredCategories = cats;
+                },
+
+                filterTags() {
+                    const search = this.tagSearch.toLowerCase();
+                    const cats = {};
+                    this.allTags.forEach(tag => {
+                        if (tag.name.toLowerCase().includes(search)) {
+                            const categoryKey = tag.category || 'כללי';
+                            if (!cats[categoryKey]) {
+                                cats[categoryKey] = [];
+                            }
+                            cats[categoryKey].push(tag);
+                        }
+                    });
+                    this.filteredCategories = cats;
+                },
+
+                toggleTag(tagId) {
+                    if (this.selectedTags.includes(tagId)) {
+                        this.selectedTags = this.selectedTags.filter(id => id !== tagId);
+                    } else {
+                        this.selectedTags.push(tagId);
+                    }
+                },
+
+                toggleShowAll(categoryName) {
+                    this.showAllCategories[categoryName] = !this.showAllCategories[categoryName];
+                },
+
+                getCategoryColor(categoryName) {
+                    const category = this.categories.find(cat => cat.name === categoryName);
+                    return category ? category.color : '#F5F5F5';
+                }
+            };
+        }
+
+        /* ===== pirushModal() Alpine.js Component ===== */
+        function pirushModal() {
+            return {
+                isOpen: false,
+                pdfUrl: '',
+                iframeSrc: '',
+                loading: true,
+                showRetry: false,
+                chapter: '',
+                mishna: '',
+                pirushAttributionUrl: '',
+                _retryTimer: null,
+                _loadedCache: {},
+
+                init() {
+                    // Fetch attribution URL from settings
+                    apiGet('/settings').then(data => {
+                        this.pirushAttributionUrl = data.pirush_attribution_url || '';
+                    }).catch(() => {});
+                },
+
+                open(url, chapter, mishna) {
+                    this.pdfUrl = url;
+                    this.chapter = chapter;
+                    this.mishna = mishna;
+                    this.isOpen = true;
+                    this.showRetry = false;
+                    this.iframeSrc = '';
+                    document.body.style.overflow = 'hidden';
+
+                    const viewerUrl = 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+                    const cached = this._loadedCache[url];
+
+                    this.$nextTick(() => {
+                        const modal = this.$el.querySelector('.pirush-modal-content');
+                        if (modal) modal.focus();
+
+                        if (cached) {
+                            this.loading = false;
+                            this.iframeSrc = viewerUrl;
+                        } else {
+                            this.loading = true;
+                            setTimeout(() => {
+                                this.iframeSrc = viewerUrl;
+                                this._startRetryTimer();
+                            }, 100);
+                        }
+                    });
+                },
+
+                _startRetryTimer() {
+                    this._clearRetryTimer();
+                    this._retryTimer = setTimeout(() => {
+                        if (this.loading && this.isOpen) {
+                            this.showRetry = true;
+                        }
+                    }, 4000);
+                },
+
+                _clearRetryTimer() {
+                    if (this._retryTimer) {
+                        clearTimeout(this._retryTimer);
+                        this._retryTimer = null;
+                    }
+                },
+
+                retry() {
+                    this.showRetry = false;
+                    this.loading = true;
+                    const url = this.iframeSrc;
+                    this.iframeSrc = '';
+                    this.$nextTick(() => {
+                        this.iframeSrc = url;
+                        this._startRetryTimer();
+                    });
+                },
+
+                onIframeLoad() {
+                    this._clearRetryTimer();
+                    this.loading = false;
+                    this.showRetry = false;
+                    if (this.pdfUrl) {
+                        this._loadedCache[this.pdfUrl] = true;
+                    }
+                },
+
+                close() {
+                    this._clearRetryTimer();
+                    this.isOpen = false;
+                    this.pdfUrl = '';
+                    this.iframeSrc = '';
+                    this.loading = true;
+                    this.showRetry = false;
+                    document.body.style.overflow = '';
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>

@@ -2,86 +2,91 @@
 
 ## Root Level
 
-- `app.py`: Application factory and entry point
-- `routes.py`: Blueprint with all route handlers
-- `models.py`: SQLAlchemy database models
-- `forms.py`: WTForms definitions
-- `config.py`: Configuration management and environment variables
-- `constants.py`: Chapter/Mishna constants
-- `logger.py`: Logging setup
-- `requirements.txt`: Python dependencies
-- `gunicorn.conf.py`: Gunicorn production server configuration
-- `Dockerfile`: Container configuration
+- `template.yaml`: AWS SAM infrastructure template (all AWS resources)
+- `samconfig.toml`: SAM deployment configuration (gitignored — contains secrets)
+- `README.md`: Project documentation
 
 ## Directory Organization
 
-### `/api`
-External service integrations:
-- `aws_search_client.py`: AWS semantic search API client
-- `supabase_client.py`: Supabase authentication client
+### `/functions`
+Lambda function handlers (one directory per function):
 
-### `/utils`
-Utility modules:
-- `semantic_search.py`: [DISABLED] Local AlephBERT semantic search (preserved for reference)
-- `rate_limiter.py`: Request rate limiting with sliding window
-- `text_utils.py`: Hebrew text normalization (niqqud removal)
+- `search/search_handler.py`: Public search endpoints — chapter/mishna, smart search, tag search, navigate by number, get all tags
+- `semantic_search/semantic_search_handler.py`: Bedrock Knowledge Base vector search + Nova Pro LLM reranking (invoked directly by search handler, not via HTTP)
+- `admin/admin_handler.py`: Authenticated admin CRUD — mishna create/update, tag CRUD, category creation, get all tags
+- `settings/settings_handler.py`: Site settings — get pirush_enabled, toggle pirush
+- `auth/auth_handler.py`: Cognito authentication — login (USER_PASSWORD_AUTH), logout
 
-### `/templates`
-Jinja2 HTML templates:
-- `index.html`: Main search interface
-- `manage_content.html`: Admin content management
-- `manage_mishnas.html`: Mishna management
-- `manage_tags.html`: Tag management
-- `login.html`: Authentication page
-- `result.html`: Search results display
-- `error.html`: Error page
-- `color_legend.html`: Tag category legend
+### `/layers/shared`
+Shared Lambda layer (deployed to all functions except semantic_search):
 
-### `/static`
-Frontend assets:
-- `style.css`: Custom styles
-- `/pics`: Images, logos, SVG icons, Lottie animations
+- `models.py`: SQLAlchemy models (Mishna, Tag, Category, SiteSetting, mishna_tag) with plain declarative base
+- `db.py`: Database engine and session factory (module-level initialization for warm invocation reuse)
+- `text_utils.py`: Hebrew text normalization (niqqud removal, U+0591–U+05C7)
+- `constants.py`: ALLOWED_CHAPTERS mapping (6 chapters, Hebrew letter keys)
+- `response.py`: API Gateway response helpers (success_response, error_response, serialize_mishna)
+- `requirements.txt`: Layer pip dependencies (sqlalchemy, psycopg2-binary)
+
+### `/frontend`
+Static site served from S3 via CloudFront:
+
+- `index.html`: Main search page (Alpine.js searchApp, tagSelection, pirushModal components)
+- `manage.html`: Admin panel (Alpine.js adminApp — mishna/tag/category CRUD, pirush toggle)
+- `login.html`: Admin login page (Cognito authentication)
+- `error.html`: Error display page
+- `static/style.css`: Custom CSS (gold/dark theme, glassmorphism, animations)
+- `static/pics/`: Images, logos, Lottie JSON animations
 
 ### `/scripts`
-Database and utility scripts:
-- `create_db.py`: Database initialization
-- `create_db_sql`: SQL schema
-- `raw_data_split.py`: Data processing
-- `check_memory.py`: Memory monitoring
+- `deploy.sh`: Automated deployment (sam build → sam deploy → S3 sync → CloudFront invalidation)
 
 ### `/tests`
-Test suite:
-- `__init__.py`: Test package initialization
-- `test_aws_search_client.py`: AWS client tests
+- `test_response.py`: Unit tests for response helpers and Mishna serialization
+- `test_aws_search_client.py`: Unit tests for AWS search client (monolith-era, still valid)
 
 ### `/docs`
-Documentation:
-- `TESTING_CHECKLIST.md`: Testing guidelines
+- `DEPLOYMENT_GUIDE.md`: Full deployment walkthrough (Phase 1: deploy, Phase 2: custom domain)
+
+### `/monolith`
+Archived Flask/Gunicorn monolith code (preserved for reference, not deployed):
+- `app.py`, `routes.py`, `models.py`, `forms.py`, `config.py`, etc.
+- `templates/`: Jinja2 templates (ported to Alpine.js in `/frontend`)
+- `scripts/`: Old utility scripts (create_db, check_memory, etc.)
 
 ## Architecture Patterns
 
-### Blueprint Pattern
-Single `main` blueprint in `routes.py` contains all route handlers, keeping the application modular.
+### Lambda Handler Pattern
+Each handler follows: parse event → create session → route dispatch → business logic → close session. Outer try/except catches SQLAlchemy and general errors. Session created per invocation, closed in finally block.
 
-### Lazy Loading
-Expensive resources (AWS client, semantic search engine) use singleton pattern with lazy initialization to reduce memory footprint.
+### Shared Layer
+Common modules packaged as a Lambda layer. SAM builds with `BuildMethod: python3.12` to install pip dependencies alongside custom modules. All functions except semantic_search use this layer.
+
+### Lambda-to-Lambda Invoke
+Search handler invokes semantic search Lambda directly via `boto3.client('lambda').invoke()` — no HTTP API Gateway in between. Faster and simpler than HTTP-based approach.
 
 ### Database Models
-- `Mishna`: Composite ID (`chapter_mishna`), unique sequential number, dual text fields (pretty/raw)
-- `Tag`: Hierarchical with category relationship
-- `Category`: Color-coded tag categories
+- `Mishna`: Composite ID (`chapter_mishna`), unique sequential number (1-108), dual text fields (pretty/raw)
+- `Tag`: Hierarchical with category relationship, unique name
+- `Category`: Color-coded tag categories (default #F5F5F5)
+- `SiteSetting`: Key-value store for site configuration (pirush_enabled)
 - `mishna_tag`: Many-to-many association table
 
-### Form Handling
-WTForms with dynamic choices populated from database, CSRF protection enabled on all forms.
+### Frontend Components (Alpine.js)
+- `searchApp()`: Main search state, three search modes, result rendering
+- `tagSelection()`: Tag filtering, category grouping, show-more toggles
+- `pirushModal()`: PDF viewer with Google Docs iframe, loading/retry states
+- `adminApp()`: Admin panel with tabbed navigation, CRUD forms, auth management
 
 ### Error Handling
-Comprehensive logging with structured messages, graceful error pages, database rollback on failures.
+- Lambda: outer try/except with Hebrew error messages, SQLAlchemy rollback on DB errors
+- Frontend: fetch errors display Hebrew messages, 401 triggers redirect to login
+- API Gateway: Cognito authorizer returns 401 for invalid/missing JWT, rate limiter returns 429
 
 ## Code Conventions
 
 - Hebrew text normalization: Use `remove_niqqud()` for search operations
-- Logging: Use `current_app.logger` with appropriate levels (info, warning, error)
-- Database operations: Always wrap in try/except with rollback on SQLAlchemyError
-- Rate limiting: Apply `@rate_limit` decorator to public endpoints
-- Authentication: Use `@login_is_required` decorator for admin routes
+- Logging: Use Python `logging` module (`logger = logging.getLogger()`)
+- Database operations: Always wrap in try/except with session.rollback() on SQLAlchemyError
+- Rate limiting: API Gateway route-level throttling (20 req/min burst on search endpoints)
+- Authentication: API Gateway Cognito JWT authorizer on admin routes
+- Response format: `success_response(body)` and `error_response(message, code, status)`
