@@ -1,0 +1,455 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Pirkei Avot Finder - Serverless AWS Architecture
+
+# ============================================================
+# Task 6.1 - Parameters and Globals
+# ============================================================
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Description: PostgreSQL connection string (Supabase pooler URL, port 6543)
+  KnowledgeBaseId:
+    Type: String
+    Description: Bedrock Knowledge Base ID for semantic search
+    Default: 'HAFIDLHKGC'
+  PirushAttributionUrl:
+    Type: String
+    Default: 'https://www.veten.co.il'
+    Description: Attribution URL for pirush commentary
+  DomainName:
+    Type: String
+    Description: Custom domain name for CloudFront distribution
+    Default: 'pirkei-avot.online'
+  AcmCertificateArn:
+    Type: String
+    Description: ACM certificate ARN for the custom domain (must be in us-east-1)
+    Default: ''
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 256
+    Timeout: 30
+    Layers:
+      - !Ref SharedLayer
+    Environment:
+      Variables:
+        DATABASE_URL: !Ref DatabaseUrl
+        PIRUSH_ATTRIBUTION_URL: !Ref PirushAttributionUrl
+
+Conditions:
+  HasAcmCertificate: !Not [!Equals [!Ref AcmCertificateArn, '']]
+
+Resources:
+
+  # ============================================================
+  # Task 6.2 - SharedLayer and Lambda Functions
+  # ============================================================
+
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: pirkei-avot-shared
+      ContentUri: layers/shared/
+      CompatibleRuntimes:
+        - python3.12
+      Description: Shared modules - models, db, text_utils, constants, response
+    Metadata:
+      BuildMethod: python3.12
+      BuildArchitecture: x86_64
+
+  SearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-search
+      Handler: search_handler.handler
+      CodeUri: functions/search/
+      Environment:
+        Variables:
+          SEMANTIC_SEARCH_FUNCTION_NAME: !Ref SemanticSearchFunction
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !GetAtt SemanticSearchFunction.Arn
+      Events:
+        SearchMishna:
+          Type: HttpApi
+          Properties:
+            Path: /api/search/mishna
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        SearchSmart:
+          Type: HttpApi
+          Properties:
+            Path: /api/search/smart
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        SearchTags:
+          Type: HttpApi
+          Properties:
+            Path: /api/search/tags
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        SearchTagsAll:
+          Type: HttpApi
+          Properties:
+            Path: /api/search/tags/all
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        SearchNumber:
+          Type: HttpApi
+          Properties:
+            Path: /api/search/number/{n}
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+
+  SemanticSearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-semantic-search
+      Handler: semantic_search_handler.handler
+      CodeUri: functions/semantic_search/
+      MemorySize: 512
+      Timeout: 60
+      Layers: []
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:Retrieve
+              Resource: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KnowledgeBaseId}'
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: 'arn:aws:bedrock:us-east-2::foundation-model/us.amazon.nova-pro-v1:0'
+
+  AdminFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-admin
+      Handler: admin_handler.handler
+      CodeUri: functions/admin/
+      Events:
+        AdminGetMishna:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/mishna/{id}
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminPostMishna:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/mishna
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminPostTag:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/tag
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGetTags:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/tags
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminPutTag:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/tag/{id}
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminDeleteTag:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/tag/{id}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminPostCategory:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/category
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  SettingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-settings
+      Handler: settings_handler.handler
+      CodeUri: functions/settings/
+      Events:
+        SettingsGet:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        SettingsPutPirush:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-auth
+      Handler: auth_handler.handler
+      CodeUri: functions/auth/
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:InitiateAuth
+              Resource: !GetAtt CognitoUserPool.Arn
+      Events:
+        AuthLogin:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/login
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        AuthLogout:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/logout
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+
+  # ============================================================
+  # Task 6.3 - API Gateway HTTP API with Cognito Authorizer
+  # ============================================================
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub 'https://${DomainName}'
+          - 'https://dvbs9w4c73suc.cloudfront.net'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
+              audience:
+                - !Ref CognitoUserPoolClient
+      RouteSettings:
+        'GET /api/search/mishna':
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 20
+        'GET /api/search/smart':
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 20
+        'GET /api/search/tags':
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 20
+        'GET /api/search/number/{n}':
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 20
+
+  # ============================================================
+  # Task 6.4 - Cognito User Pool and Client
+  # ============================================================
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: pirkei-avot-admin-pool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: pirkei-avot-admin-client
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # ============================================================
+  # Task 6.5 - S3 Bucket, CloudFront Distribution, and Routing
+  # ============================================================
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${DomainName}-frontend'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAI
+            Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'OAI for ${DomainName} frontend bucket'
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Comment: !Sub 'Pirkei Avot Finder - ${DomainName}'
+        Aliases:
+          !If
+            - HasAcmCertificate
+            - - !Ref DomainName
+            - !Ref 'AWS::NoValue'
+        ViewerCertificate:
+          !If
+            - HasAcmCertificate
+            - AcmCertificateArn: !Ref AcmCertificateArn
+              SslSupportMethod: sni-only
+              MinimumProtocolVersion: TLSv1.2_2021
+            - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOAI}'
+          - Id: ApiOrigin
+            DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              HTTPSPort: 443
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            Compress: true
+
+# ============================================================
+# Outputs
+# ============================================================
+
+Outputs:
+  HttpApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  CloudFrontUrl:
+    Description: CloudFront distribution URL
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID (for cache invalidation)
+    Value: !Ref CloudFrontDistribution
+  FrontendBucketName:
+    Description: S3 bucket name for frontend deployment
+    Value: !Ref FrontendBucket
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient

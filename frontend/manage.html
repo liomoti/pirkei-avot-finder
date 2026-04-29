@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פאנל ניהול - פרקי אבות</title>
+    <link rel="icon" type="image/png" href="/static/pics/pirkei-avot-online-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            direction: rtl;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background:
+                linear-gradient(135deg,
+                    rgba(0, 29, 41, 0.8) 0%,
+                    rgba(25, 25, 112, 0.6) 30%,
+                    rgba(218, 165, 32, 0.4) 50%,
+                    rgba(25, 25, 112, 0.6) 70%,
+                    rgba(0, 29, 41, 0.8) 100%),
+                url('/static/pics/background_book.png') center center/cover no-repeat fixed !important;
+            min-height: 100vh !important;
+            position: relative !important;
+            overflow-x: hidden !important;
+            color: #F5F5DC !important;
+            background-attachment: fixed !important;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.8)); }
+        }
+        .logo-animate {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+        }
+        .logo-animate:hover {
+            transform: scale(1.1);
+        }
+
+        /* ===== TAB NAVIGATION ===== */
+        .tab-button {
+            position: relative;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #F5F5DC;
+            background: rgba(30, 58, 95, 0.6);
+            border: 2px solid rgba(218, 165, 32, 0.3);
+            border-radius: 16px 16px 0 0;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        .tab-button:hover {
+            background: rgba(30, 58, 95, 0.8);
+            border-color: rgba(218, 165, 32, 0.5);
+            transform: translateY(-2px);
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, rgba(218, 165, 32, 0.9) 0%, rgba(184, 134, 11, 0.9) 100%);
+            color: #2D2D2D;
+            border-color: #DAA520;
+            box-shadow: 0 4px 12px rgba(218, 165, 32, 0.4);
+        }
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #DAA520, #FFD700, #B8860B);
+        }
+
+        /* ===== TAB CONTENT ===== */
+        .tab-content {
+            background: rgba(255, 255, 255, 0.4) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow:
+                0 20px 40px rgba(0, 29, 41, 0.15),
+                0 8px 16px rgba(0, 29, 41, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            border-radius: 0 24px 24px 24px !important;
+            padding: 2rem !important;
+            min-height: 400px;
+        }
+
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle-switch { position: relative; display: inline-block; width: 52px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: 0.4s; border-radius: 28px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px;
+            background-color: white; transition: 0.4s; border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider { background-color: #DAA520; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .tab-button { padding: 0.75rem 1rem; font-size: 1rem; border-radius: 16px !important; margin-bottom: 0.5rem; }
+            .tab-content { padding: 1rem !important; border-radius: 0 16px 16px 16px !important; }
+        }
+        @media (max-width: 768px) {
+            input, select, textarea { font-size: 16px !important; min-height: 44px !important; }
+            button { min-height: 44px !important; }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 md:p-6" x-data="adminApp()" x-init="init()">
+
+    <!-- Navigation Buttons -->
+    <div class="flex justify-end space-x-4 mb-6 md:mb-8">
+        <a href="/index.html" class="main-search-btn py-2 px-4 rounded-xl font-bold transition-all duration-200 ml-4">
+            חזור לדף הראשי
+        </a>
+        <button type="button" @click="logout()"
+            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-2 px-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+            התנתק
+        </button>
+    </div>
+
+    <!-- Header with Logo -->
+    <header class="text-center mb-6 md:mb-8">
+        <a href="/index.html" class="inline-block">
+            <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
+                class="h-24 md:h-32 lg:h-40 w-auto object-contain mx-auto logo-animate transition-all duration-500 mb-2">
+        </a>
+        <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold gold-text mb-4 md:mb-6">
+            פאנל ניהול
+        </h1>
+    </header>
+
+    <!-- Status Message -->
+    <template x-if="message">
+        <div class="container mx-auto max-w-7xl px-4 mb-4">
+            <div x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 :class="messageType === 'error' ? 'bg-red-50 border-2 border-red-300' : 'bg-blue-50 border-2 border-blue-300'"
+                 class="rounded-xl p-4 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 ml-3" :class="messageType === 'error' ? 'text-red-600' : 'text-blue-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p :class="messageType === 'error' ? 'text-red-800' : 'text-blue-800'" class="font-semibold" x-text="message"></p>
+                    </div>
+                    <button @click="message = ''" :class="messageType === 'error' ? 'text-red-600 hover:text-red-800' : 'text-blue-600 hover:text-blue-800'" class="font-bold text-xl">×</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Main Container -->
+    <div class="container mx-auto max-w-7xl px-4">
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap gap-2 mb-0">
+            <button @click="activeTab = 'mishnas'"
+                    :class="{ 'active': activeTab === 'mishnas' }"
+                    class="tab-button flex-1 md:flex-none">
+                <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                ניהול משניות
+            </button>
+            <button @click="activeTab = 'tags'"
+                    :class="{ 'active': activeTab === 'tags' }"
+                    class="tab-button flex-1 md:flex-none">
+                <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                ניהול נושאים
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+
+            <!-- ===== MISHNA MANAGEMENT TAB ===== -->
+            <div x-show="activeTab === 'mishnas'"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+
+                <!-- Section Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+                        <svg class="w-8 h-8 inline-block ml-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        ניהול משניות
+                    </h2>
+                    <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                </div>
+
+                <!-- Global Pirush Toggle -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            <label class="text-lg font-bold cursor-pointer" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" x-model="pirushEnabled" @change="togglePirush()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Search Mishna Card -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
+                        <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
+                            <svg class="w-6 h-6 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חיפוש משנה
+                        </h3>
+                        <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">פרק</label>
+                            <select x-model="selectedChapter" @change="updateMishnaOptions()"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200">
+                                <template x-for="ch in chapterKeys" :key="ch">
+                                    <option :value="ch" x-text="ch"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">משנה</label>
+                            <select x-model="selectedMishna"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200">
+                                <template x-for="m in mishnaOptions" :key="m">
+                                    <option :value="m" x-text="m"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="button" @click="searchMishna()" class="search-button-sand-gold inline-flex items-center">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חפש משנה
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Edit Mishna Content Card -->
+                <div x-show="mishnaLoaded"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
+
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
+                        <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
+                            <svg class="w-6 h-6 ml-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            עריכת תוכן המשנה
+                        </h3>
+                        <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    </div>
+
+                    <!-- Textarea for Mishna content -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold mb-2" style="color: #1F2937;">טקסט המשנה</label>
+                        <textarea x-model="mishnaText" rows="6"
+                            class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            style="line-height: 1.8; font-size: 1.05rem;"></textarea>
+                    </div>
+
+                    <!-- Pirush URL Input -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold mb-2" style="color: #1F2937;">קישור לפירוש (PDF)</label>
+                        <input type="text" x-model="pirushUrl" placeholder="https://example.com/pirush.pdf"
+                            @input="validatePirushUrl()"
+                            class="w-full border-2 border-gray-200 p-4 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                        <div x-show="pirushUrlWarning" style="color: #DC2626;" class="text-sm mt-2 font-semibold">
+                            ⚠️ הקישור צריך להסתיים ב-.pdf
+                        </div>
+                    </div>
+
+                    <!-- Tag Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold mb-4 flex items-center" style="color: #1F2937;">
+                            <svg class="w-5 h-5 ml-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            בחירת נושאים
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <template x-for="category in categories" :key="category.id">
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <h4 class="font-bold mb-3 text-gray-800" x-text="category.name"></h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="tag in category.tags" :key="tag.id">
+                                            <button type="button"
+                                                class="px-3 py-2 rounded-lg text-black font-medium transition-all duration-200 hover:shadow-md"
+                                                :style="'background-color: ' + category.color + '; border: 2px solid ' + category.color + ';'"
+                                                :class="{ 'opacity-100 ring-2 ring-offset-2': selectedTags.includes(tag.id), 'opacity-60': !selectedTags.includes(tag.id) }"
+                                                @click="toggleMishnaTag(tag.id)"
+                                                x-text="tag.name">
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Uncategorized Tags -->
+                            <template x-if="uncategorizedTags.length > 0">
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <h4 class="font-bold mb-3 text-gray-800">כללי</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="tag in uncategorizedTags" :key="tag.id">
+                                            <button type="button"
+                                                class="px-3 py-2 rounded-lg bg-gray-300 text-black font-medium transition-all duration-200 hover:shadow-md border-2 border-gray-400"
+                                                :class="{ 'opacity-100 ring-2 ring-offset-2 ring-gray-500': selectedTags.includes(tag.id), 'opacity-60': !selectedTags.includes(tag.id) }"
+                                                @click="toggleMishnaTag(tag.id)"
+                                                x-text="tag.name">
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="button" @click="submitMishna()"
+                            class="main-search-btn px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span x-text="mishnaExists ? 'עדכן משנה' : 'הוסף משנה'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TAG MANAGEMENT TAB ===== -->
+            <div x-show="activeTab === 'tags'"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+
+                <!-- Section Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+                        <svg class="w-8 h-8 inline-block ml-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        </svg>
+                        ניהול נושאים
+                    </h2>
+                    <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                </div>
+
+                <!-- View All Tags -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300"></div>
+                        <h3 class="text-xl md:text-2xl font-bold mx-6 flex items-center" style="color: #1F2937;">
+                            <svg class="w-6 h-6 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            צפייה בנושאים לפי קטגוריות
+                        </h3>
+                        <div class="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <template x-for="category in categories" :key="category.id">
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <h4 class="font-bold mb-3 text-gray-800 flex items-center">
+                                    <span class="w-3 h-3 rounded-full ml-2" :style="'background-color: ' + category.color + ';'"></span>
+                                    <span x-text="category.name"></span>
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="tag in category.tags" :key="tag.id">
+                                        <span class="px-3 py-1 rounded-lg text-black text-sm font-medium"
+                                              :style="'background-color: ' + category.color + '; border: 1px solid ' + category.color + ';'"
+                                              x-text="tag.name"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Uncategorized Tags -->
+                        <template x-if="uncategorizedTags.length > 0">
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <h4 class="font-bold mb-3 text-gray-800 flex items-center">
+                                    <span class="w-3 h-3 rounded-full bg-gray-400 ml-2"></span>
+                                    כללי
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="tag in uncategorizedTags" :key="tag.id">
+                                        <span class="px-3 py-1 rounded-lg bg-gray-300 text-black text-sm font-medium border border-gray-400"
+                                              x-text="tag.name"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Add New Tag - Collapsible -->
+                <div class="mb-6" x-data="{ showAddTag: false }">
+                    <div @click="showAddTag = !showAddTag"
+                         class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <h3 class="text-lg font-bold" style="color: #1F2937;">הוספת נושא חדש</h3>
+                        </div>
+                        <svg :class="{'rotate-180': showAddTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="showAddTag"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">שם הנושא</label>
+                                <input type="text" x-model="newTagName" placeholder="הכנס שם נושא חדש..."
+                                    class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">קטגוריה</label>
+                                <select x-model="newTagCategoryId"
+                                    class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200">
+                                    <option value="">כללי</option>
+                                    <template x-for="cat in categories" :key="cat.id">
+                                        <option :value="cat.id" x-text="cat.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" @click="addTag()"
+                                class="main-search-btn px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                הוסף נושא
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add New Category - Collapsible -->
+                <div class="mb-6" x-data="{ showAddCategory: false }">
+                    <div @click="showAddCategory = !showAddCategory"
+                         class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            <h3 class="text-lg font-bold" style="color: #1F2937;">הוספת קטגוריה חדשה</h3>
+                        </div>
+                        <svg :class="{'rotate-180': showAddCategory}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="showAddCategory"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">שם הקטגוריה</label>
+                                <input type="text" x-model="newCategoryName" placeholder="הכנס שם קטגוריה חדשה..."
+                                    class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">צבע הקטגוריה</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" x-model="newCategoryColor" id="new_category_color"
+                                        class="w-16 h-10 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition-all duration-200">
+                                    <span class="text-sm text-gray-600 flex-1">בחר צבע מועדף</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Color Presets -->
+                        <div class="mb-6 bg-gray-50 p-4 rounded-xl">
+                            <label class="block text-sm font-bold text-gray-700 mb-3 text-center">צבעים מומלצים</label>
+                            <div class="flex justify-center gap-2 flex-wrap">
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #A5D6A7;" @click="newCategoryColor = '#A5D6A7'" title="ירוק בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #90CAF9;" @click="newCategoryColor = '#90CAF9'" title="כחול בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #FFD180;" @click="newCategoryColor = '#FFD180'" title="כתום בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #E1BEE7;" @click="newCategoryColor = '#E1BEE7'" title="סגול בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #FFCDD2;" @click="newCategoryColor = '#FFCDD2'" title="ורוד בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #C8E6C9;" @click="newCategoryColor = '#C8E6C9'" title="ירוק נוסף"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #FFF9C4;" @click="newCategoryColor = '#FFF9C4'" title="צהוב בהיר"></button>
+                                <button type="button" class="w-10 h-10 rounded-lg border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        style="background-color: #F5F5F5;" @click="newCategoryColor = '#F5F5F5'" title="אפור - כללי"></button>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" @click="addCategory()"
+                                class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                הוסף קטגוריה
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Existing Tag - Collapsible -->
+                <div class="mb-6" x-data="{ showEditTag: false, showEditConfirm: false }">
+                    <div @click="showEditTag = !showEditTag"
+                         class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            <h3 class="text-lg font-bold" style="color: #1F2937;">עריכת נושא קיים</h3>
+                        </div>
+                        <svg :class="{'rotate-180': showEditTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="showEditTag"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">בחר נושא לעריכה</label>
+                                <select x-model="editTagId" @change="onEditTagSelect()"
+                                    class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                                    <template x-for="category in categories" :key="'edit-cat-' + category.id">
+                                        <optgroup :label="category.name">
+                                            <template x-for="tag in category.tags" :key="'edit-tag-' + tag.id">
+                                                <option :value="tag.id" x-text="tag.name"></option>
+                                            </template>
+                                        </optgroup>
+                                    </template>
+                                    <template x-if="uncategorizedTags.length > 0">
+                                        <optgroup label="כללי">
+                                            <template x-for="tag in uncategorizedTags" :key="'edit-unc-' + tag.id">
+                                                <option :value="tag.id" x-text="tag.name"></option>
+                                            </template>
+                                        </optgroup>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2" style="color: #1F2937;">שם חדש לנושא</label>
+                                <input type="text" x-model="editTagNewName" placeholder="הכנס שם חדש..."
+                                    class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">קטגוריה חדשה</label>
+                            <select x-model="editTagNewCategoryId"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                                <option value="0">כללי</option>
+                                <template x-for="cat in categories" :key="'edit-newcat-' + cat.id">
+                                    <option :value="cat.id" x-text="cat.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" @click="showEditConfirm = true"
+                                class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                עדכן נושא
+                            </button>
+                            <!-- Edit Confirmation Modal -->
+                            <div x-show="showEditConfirm"
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                                 style="z-index: 10000;" @click.self="showEditConfirm = false">
+                                <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border border-gray-100" @click.stop>
+                                    <div class="text-center mb-6">
+                                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-800 mb-2">אישור עריכה</p>
+                                        <p class="text-gray-600">האם אתה בטוח שברצונך לעדכן את הנושא?</p>
+                                    </div>
+                                    <div class="flex justify-center gap-4">
+                                        <button type="button" @click="editTag(); showEditConfirm = false"
+                                            class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                            אישור
+                                        </button>
+                                        <button type="button" @click="showEditConfirm = false"
+                                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                            ביטול
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Tag - Collapsible -->
+                <div class="mb-6" x-data="{ showDeleteTag: false, showDeleteConfirm: false }">
+                    <div @click="showDeleteTag = !showDeleteTag"
+                         class="bg-white bg-opacity-90 rounded-xl p-4 shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <h3 class="text-lg font-bold" style="color: #1F2937;">מחיקת נושא</h3>
+                        </div>
+                        <svg :class="{'rotate-180': showDeleteTag}" class="w-5 h-5 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="showDeleteTag"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform -translate-y-2"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white bg-opacity-95 rounded-b-2xl shadow-lg p-6 md:p-8 mt-2 border-x border-b border-gray-200">
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold mb-3" style="color: #1F2937;">בחר נושא למחיקה</label>
+                            <select x-model="deleteTagId"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200">
+                                <template x-for="category in categories" :key="'del-cat-' + category.id">
+                                    <optgroup :label="category.name">
+                                        <template x-for="tag in category.tags" :key="'del-tag-' + tag.id">
+                                            <option :value="tag.id" x-text="tag.name"></option>
+                                        </template>
+                                    </optgroup>
+                                </template>
+                                <template x-if="uncategorizedTags.length > 0">
+                                    <optgroup label="כללי">
+                                        <template x-for="tag in uncategorizedTags" :key="'del-unc-' + tag.id">
+                                            <option :value="tag.id" x-text="tag.name"></option>
+                                        </template>
+                                    </optgroup>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" @click="showDeleteConfirm = true"
+                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                מחק נושא
+                            </button>
+                            <!-- Delete Confirmation Modal -->
+                            <div x-show="showDeleteConfirm"
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                                 style="z-index: 10000;" @click.self="showDeleteConfirm = false">
+                                <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border border-gray-100" @click.stop>
+                                    <div class="text-center mb-6">
+                                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-800 mb-2">אישור מחיקה</p>
+                                        <p class="text-gray-600">האם אתה בטוח שברצונך למחוק את הנושא? פעולה זו אינה ניתנת לביטול.</p>
+                                    </div>
+                                    <div class="flex justify-center gap-4">
+                                        <button type="button" @click="deleteTag(); showDeleteConfirm = false"
+                                            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                            מחק
+                                        </button>
+                                        <button type="button" @click="showDeleteConfirm = false"
+                                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                            ביטול
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- End Tag Management Tab -->
+
+        </div>
+        <!-- End Tab Content -->
+    </div>
+    <!-- End Main Container -->
+
+    <script>
+        // ===== AUTH HELPERS =====
+        function getAuthToken() {
+            return localStorage.getItem('auth_token');
+        }
+
+        async function apiAuthGet(path) {
+            const token = getAuthToken();
+            if (!token) { window.location.href = '/login.html'; return; }
+            const response = await fetch('/api' + path, {
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            });
+            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            return response.json();
+        }
+
+        async function apiAuthPost(path, body) {
+            const token = getAuthToken();
+            if (!token) { window.location.href = '/login.html'; return; }
+            const response = await fetch('/api' + path, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(body)
+            });
+            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            return response;
+        }
+
+        async function apiAuthPut(path, body) {
+            const token = getAuthToken();
+            if (!token) { window.location.href = '/login.html'; return; }
+            const response = await fetch('/api' + path, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(body)
+            });
+            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            return response;
+        }
+
+        async function apiAuthDelete(path) {
+            const token = getAuthToken();
+            if (!token) { window.location.href = '/login.html'; return; }
+            const response = await fetch('/api' + path, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            });
+            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            return response;
+        }
+
+        // ===== ALLOWED CHAPTERS =====
+        const ALLOWED_CHAPTERS = {
+            'א': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח'],
+            'ב': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז'],
+            'ג': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח'],
+            'ד': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט', 'כ', 'כא', 'כב'],
+            'ה': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט', 'כ', 'כא', 'כב', 'כג'],
+            'ו': ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'יא'],
+        };
+
+        // ===== ADMIN APP COMPONENT =====
+        function adminApp() {
+            return {
+                activeTab: 'mishnas',
+                message: '',
+                messageType: 'info',
+
+                // Mishna management state
+                selectedChapter: 'א',
+                selectedMishna: 'א',
+                chapterKeys: Object.keys(ALLOWED_CHAPTERS),
+                mishnaOptions: ALLOWED_CHAPTERS['א'],
+                mishnaLoaded: false,
+                mishnaExists: false,
+                mishnaText: '',
+                pirushUrl: '',
+                pirushUrlWarning: false,
+                selectedTags: [],
+                pirushEnabled: false,
+
+                // Tag/Category data
+                categories: [],
+                uncategorizedTags: [],
+                allTags: [],
+
+                // Add tag form
+                newTagName: '',
+                newTagCategoryId: '',
+
+                // Add category form
+                newCategoryName: '',
+                newCategoryColor: '#F5F5F5',
+
+                // Edit tag form
+                editTagId: '',
+                editTagNewName: '',
+                editTagNewCategoryId: '0',
+
+                // Delete tag form
+                deleteTagId: '',
+
+                async init() {
+                    // Check auth
+                    if (!getAuthToken()) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    await this.loadSettings();
+                    await this.loadTagsAndCategories();
+                },
+
+                updateMishnaOptions() {
+                    this.mishnaOptions = ALLOWED_CHAPTERS[this.selectedChapter] || [];
+                    this.selectedMishna = this.mishnaOptions[0] || '';
+                },
+
+                // ===== SETTINGS =====
+                async loadSettings() {
+                    try {
+                        const data = await fetch('/api/settings').then(r => r.json());
+                        if (data) {
+                            this.pirushEnabled = data.pirush_enabled || false;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load settings:', e);
+                    }
+                },
+
+                async togglePirush() {
+                    try {
+                        const resp = await apiAuthPut('/settings/pirush', { enabled: this.pirushEnabled });
+                        if (resp && resp.ok) {
+                            this.showMessage('הגדרת הפירוש עודכנה בהצלחה');
+                        } else {
+                            this.showMessage('שגיאה בעדכון הגדרת הפירוש', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                // ===== TAGS & CATEGORIES LOADING =====
+                async loadTagsAndCategories() {
+                    try {
+                        const data = await apiAuthGet('/admin/tags');
+                        if (data) {
+                            this.categories = data.categories || [];
+                            this.uncategorizedTags = data.uncategorized_tags || [];
+                            this.allTags = [];
+                            this.categories.forEach(cat => {
+                                cat.tags.forEach(tag => this.allTags.push(tag));
+                            });
+                            this.uncategorizedTags.forEach(tag => this.allTags.push(tag));
+
+                            // Set default edit/delete selections
+                            if (this.allTags.length > 0) {
+                                if (!this.editTagId) {
+                                    this.editTagId = String(this.allTags[0].id);
+                                    this.onEditTagSelect();
+                                }
+                                if (!this.deleteTagId) {
+                                    this.deleteTagId = String(this.allTags[0].id);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load tags:', e);
+                    }
+                },
+
+                // ===== MISHNA CRUD =====
+                async searchMishna() {
+                    if (!this.selectedChapter || !this.selectedMishna) {
+                        this.showMessage('אנא מלא את כל השדות הנדרשים: פרק ומשנה.', 'error');
+                        return;
+                    }
+                    try {
+                        const id = this.selectedChapter + '_' + this.selectedMishna;
+                        const data = await apiAuthGet('/admin/mishna/' + encodeURIComponent(id));
+                        if (data && data.id) {
+                            this.mishnaExists = true;
+                            this.mishnaText = data.text_pretty || '';
+                            this.pirushUrl = data.pirush_url || '';
+                            this.selectedTags = (data.tags || []).map(t => t.id);
+                        } else {
+                            this.mishnaExists = false;
+                            this.mishnaText = '';
+                            this.pirushUrl = '';
+                            this.selectedTags = [];
+                        }
+                        this.mishnaLoaded = true;
+                    } catch (e) {
+                        // 404 means mishna doesn't exist yet — that's fine for creation
+                        this.mishnaExists = false;
+                        this.mishnaText = '';
+                        this.pirushUrl = '';
+                        this.selectedTags = [];
+                        this.mishnaLoaded = true;
+                    }
+                },
+
+                async submitMishna() {
+                    if (!this.mishnaText.trim()) {
+                        this.showMessage('אנא מלא את כל השדות הנדרשים: פרק, משנה, וטקסט.', 'error');
+                        return;
+                    }
+                    try {
+                        const body = {
+                            chapter: this.selectedChapter,
+                            mishna: this.selectedMishna,
+                            text_pretty: this.mishnaText,
+                            tags: this.selectedTags,
+                            pirush_url: this.pirushUrl || null
+                        };
+                        const resp = await apiAuthPost('/admin/mishna', body);
+                        if (resp && resp.ok) {
+                            const result = await resp.json();
+                            this.mishnaExists = true;
+                            this.showMessage(result.message || 'המשנה נשמרה בהצלחה');
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בשמירת המשנה', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                toggleMishnaTag(tagId) {
+                    const idx = this.selectedTags.indexOf(tagId);
+                    if (idx >= 0) {
+                        this.selectedTags.splice(idx, 1);
+                    } else {
+                        this.selectedTags.push(tagId);
+                    }
+                },
+
+                validatePirushUrl() {
+                    const val = this.pirushUrl.trim();
+                    this.pirushUrlWarning = val && !val.toLowerCase().endsWith('.pdf');
+                },
+
+                // ===== TAG CRUD =====
+                async addTag() {
+                    if (!this.newTagName.trim()) {
+                        this.showMessage('אנא מלא את שם הנושא.', 'error');
+                        return;
+                    }
+                    try {
+                        const body = { name: this.newTagName.trim() };
+                        if (this.newTagCategoryId) {
+                            body.category_id = parseInt(this.newTagCategoryId);
+                        }
+                        const resp = await apiAuthPost('/admin/tag', body);
+                        if (resp && resp.ok) {
+                            this.showMessage('הנושא נוסף בהצלחה');
+                            this.newTagName = '';
+                            this.newTagCategoryId = '';
+                            await this.loadTagsAndCategories();
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בהוספת הנושא', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                onEditTagSelect() {
+                    const tag = this.allTags.find(t => String(t.id) === String(this.editTagId));
+                    if (tag) {
+                        this.editTagNewName = tag.name;
+                        this.editTagNewCategoryId = tag.category_id ? String(tag.category_id) : '0';
+                    }
+                },
+
+                async editTag() {
+                    if (!this.editTagNewName.trim()) {
+                        this.showMessage('אנא מלא את השם החדש לנושא.', 'error');
+                        return;
+                    }
+                    try {
+                        const body = { name: this.editTagNewName.trim() };
+                        const catId = parseInt(this.editTagNewCategoryId);
+                        if (catId > 0) {
+                            body.category_id = catId;
+                        } else {
+                            body.category_id = null;
+                        }
+                        const resp = await apiAuthPut('/admin/tag/' + this.editTagId, body);
+                        if (resp && resp.ok) {
+                            this.showMessage('הנושא עודכן בהצלחה');
+                            await this.loadTagsAndCategories();
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בעדכון הנושא', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                async deleteTag() {
+                    if (!this.deleteTagId) {
+                        this.showMessage('אנא בחר נושא למחיקה.', 'error');
+                        return;
+                    }
+                    try {
+                        const resp = await apiAuthDelete('/admin/tag/' + this.deleteTagId);
+                        if (resp && resp.ok) {
+                            this.showMessage('הנושא נמחק בהצלחה');
+                            this.deleteTagId = '';
+                            await this.loadTagsAndCategories();
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה במחיקת הנושא', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                // ===== CATEGORY CRUD =====
+                async addCategory() {
+                    if (!this.newCategoryName.trim()) {
+                        this.showMessage('אנא מלא את שם הקטגוריה.', 'error');
+                        return;
+                    }
+                    if (this.newCategoryColor && !/^#[0-9A-Fa-f]{6}$/.test(this.newCategoryColor)) {
+                        this.showMessage('אנא בחר צבע תקין בפורמט #RRGGBB.', 'error');
+                        return;
+                    }
+                    try {
+                        const body = {
+                            name: this.newCategoryName.trim(),
+                            color: this.newCategoryColor || '#F5F5F5'
+                        };
+                        const resp = await apiAuthPost('/admin/category', body);
+                        if (resp && resp.ok) {
+                            this.showMessage('הקטגוריה נוספה בהצלחה');
+                            this.newCategoryName = '';
+                            this.newCategoryColor = '#F5F5F5';
+                            await this.loadTagsAndCategories();
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בהוספת הקטגוריה', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                // ===== LOGOUT =====
+                logout() {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/index.html';
+                },
+
+                // ===== HELPERS =====
+                showMessage(msg, type) {
+                    this.message = msg;
+                    this.messageType = type || 'info';
+                    // Auto-dismiss after 5 seconds
+                    setTimeout(() => { this.message = ''; }, 5000);
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>
