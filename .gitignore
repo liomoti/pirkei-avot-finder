@@ -1,6 +1,3 @@
-# Old repo
-monolith/
-
 # SAM deployment config (contains secrets)
 samconfig.toml
 
