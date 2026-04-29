@@ -16,140 +16,142 @@
 - ממשק משתמש מעוצב ואסתטי בעברית
 - תיוג משניות לפי קטגוריות נושאיות
 - מערכת ניהול תוכן למנהלים (הוספה ועריכה של משניות)
-- אפשרות לשיתוף תוצאות חיפוש
+- צפייה בפירוש למשניות (Google Docs Viewer)
 - חוויית משתמש מהירה ונוחה
 
 האתר מיועד לסטודנטים, מורים, חוקרים וכל אדם המעוניין ללמוד ולחפש במסכת פרקי אבות בצורה יעילה ומתקדמת.
+
+🔗 **[pirkei-avot.online](https://pirkei-avot.online)**
 
 ---
 
 ## Technical Overview (For Developers)
 
-### Architecture & Stack
+### Architecture
 
-**Pirkei Avot Finder** is a production-grade Flask web application for semantic search and content management of Mishnayot from Pirkei Avot (Ethics of the Fathers).
+Pirkei Avot Finder is a fully serverless application running on AWS, built with AWS SAM (Serverless Application Model).
 
-#### Core Technologies:
-- **Backend Framework**: Flask 3.1.0 with Blueprint-based modular architecture
-- **Database**: PostgreSQL with pgvector extension for vector similarity search
-- **ORM**: SQLAlchemy 2.0.35 with Flask-SQLAlchemy integration
-- **Authentication**: Supabase Auth for secure admin access
-- **Forms & Validation**: WTForms with Flask-WTF and CSRF protection
-- **Production Server**: Gunicorn with optimized worker configuration
-- **Containerization**: Docker with multi-stage builds
-- **Deployment**: Render (cloud platform for web applications)
+```
+User → CloudFront → S3 (static frontend)
+                  → API Gateway → Lambda functions → Supabase PostgreSQL
+                                                   → Bedrock Knowledge Base
+```
 
-### Key Features
+### Tech Stack
 
-#### 1. **Multi-Modal Search System**
-- **Chapter/Mishna Navigation**: Direct access to specific Mishnayot by ID
-- **Exact Text Search**: SQL-based full-text search with niqqud normalization
-- **Semantic AI Search**: AWS API Gateway integration with external ML service for context-aware Hebrew text search
-- **Tag-Based Search**: Multi-tag filtering with categorized taxonomy
-- **Mishna Number Navigation**: Direct jump to specific Mishna by sequential number (1-108)
+| Layer | Technology |
+|---|---|
+| Frontend | Alpine.js, Tailwind CSS, Lottie.js — static HTML served from S3 |
+| CDN | CloudFront with custom domain and ACM certificate |
+| API | API Gateway HTTP API with Cognito JWT authorizer |
+| Compute | AWS Lambda (Python 3.12) — 5 functions |
+| Database | PostgreSQL on Supabase (via pgbouncer pooler, port 6543) |
+| Auth | Amazon Cognito User Pool (email/password) |
+| AI Search | Bedrock Knowledge Base + Amazon Nova Pro (LLM reranking) |
+| IaC | AWS SAM (template.yaml) |
 
-#### 2. **Semantic Search Implementation**
-The application integrates with an external AWS-hosted semantic search service:
-- **Client**: `AWSSemanticSearchClient` handles authentication, request formatting, and response parsing
-- **API Integration**: RESTful API with API key authentication
-- **Result Processing**: Maps external API results back to local database records
-- **Relevance Scoring**: Attaches similarity scores (0-100%) to search results
+### Lambda Functions
 
-> **Note**: Local semantic search using AlephBERT (`sentence-transformers`) was disabled to reduce memory footprint. The code is preserved in `utils/semantic_search.py` for future reference.
+| Function | Routes | Auth |
+|---|---|---|
+| `pirkei-avot-search` | `GET /api/search/mishna`, `/smart`, `/tags`, `/tags/all`, `/number/{n}` | Public |
+| `pirkei-avot-semantic-search` | Invoked directly by search handler (no HTTP route) | Internal |
+| `pirkei-avot-admin` | `GET/POST /api/admin/mishna`, `GET/POST/PUT/DELETE /api/admin/tag*`, `POST /api/admin/category` | Cognito JWT |
+| `pirkei-avot-settings` | `GET /api/settings`, `PUT /api/settings/pirush` | GET: Public, PUT: JWT |
+| `pirkei-avot-auth` | `POST /api/auth/login`, `POST /api/auth/logout` | Public |
 
-#### 3. **Database Schema**
-- **Mishna Model**: 
-  - Composite ID (`chapter_mishna`)
-  - Unique sequential number (1-108)
-  - Dual text fields: `text_pretty` (with niqqud) and `text_raw` (normalized)
-  - Many-to-many relationship with tags
-  - Optional vector embedding field for semantic search (when enabled)
-  
-- **Tag Model**: Hierarchical tag system with categories
-- **Category Model**: Color-coded tag categories for visual organization
+### Semantic Search
 
-#### 4. **Admin Content Management**
-Supabase-authenticated admin interface for:
-- Creating and editing Mishnayot
-- Managing tag taxonomy and categories
-- Associating tags with content
-- Bulk operations on content
+The semantic search uses a two-stage pipeline:
 
-#### 5. **Performance Optimizations**
-- **Rate Limiting**: Sliding window rate limiter (20 requests/minute)
-- **Connection Pooling**: Optimized for low-memory environments (pool size: 2, max overflow: 3)
-- **Lazy Loading**: Singleton pattern for expensive resources (AWS client)
-- **Memory Management**: Reduced dependencies by disabling local ML models
+1. **Vector retrieval** — Bedrock Knowledge Base returns top 20 candidates from indexed Pirkei Avot documents
+2. **LLM reranking** — Amazon Nova Pro (via Converse API) filters candidates by relevance to the Hebrew query
 
-#### 6. **Frontend**
-- **Framework**: Alpine.js for reactive UI components
-- **Styling**: Tailwind CSS with custom mystical Hebrew theme
-- **Animations**: Lottie.js for loading animations
-- **UX Features**: 
-  - Dynamic form updates (chapter → mishna dropdown)
-  - Multi-select tag interface
-  - Color-coded tag categories
-  - Responsive design for mobile/desktop
+The search handler invokes the semantic search Lambda directly (Lambda-to-Lambda via boto3) — no HTTP API Gateway in between.
+
+### Database Schema
+
+- **Mishna**: Composite ID (`chapter_mishna`), unique sequential number (1-108), dual text fields (`text_pretty` with niqqud, `text_raw` normalized)
+- **Tag**: Hierarchical with category relationship, unique name
+- **Category**: Color-coded tag categories (default `#F5F5F5`)
+- **SiteSetting**: Key-value store (`pirush_enabled`)
+- **mishna_tag**: Many-to-many association table
+
+The database is hosted on Supabase PostgreSQL. Lambda connects via the pgbouncer connection pooler (port 6543) with `pool_size=1, max_overflow=0` per container.
 
 ### Project Structure
+
 ```
-pirkei-avot-finder/
-├── api/
-│   ├── aws_search_client.py      # AWS semantic search integration
-│   └── supabase_client.py        # Supabase authentication
-├── utils/
-│   ├── semantic_search.py        # [DISABLED] Local semantic search engine
-│   ├── rate_limiter.py           # Request rate limiting
-│   └── text_utils.py             # Hebrew text normalization
-├── templates/                    # Jinja2 templates
-│   ├── index.html                # Main search interface
-│   ├── manage_content.html       # Admin content management
-│   └── ...
-├── static/                       # CSS, images, assets
-├── scripts/                      # Database setup and utilities
-├── tests/                        # Unit tests
-├── app.py                        # Application factory
-├── routes.py                     # Blueprint with all route handlers
-├── models.py                     # SQLAlchemy models
-├── config.py                     # Configuration management
-├── forms.py                      # WTForms definitions
-├── logger.py                     # Logging setup
-├── constants.py                  # Chapter/Mishna constants
-└── requirements.txt              # Python dependencies
+├── template.yaml              # SAM infrastructure (all AWS resources)
+├── samconfig.toml             # Deployment config (gitignored)
+├── scripts/deploy.sh          # Build + deploy + S3 sync + cache invalidation
+├── functions/
+│   ├── search/                # Search handler (5 public endpoints)
+│   ├── semantic_search/       # Bedrock KB + Nova Pro reranking
+│   ├── admin/                 # Admin CRUD (Cognito-protected)
+│   ├── settings/              # Site settings
+│   └── auth/                  # Cognito login/logout
+├── layers/shared/             # Shared Lambda layer
+│   ├── models.py              # SQLAlchemy models (plain declarative base)
+│   ├── db.py                  # Engine + session factory
+│   ├── response.py            # API Gateway response helpers
+│   ├── text_utils.py          # Niqqud removal
+│   ├── constants.py           # ALLOWED_CHAPTERS mapping
+│   └── requirements.txt       # Layer dependencies (sqlalchemy, psycopg2-binary)
+├── frontend/                  # Static site (S3 + CloudFront)
+│   ├── index.html             # Main search page
+│   ├── manage.html            # Admin panel
+│   ├── login.html             # Admin login
+│   ├── error.html             # Error page
+│   └── static/                # CSS, images, Lottie animations
+├── tests/                     # Unit tests
+├── docs/
+│   └── DEPLOYMENT_GUIDE.md    # Full deployment walkthrough
+└── monolith/                  # Archived Flask/Gunicorn code (reference only)
 ```
 
-### Configuration & Deployment
+### Deployment
 
-#### Environment Variables:
-- `DATABASE_URL`: PostgreSQL connection string (required)
-- `SECRET_KEY`: Flask secret key for sessions and CSRF
-- `AWS_SEARCH_AI_KEY`: API key for AWS semantic search
-- `AWS_SEARCH_API_URL`: AWS API Gateway endpoint
-- Supabase configuration (URL, API keys)
+The application deploys to AWS using SAM CLI. See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for the full walkthrough.
 
-#### Deployment:
-- **Platform**: Render (cloud platform with Docker and native Python support)
-- **Database**: PostgreSQL with SSL (sslmode=require)
-- **Workers**: 4 Gunicorn workers (configurable via `gunicorn.conf.py`)
-- **Memory**: Optimized for 512MB RAM environments
-- **Start Command**: `gunicorn --config gunicorn.conf.py app:app`
+Quick deploy:
 
-### Development & Testing
-- Comprehensive logging with structured messages
-- Test suite for AWS search client
-- Development mode with Flask debug server
-- Production mode with Gunicorn WSGI server
+```bash
+./scripts/deploy.sh
+```
+
+This runs `sam build --use-container` → `sam deploy` → S3 sync → CloudFront invalidation.
+
+**Prerequisites**: AWS CLI, SAM CLI, Docker. Python 3.12 is not required locally — Docker handles the build environment.
+
+### Configuration
+
+All configuration is in `samconfig.toml` (gitignored). Key parameters:
+
+| Parameter | Description |
+|---|---|
+| `DatabaseUrl` | Supabase PostgreSQL pooler URL (port 6543) |
+| `KnowledgeBaseId` | Bedrock Knowledge Base ID (default: `HAFIDLHKGC`) |
+| `DomainName` | Custom domain (default: `pirkei-avot.online`) |
+| `AcmCertificateArn` | ACM certificate for HTTPS (us-east-1) |
 
 ### Security
-- CSRF protection on all forms
-- Session-based authentication with Supabase
-- Rate limiting on public endpoints
-- SQL injection protection via SQLAlchemy ORM
-- SSL/TLS for database connections
+
+- Cognito JWT authorizer on all admin API routes
+- API Gateway rate limiting (20 req/min on search endpoints)
+- Database credentials passed as SAM parameters with `NoEcho: true`
+- `samconfig.toml` gitignored (contains secrets)
+- SSL/TLS for database connections (`sslmode=require`)
+- No self-registration — admin users created via AWS CLI only
+
+### Region
+
+All services in `us-east-2` (Ohio), except ACM certificate in `us-east-1` (CloudFront requirement).
 
 ### Future Roadmap
-- Re-enable local semantic search for offline capability
-- Add user accounts and personalized collections
-- Export search results to PDF/Word
-- Advanced analytics dashboard for content insights
+
+- User accounts with Cognito self-registration and personal area
+- Saved searches and bookmarks
+- Export search results to PDF
+- Analytics dashboard for content insights
 - Multi-language support (English translation)
