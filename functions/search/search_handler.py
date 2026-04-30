@@ -4,6 +4,7 @@ Routes all public search endpoints: chapter/mishna, smart search,
 tag-based search, and navigate-by-number.
 """
 
+import base64
 import json
 import logging
 import os
@@ -12,7 +13,7 @@ import boto3
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import Mishna, Tag, Category
+from models import Mishna, Tag, Category, AiSearchLog
 from constants import ALLOWED_CHAPTERS
 from text_utils import remove_niqqud
 from response import success_response, error_response, serialize_mishna
@@ -22,6 +23,55 @@ logger.setLevel(logging.INFO)
 
 # Lambda client initialized at module level — persists across warm invocations
 lambda_client = boto3.client('lambda')
+
+
+def _extract_user_sub_from_event(event):
+    """Best-effort extraction of the Cognito sub claim from the Authorization header.
+
+    Returns the sub string if a valid Bearer JWT is present, or None otherwise.
+    """
+    try:
+        auth_header = (
+            event.get('headers', {}).get('authorization', '')
+            or event.get('headers', {}).get('Authorization', '')
+        )
+        if not auth_header.startswith('Bearer '):
+            return None
+        token = auth_header[len('Bearer '):]
+        # JWT is three base64url-encoded segments separated by '.'
+        parts = token.split('.')
+        if len(parts) < 2:
+            return None
+        payload_b64 = parts[1]
+        # Fix base64 padding
+        padding = 4 - len(payload_b64) % 4
+        if padding != 4:
+            payload_b64 += '=' * padding
+        decoded = base64.urlsafe_b64decode(payload_b64)
+        claims = json.loads(decoded)
+        return claims.get('sub')
+    except Exception:
+        return None
+
+
+def _log_ai_search(session, query, results, user_sub):
+    """Best-effort logging of an AI/semantic search query to the ai_search_log table.
+
+    Failures are logged as warnings but never raised — they must not affect the search response.
+    """
+    try:
+        result_ids = ','.join(str(r.get('id', '')) for r in results)
+        log_entry = AiSearchLog(
+            query_text=query,
+            result_count=len(results),
+            result_ids=result_ids if result_ids else None,
+            user_sub=user_sub,
+        )
+        session.add(log_entry)
+        session.commit()
+        logger.info(f'AI search logged — query length: {len(query)}, results: {len(results)}')
+    except Exception as e:
+        logger.warning(f'Failed to log AI search (non-critical): {str(e)}')
 
 
 def handler(event, context):
@@ -38,7 +88,7 @@ def handler(event, context):
             return _search_mishna(session, params)
 
         elif path == '/api/search/smart' and method == 'GET':
-            return _search_smart(session, params)
+            return _search_smart(session, params, event)
 
         elif path == '/api/search/tags' and method == 'GET':
             return _search_tags(session, params)
@@ -109,7 +159,7 @@ def _search_mishna(session, params):
 # Smart search  (GET /api/search/smart)
 # ---------------------------------------------------------------------------
 
-def _search_smart(session, params):
+def _search_smart(session, params, event):
     """Exact-match text search or semantic AI search."""
     query = params.get('q', '').strip()
     exact_match = params.get('exact_match', 'false').lower() == 'true'
@@ -122,7 +172,7 @@ def _search_smart(session, params):
     if exact_match:
         return _exact_text_search(session, query)
     else:
-        return _semantic_search(session, query)
+        return _semantic_search(session, query, event)
 
 
 def _exact_text_search(session, query):
@@ -141,7 +191,7 @@ def _exact_text_search(session, query):
     return success_response([serialize_mishna(m) for m in results])
 
 
-def _semantic_search(session, query):
+def _semantic_search(session, query, event):
     """Invoke the Semantic Search Lambda directly and fetch matching records."""
     function_name = os.environ.get('SEMANTIC_SEARCH_FUNCTION_NAME', '')
 
@@ -180,7 +230,9 @@ def _semantic_search(session, query):
 
         if not api_results:
             logger.info('Semantic search returned no results')
-            return success_response([])
+            response = success_response([])
+            _log_ai_search(session, query, [], _extract_user_sub_from_event(event))
+            return response
 
         # Build a mapping of mishna_number -> score
         number_score_map = {}
@@ -209,7 +261,9 @@ def _semantic_search(session, query):
         serialized.sort(key=lambda x: x['similarity_score'], reverse=True)
 
         logger.info(f'Semantic search returned {len(serialized)} results')
-        return success_response(serialized)
+        response = success_response(serialized)
+        _log_ai_search(session, query, serialized, _extract_user_sub_from_event(event))
+        return response
 
     except Exception as e:
         logger.error(f'Semantic search error: {str(e)}', exc_info=True)

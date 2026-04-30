@@ -1,6 +1,7 @@
 import os
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, SmallInteger, Integer, Text, ForeignKey, Table
+from sqlalchemy import Column, String, SmallInteger, Integer, Text, DateTime, ForeignKey, Table, UniqueConstraint, Index
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -128,3 +129,54 @@ def set_pirush_enabled(session, enabled):
     else:
         setting.value = 'true' if enabled else 'false'
     session.commit()
+
+
+class UserFavorite(Base):
+    """
+    Model representing a user's saved favorite Mishna.
+
+    Attributes:
+        id (int): Auto-incremented primary key.
+        user_sub (str): Cognito user sub (UUID) identifying the user.
+        mishna_id (str): Foreign key reference to the Mishna.
+        created_at (datetime): UTC timestamp when the favorite was added.
+        mishna (Mishna): The associated Mishna object (eager-loaded).
+    """
+    __tablename__ = 'user_favorite'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_sub = Column(String(128), nullable=False, index=True)
+    mishna_id = Column(String(100), ForeignKey('mishna.id'), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    mishna = relationship('Mishna', lazy='joined')
+
+    __table_args__ = (
+        UniqueConstraint('user_sub', 'mishna_id', name='uq_user_favorite'),
+    )
+
+
+class AiSearchLog(Base):
+    """
+    Model representing a logged AI/semantic search query for admin analytics.
+
+    Attributes:
+        id (int): Auto-incremented primary key.
+        query_text (str): The semantic search query string.
+        result_count (int): Number of results returned.
+        result_ids (str): Comma-separated mishna IDs from results (nullable).
+        user_sub (str): Cognito user sub if authenticated, NULL otherwise.
+        created_at (datetime): UTC timestamp when the search was performed.
+    """
+    __tablename__ = 'ai_search_log'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    query_text = Column(String(500), nullable=False)
+    result_count = Column(Integer, nullable=False, default=0)
+    result_ids = Column(Text, nullable=True)
+    user_sub = Column(String(128), nullable=True, index=True)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('ix_ai_search_log_created', 'created_at'),
+    )

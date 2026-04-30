@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Umami Analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="bd47690c-1c4e-4e28-a0c5-570005686aa2"></script>
     <title>התחברות - פרקי אבות</title>
     <link rel="icon" type="image/png" href="/static/pics/pirkei-avot-online-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
@@ -66,8 +68,8 @@
         <div class="max-w-md mx-auto">
             <div class="content-overlay p-8 rounded-2xl shadow-xl">
                 <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold mb-2" style="color: #191970;">התחברות למערכת הניהול</h2>
-                    <p class="text-gray-600">אנא התחבר עם החשבון שלך כדי לגשת לפאנל הניהול</p>
+                    <h2 class="text-2xl font-bold mb-2" style="color: #191970;">התחברות למערכת</h2>
+                    <p class="text-gray-600">אנא התחבר עם החשבון שלך</p>
                     <div class="w-24 h-1 mx-auto mt-4 rounded-full"
                         style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
                 </div>
@@ -100,7 +102,79 @@
                         <input type="password" id="password" x-model="password" required
                             placeholder="הכנס סיסמה"
                             class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                        <!-- Forgot Password Link -->
+                        <div class="text-left mt-2">
+                            <button type="button" @click="showForgotPassword = !showForgotPassword"
+                                class="text-xs font-medium hover:underline transition-all duration-200"
+                                style="color: #191970;">
+                                שכחת סיסמה?
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Forgot Password Section (inline) -->
+                    <div x-show="showForgotPassword" x-cloak
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         class="border-2 border-yellow-200 rounded-xl p-4 space-y-3"
+                         style="background: rgba(218, 165, 32, 0.05);">
+
+                        <h3 class="text-sm font-bold" style="color: #191970;">איפוס סיסמה</h3>
+
+                        <!-- Forgot Error -->
+                        <template x-if="forgotError">
+                            <div class="bg-red-50 border border-red-300 rounded-lg p-3">
+                                <p class="text-red-800 text-xs font-semibold" x-text="forgotError"></p>
+                            </div>
+                        </template>
+
+                        <!-- Forgot Success -->
+                        <template x-if="forgotMessage">
+                            <div class="bg-green-50 border border-green-300 rounded-lg p-3">
+                                <p class="text-green-800 text-xs font-semibold" x-text="forgotMessage"></p>
+                            </div>
+                        </template>
+
+                        <!-- Step 1: Enter email to receive code -->
+                        <div x-show="forgotStep === 1" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold mb-1" style="color: #1F2937;">אימייל לאיפוס</label>
+                                <input type="email" x-model="forgotEmail"
+                                    placeholder="הכנס את כתובת האימייל שלך"
+                                    class="w-full border-2 border-gray-200 p-2 rounded-lg text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                            </div>
+                            <button type="button" @click="sendResetCode()" :disabled="forgotLoading"
+                                class="w-full py-2 px-4 rounded-lg font-bold text-sm shadow hover:shadow-md transition-all duration-200"
+                                style="background: linear-gradient(45deg, #DAA520, #FFD700); color: #1F2937;"
+                                :class="{ 'opacity-60 cursor-not-allowed': forgotLoading }">
+                                <span x-text="forgotLoading ? 'שולח...' : 'שלח קוד'"></span>
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Enter code and new password -->
+                        <div x-show="forgotStep === 2" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold mb-1" style="color: #1F2937;">קוד אימות</label>
+                                <input type="text" x-model="resetCode"
+                                    placeholder="הכנס את הקוד שנשלח לאימייל"
+                                    class="w-full border-2 border-gray-200 p-2 rounded-lg text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1" style="color: #1F2937;">סיסמה חדשה</label>
+                                <input type="password" x-model="newPassword"
+                                    placeholder="הכנס סיסמה חדשה"
+                                    class="w-full border-2 border-gray-200 p-2 rounded-lg text-sm focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                            </div>
+                            <button type="button" @click="confirmReset()" :disabled="forgotLoading"
+                                class="w-full py-2 px-4 rounded-lg font-bold text-sm shadow hover:shadow-md transition-all duration-200"
+                                style="background: linear-gradient(45deg, #DAA520, #FFD700); color: #1F2937;"
+                                :class="{ 'opacity-60 cursor-not-allowed': forgotLoading }">
+                                <span x-text="forgotLoading ? 'מאפס...' : 'אפס סיסמה'"></span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="text-center pt-2">
                         <button type="submit" :disabled="loading"
                             class="main-search-btn px-8 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
@@ -118,10 +192,20 @@
                     </div>
                 </form>
 
-                <div class="text-center mt-6">
-                    <a href="/index.html" class="text-sm font-medium hover:underline transition-all duration-200" style="color: #191970;">
-                        חזרה לדף הבית
-                    </a>
+                <div class="text-center mt-6 space-y-2">
+                    <div>
+                        <a href="/index.html" class="text-sm font-medium hover:underline transition-all duration-200" style="color: #191970;">
+                            חזרה לדף הבית
+                        </a>
+                    </div>
+                    <div>
+                        <p class="text-sm" style="color: #4a5568;">
+                            עדיין אין לך חשבון?
+                            <a href="/register.html" class="font-bold hover:underline transition-all duration-200" style="color: #191970;">
+                                הירשם כאן
+                            </a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,11 +237,38 @@
                 errorMessage: '',
                 loading: false,
 
+                // Forgot password state
+                showForgotPassword: false,
+                forgotStep: 1,
+                forgotEmail: '',
+                resetCode: '',
+                newPassword: '',
+                forgotMessage: '',
+                forgotError: '',
+                forgotLoading: false,
+
                 init() {
-                    // If already logged in, redirect to manage page
-                    const token = localStorage.getItem('auth_token');
+                    // If already logged in, redirect based on role
+                    const token = localStorage.getItem('authToken');
                     if (token) {
-                        window.location.href = '/manage.html';
+                        const role = this._getRoleFromToken(token);
+                        if (role === 'admin') {
+                            window.location.href = '/manage.html';
+                        } else {
+                            window.location.href = '/personal.html';
+                        }
+                    }
+                },
+
+                // Decode JWT payload to extract role
+                _getRoleFromToken(token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length !== 3) return null;
+                        const payload = JSON.parse(atob(parts[1]));
+                        return payload['custom:role'] || payload['role'] || null;
+                    } catch (e) {
+                        return null;
                     }
                 },
 
@@ -177,9 +288,26 @@
 
                         const data = await response.json();
 
-                        if (response.ok && data.token) {
-                            localStorage.setItem('auth_token', data.token);
-                            window.location.href = '/manage.html';
+                        if (!response.ok) {
+                            // Show error as-is for disabled accounts (403 or message containing 'מושבת')
+                            const errMsg = data.error || 'שם משתמש או סיסמה שגויים';
+                            if (response.status === 403 || errMsg.includes('מושבת')) {
+                                this.errorMessage = errMsg;
+                            } else {
+                                this.errorMessage = errMsg;
+                            }
+                            return;
+                        }
+
+                        if (data.token) {
+                            localStorage.setItem('authToken', data.token);
+                            // Role-based redirect
+                            const role = data.role || this._getRoleFromToken(data.token);
+                            if (role === 'admin') {
+                                window.location.href = '/manage.html';
+                            } else {
+                                window.location.href = '/personal.html';
+                            }
                         } else {
                             this.errorMessage = data.error || 'שם משתמש או סיסמה שגויים';
                         }
@@ -187,6 +315,72 @@
                         this.errorMessage = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
                     } finally {
                         this.loading = false;
+                    }
+                },
+
+                async sendResetCode() {
+                    this.forgotError = '';
+                    this.forgotMessage = '';
+                    this.forgotLoading = true;
+
+                    try {
+                        const response = await fetch('/api/auth/forgot-password', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.forgotEmail })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.forgotStep = 2;
+                            this.forgotMessage = 'קוד אימות נשלח לאימייל שלך';
+                        } else {
+                            this.forgotError = data.error || 'אירעה שגיאה בשליחת הקוד';
+                        }
+                    } catch (e) {
+                        this.forgotError = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
+                    } finally {
+                        this.forgotLoading = false;
+                    }
+                },
+
+                async confirmReset() {
+                    this.forgotError = '';
+                    this.forgotMessage = '';
+                    this.forgotLoading = true;
+
+                    try {
+                        const response = await fetch('/api/auth/confirm-reset', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: this.forgotEmail,
+                                code: this.resetCode,
+                                new_password: this.newPassword
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.forgotMessage = 'הסיסמה אופסה בהצלחה! כעת תוכל להתחבר עם הסיסמה החדשה.';
+                            // Hide forgot section after success
+                            setTimeout(() => {
+                                this.showForgotPassword = false;
+                                this.forgotStep = 1;
+                                this.forgotEmail = '';
+                                this.resetCode = '';
+                                this.newPassword = '';
+                                this.forgotMessage = '';
+                            }, 3000);
+                        } else {
+                            this.forgotError = data.error || 'אירעה שגיאה באיפוס הסיסמה';
+                        }
+                    } catch (e) {
+                        this.forgotError = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
+                    } finally {
+                        this.forgotLoading = false;
                     }
                 }
             };

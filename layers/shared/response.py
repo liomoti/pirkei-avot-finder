@@ -69,3 +69,44 @@ def serialize_mishna(mishna):
             for tag in mishna.tags
         ]
     }
+
+
+def serialize_favorite(favorite):
+    """Serialize a UserFavorite ORM object with its joined Mishna data.
+
+    Args:
+        favorite: A UserFavorite SQLAlchemy model instance (with mishna eagerly loaded).
+
+    Returns:
+        dict with favorite fields and nested mishna dict.
+    """
+    return {
+        'id': favorite.id,
+        'mishna_id': favorite.mishna_id,
+        'created_at': favorite.created_at.isoformat(),
+        'mishna': {
+            'chapter': favorite.mishna.chapter,
+            'mishna': favorite.mishna.mishna,
+            'text_pretty': favorite.mishna.text_pretty,
+            'tags': [tag.name for tag in favorite.mishna.tags]
+        }
+    }
+
+
+def serialize_search_log(log):
+    """Serialize an AiSearchLog ORM object for admin display.
+
+    Args:
+        log: An AiSearchLog SQLAlchemy model instance.
+
+    Returns:
+        dict with all search log fields.
+    """
+    return {
+        'id': log.id,
+        'query_text': log.query_text,
+        'result_count': log.result_count,
+        'result_ids': log.result_ids,
+        'user_sub': log.user_sub,
+        'created_at': log.created_at.isoformat()
+    }

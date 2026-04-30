@@ -147,6 +147,19 @@ Resources:
       FunctionName: pirkei-avot-admin
       Handler: admin_handler.handler
       CodeUri: functions/admin/
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminDisableUser
+                - cognito-idp:AdminEnableUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+              Resource: !GetAtt CognitoUserPool.Arn
       Events:
         AdminGetMishna:
           Type: HttpApi
@@ -204,6 +217,54 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        AdminListUsers:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminSearchUsers:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/search
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminDisableUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}/disable
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminEnableUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}/enable
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminDeleteUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGetSearchLogs:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/search-logs
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   SettingsFunction:
     Type: AWS::Serverless::Function
@@ -238,11 +299,16 @@ Resources:
       Environment:
         Variables:
           COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - cognito-idp:InitiateAuth
+                - cognito-idp:SignUp
+                - cognito-idp:AdminConfirmSignUp
+                - cognito-idp:ForgotPassword
+                - cognito-idp:ConfirmForgotPassword
               Resource: !GetAtt CognitoUserPool.Arn
       Events:
         AuthLogin:
@@ -261,6 +327,73 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: NONE
+        AuthRegister:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/register
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        AuthForgotPassword:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/forgot-password
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        AuthConfirmReset:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/confirm-reset
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-user
+      Handler: user_handler.handler
+      CodeUri: functions/user/
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+      Events:
+        UserGetFavorites:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserPostFavorites:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserDeleteFavorite:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites/{mishna_id}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetProfile:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/profile
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   # ============================================================
   # Task 6.3 - API Gateway HTTP API with Cognito Authorizer
@@ -313,13 +446,13 @@ Resources:
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: pirkei-avot-admin-pool
+      UserPoolName: pirkei-avot-user-pool
       AutoVerifiedAttributes:
         - email
       UsernameAttributes:
         - email
       AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: true
+        AllowAdminCreateUserOnly: false
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -336,6 +469,7 @@ Resources:
       GenerateSecret: false
       ExplicitAuthFlows:
         - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       AccessTokenValidity: 1
       IdTokenValidity: 1

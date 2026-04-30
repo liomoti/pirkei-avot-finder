@@ -1,22 +1,47 @@
 """Admin handler Lambda function for Pirkei Avot Finder.
 
 Routes all authenticated admin endpoints: Mishna CRUD, Tag CRUD,
-and Category creation. JWT validation is handled by the API Gateway
-Cognito authorizer before this handler is invoked.
+Category creation, user management, and AI search log retrieval.
+JWT validation is handled by the API Gateway Cognito authorizer
+before this handler is invoked.
 """
 
 import json
 import logging
+import os
+from datetime import datetime
 
+import boto3
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import Mishna, Tag, Category, mishna_tag
+from models import Mishna, Tag, Category, mishna_tag, UserFavorite, AiSearchLog
 from text_utils import remove_niqqud
-from response import success_response, error_response, serialize_mishna
+from response import success_response, error_response, serialize_mishna, serialize_search_log
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID', '')
+cognito_client = boto3.client('cognito-idp')
+
+
+def _get_caller_role(event):
+    """Extract the custom:role claim from the JWT claims injected by API Gateway."""
+    claims = (
+        event.get('requestContext', {})
+             .get('authorizer', {})
+             .get('jwt', {})
+             .get('claims', {})
+    )
+    return claims.get('custom:role', 'user')
+
+
+def _require_admin(event):
+    """Return a 403 error response if the caller is not an admin, else None."""
+    if _get_caller_role(event) != 'admin':
+        return error_response('אין לך הרשאה לבצע פעולה זו', 'FORBIDDEN', 403)
+    return None
 
 
 def handler(event, context):
@@ -58,6 +83,51 @@ def handler(event, context):
         # POST /api/admin/category
         elif path == '/api/admin/category' and method == 'POST':
             return _create_category(session, event)
+
+        # GET /api/admin/users/search
+        elif path == '/api/admin/users/search' and method == 'GET':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            return _search_users(event)
+
+        # GET /api/admin/users
+        elif path == '/api/admin/users' and method == 'GET':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            return _list_users(event)
+
+        # POST /api/admin/users/{email}/disable
+        elif path.startswith('/api/admin/users/') and '/disable' in path and method == 'POST':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            email = path.replace('/api/admin/users/', '').replace('/disable', '')
+            return _disable_user(event, email)
+
+        # POST /api/admin/users/{email}/enable
+        elif path.startswith('/api/admin/users/') and '/enable' in path and method == 'POST':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            email = path.replace('/api/admin/users/', '').replace('/enable', '')
+            return _enable_user(event, email)
+
+        # DELETE /api/admin/users/{email}
+        elif path.startswith('/api/admin/users/') and method == 'DELETE':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            email = path.replace('/api/admin/users/', '')
+            return _delete_user(session, event, email)
+
+        # GET /api/admin/search-logs
+        elif path == '/api/admin/search-logs' and method == 'GET':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            return _get_search_logs(session, event)
 
         else:
             return error_response('הנתיב המבוקש לא נמצא', 'NOT_FOUND', 404)
@@ -364,3 +434,222 @@ def _create_category(session, event):
         session.rollback()
         logger.error(f'Database error while creating category: {str(e)}', exc_info=True)
         return error_response('אירעה שגיאה בהוספת הקטגוריה', 'INTERNAL_ERROR', 500)
+
+
+# ---------------------------------------------------------------------------
+# User management helpers
+# ---------------------------------------------------------------------------
+
+def _get_user_attr(user, attr_name, default=''):
+    """Extract a named attribute from a Cognito user's Attributes list."""
+    for attr in user.get('Attributes', []):
+        if attr['Name'] == attr_name:
+            return attr['Value']
+    return default
+
+
+# ---------------------------------------------------------------------------
+# User management endpoints  (GET /api/admin/users, etc.)
+# ---------------------------------------------------------------------------
+
+def _list_users(event):
+    """Return a paginated list of all Cognito users.
+
+    Supports optional pagination via next_token query param.
+    Requirements: 10.2
+    """
+    params = event.get('queryStringParameters') or {}
+    next_token = params.get('next_token')
+
+    logger.info('Listing Cognito users')
+
+    kwargs = {'UserPoolId': COGNITO_USER_POOL_ID, 'Limit': 20}
+    if next_token:
+        kwargs['PaginationToken'] = next_token
+
+    response = cognito_client.list_users(**kwargs)
+
+    users = [
+        {
+            'email': _get_user_attr(u, 'email'),
+            'status': u['UserStatus'],
+            'enabled': u['Enabled'],
+            'created': u['UserCreateDate'].isoformat(),
+            'role': _get_user_attr(u, 'custom:role', 'user'),
+        }
+        for u in response.get('Users', [])
+    ]
+
+    logger.info(f'Found {len(users)} users')
+    return success_response({'users': users, 'next_token': response.get('PaginationToken')})
+
+
+def _search_users(event):
+    """Search Cognito users by email address.
+
+    Requirements: 10.3
+    """
+    params = event.get('queryStringParameters') or {}
+    email = params.get('email', '')
+
+    logger.info(f'Searching Cognito users by email: {email}')
+
+    response = cognito_client.list_users(
+        UserPoolId=COGNITO_USER_POOL_ID,
+        Filter=f'email = "{email}"',
+        Limit=20,
+    )
+
+    users = [
+        {
+            'email': _get_user_attr(u, 'email'),
+            'status': u['UserStatus'],
+            'enabled': u['Enabled'],
+            'created': u['UserCreateDate'].isoformat(),
+            'role': _get_user_attr(u, 'custom:role', 'user'),
+        }
+        for u in response.get('Users', [])
+    ]
+
+    logger.info(f'Search returned {len(users)} users')
+    return success_response({'users': users})
+
+
+def _disable_user(event, email):
+    """Disable a Cognito user account.
+
+    Prevents an admin from disabling their own account.
+    Requirements: 10.4, 10.7
+    """
+    caller_email = (
+        event.get('requestContext', {})
+             .get('authorizer', {})
+             .get('jwt', {})
+             .get('claims', {})
+             .get('email', '')
+    )
+
+    if caller_email == email:
+        return error_response('לא ניתן לבצע פעולה זו על החשבון שלך', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Disabling user: {email}')
+
+    try:
+        cognito_client.admin_disable_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    logger.info(f'User disabled: {email}')
+    return success_response({'message': 'המשתמש הושבת בהצלחה'})
+
+
+def _enable_user(event, email):
+    """Enable a previously disabled Cognito user account.
+
+    Requirements: 10.5
+    """
+    logger.info(f'Enabling user: {email}')
+
+    try:
+        cognito_client.admin_enable_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    logger.info(f'User enabled: {email}')
+    return success_response({'message': 'המשתמש הופעל בהצלחה'})
+
+
+def _delete_user(session, event, email):
+    """Delete a Cognito user and cascade-delete their favorites from the DB.
+
+    Prevents an admin from deleting their own account.
+    Requirements: 10.6, 10.7
+    """
+    caller_email = (
+        event.get('requestContext', {})
+             .get('authorizer', {})
+             .get('jwt', {})
+             .get('claims', {})
+             .get('email', '')
+    )
+
+    if caller_email == email:
+        return error_response('לא ניתן לבצע פעולה זו על החשבון שלך', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Deleting user: {email}')
+
+    # Fetch the user's sub from Cognito to identify their DB records
+    try:
+        user_data = cognito_client.admin_get_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    user_sub = None
+    for attr in user_data.get('UserAttributes', []):
+        if attr['Name'] == 'sub':
+            user_sub = attr['Value']
+            break
+
+    # Delete all favorites for this user from the database
+    if user_sub:
+        deleted_count = session.query(UserFavorite).filter_by(user_sub=user_sub).delete()
+        logger.info(f'Deleted {deleted_count} favorites for user sub: {user_sub}')
+
+    # Delete the Cognito user
+    cognito_client.admin_delete_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    session.commit()
+
+    logger.info(f'User deleted: {email}')
+    return success_response({'message': 'המשתמש נמחק בהצלחה'})
+
+
+# ---------------------------------------------------------------------------
+# AI search logs endpoint  (GET /api/admin/search-logs)
+# ---------------------------------------------------------------------------
+
+def _get_search_logs(session, event):
+    """Return paginated AI search logs with optional filters.
+
+    Supports filtering by date_from, date_to, and query substring.
+    Requirements: 7.4, 7.5, 10.9
+    """
+    params = event.get('queryStringParameters') or {}
+
+    date_from = params.get('date_from')
+    date_to = params.get('date_to')
+    query_filter = params.get('query')
+
+    try:
+        page = int(params.get('page', 1))
+    except (ValueError, TypeError):
+        page = 1
+
+    try:
+        page_size = int(params.get('page_size', 20))
+    except (ValueError, TypeError):
+        page_size = 20
+
+    logger.info(f'Fetching search logs — page: {page}, page_size: {page_size}, '
+                f'date_from: {date_from}, date_to: {date_to}, query: {query_filter}')
+
+    q = session.query(AiSearchLog).order_by(AiSearchLog.created_at.desc())
+
+    if date_from:
+        q = q.filter(AiSearchLog.created_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(AiSearchLog.created_at <= datetime.fromisoformat(date_to))
+    if query_filter:
+        q = q.filter(AiSearchLog.query_text.ilike(f'%{query_filter}%'))
+
+    total = q.count()
+    logs = q.offset((page - 1) * page_size).limit(page_size).all()
+
+    serialized = [serialize_search_log(log) for log in logs]
+
+    logger.info(f'Returning {len(serialized)} of {total} search logs')
+    return success_response({
+        'logs': serialized,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+    })

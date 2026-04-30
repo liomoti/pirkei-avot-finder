@@ -12,6 +12,8 @@
                     'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
         })(window, document, 'script', 'dataLayer', 'GTM-WVH2ZN86');</script>
     <!-- End Google Tag Manager -->
+    <!-- Umami Analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="bd47690c-1c4e-4e28-a0c5-570005686aa2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>חיפוש מִשׁנָה</title>
@@ -65,6 +67,48 @@
             </div>
         </div>
     </header>
+
+    <!-- Auth Navigation Bar -->
+    <div class="container mx-auto px-4 mb-4">
+        <div class="max-w-3xl mx-auto">
+            <!-- Unauthenticated: show login/register buttons -->
+            <div x-show="!isAuthenticated" class="flex justify-end gap-3">
+                <a href="/login.html">
+                    <button type="button" class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                        style="background: rgba(255,255,255,0.15); color: #F5F5DC; border: 2px solid rgba(245,245,220,0.4);">
+                        התחברות
+                    </button>
+                </a>
+                <a href="/register.html">
+                    <button type="button" class="main-search-btn px-4 py-2 rounded-xl font-bold text-sm">
+                        הרשמה
+                    </button>
+                </a>
+            </div>
+            <!-- Authenticated: show user info and links -->
+            <div x-show="isAuthenticated" x-cloak class="flex flex-wrap justify-end items-center gap-3">
+                <span class="text-sm font-medium" style="color: #F5F5DC;" x-text="userEmail"></span>
+                <a href="/personal.html">
+                    <button type="button" class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                        style="background: rgba(255,255,255,0.15); color: #F5F5DC; border: 2px solid rgba(245,245,220,0.4);">
+                        האזור האישי
+                    </button>
+                </a>
+                <template x-if="userRole === 'admin'">
+                    <a href="/manage.html">
+                        <button type="button" class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                            style="background: rgba(255,255,255,0.15); color: #F5F5DC; border: 2px solid rgba(245,245,220,0.4);">
+                            פאנל ניהול
+                        </button>
+                    </a>
+                </template>
+                <button type="button" @click="logout()" class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                    style="background: rgba(255,255,255,0.1); color: #F5F5DC; border: 2px solid rgba(245,245,220,0.3);">
+                    התנתק
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Search Container -->
     <div class="container mx-auto px-4 mb-12">
@@ -294,6 +338,29 @@
                                             </svg>
                                             <span x-text="'פרק ' + result.chapter + ' • משנה ' + result.mishna"></span>
                                         </p>
+                                    </div>
+                                </div>
+
+                                <!-- Favorite Star Button -->
+                                <div class="flex justify-end mb-2 relative">
+                                    <button type="button"
+                                        @click.stop="toggleFavorite(result.id)"
+                                        class="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                                        style="background: transparent; border: none; box-shadow: none; font-size: 1.4rem; line-height: 1; cursor: pointer;"
+                                        :title="userFavoriteIds.has(result.id) ? 'הסר מהמועדפים' : 'הוסף למועדפים'">
+                                        <span x-text="userFavoriteIds.has(result.id) ? '★' : '☆'"
+                                              :style="userFavoriteIds.has(result.id) ? 'color: #DAA520;' : 'color: #9CA3AF;'"></span>
+                                    </button>
+                                    <!-- Guest popup -->
+                                    <div x-show="favoritePopupMishnaId === result.id" x-cloak
+                                         @click.outside="closeFavoritePopup()"
+                                         class="absolute top-10 left-0 z-50 p-3 rounded-xl shadow-xl text-sm font-medium"
+                                         style="background: rgba(255,255,255,0.95); color: #1F2937; border: 2px solid rgba(218,165,32,0.4); min-width: 200px; backdrop-filter: blur(10px);"
+                                         x-transition:enter="transition ease-out duration-200"
+                                         x-transition:enter-start="opacity-0 transform scale-95"
+                                         x-transition:enter-end="opacity-100 transform scale-100">
+                                        <p class="mb-2">יש להירשם כדי להשתמש בתכונה זו</p>
+                                        <a href="/register.html" class="font-bold hover:underline" style="color: #191970;">הירשם כאן</a>
                                     </div>
                                 </div>
 
@@ -748,10 +815,16 @@
                 pirushEnabled: false,
                 pirushAttributionUrl: '',
                 errorMessage: '',
+                isAuthenticated: false,
+                userRole: '',
+                userEmail: '',
+                userFavoriteIds: new Set(),
+                favoritePopupMishnaId: null,
 
                 init() {
                     this.updateMishnaOptions();
                     this.fetchSettings();
+                    this._initAuthState();
                 },
 
                 updateMishnaOptions() {
@@ -907,6 +980,91 @@
 
                 scrollToSearch() {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                _initAuthState() {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        this.isAuthenticated = false;
+                        return;
+                    }
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length !== 3) { this.isAuthenticated = false; return; }
+                        const payload = JSON.parse(atob(parts[1]));
+                        // Check token expiry
+                        if (payload.exp && payload.exp * 1000 < Date.now()) {
+                            localStorage.removeItem('authToken');
+                            this.isAuthenticated = false;
+                            return;
+                        }
+                        this.isAuthenticated = true;
+                        this.userEmail = payload.email || '';
+                        this.userRole = payload['custom:role'] || 'user';
+                        if (this.isAuthenticated) {
+                            this._loadFavoriteIds();
+                        }
+                    } catch (e) {
+                        this.isAuthenticated = false;
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('authToken');
+                    window.location.reload();
+                },
+
+                async _loadFavoriteIds() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch('/api/user/favorites', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.userFavoriteIds = new Set((data.favorites || []).map(f => f.mishna_id));
+                        }
+                    } catch (e) {
+                        // Best-effort, ignore errors
+                    }
+                },
+
+                async toggleFavorite(mishnaId) {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        // Show guest popup
+                        this.favoritePopupMishnaId = mishnaId;
+                        setTimeout(() => { this.favoritePopupMishnaId = null; }, 4000);
+                        return;
+                    }
+                    try {
+                        if (this.userFavoriteIds.has(mishnaId)) {
+                            // Remove favorite
+                            const response = await fetch(`/api/user/favorites/${mishnaId}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                                this.userFavoriteIds = new Set([...this.userFavoriteIds].filter(id => id !== mishnaId));
+                            }
+                        } else {
+                            // Add favorite
+                            const response = await fetch('/api/user/favorites', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({ mishna_id: mishnaId })
+                            });
+                            if (response.ok) {
+                                this.userFavoriteIds = new Set([...this.userFavoriteIds, mishnaId]);
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors silently
+                    }
+                },
+
+                closeFavoritePopup() {
+                    this.favoritePopupMishnaId = null;
                 }
             };
         }

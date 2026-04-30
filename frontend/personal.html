@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Umami Analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="bd47690c-1c4e-4e28-a0c5-570005686aa2"></script>
+    <title>האזור האישי - פרקי אבות</title>
+    <link rel="icon" type="image/png" href="/static/pics/pirkei-avot-online-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            direction: rtl;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background:
+                linear-gradient(135deg,
+                    rgba(0, 29, 41, 0.8) 0%,
+                    rgba(25, 25, 112, 0.6) 30%,
+                    rgba(218, 165, 32, 0.4) 50%,
+                    rgba(25, 25, 112, 0.6) 70%,
+                    rgba(0, 29, 41, 0.8) 100%),
+                url('/static/pics/background_book.png') center center/cover no-repeat fixed !important;
+            min-height: 100vh !important;
+            position: relative !important;
+            overflow-x: hidden !important;
+            color: #F5F5DC !important;
+            background-attachment: fixed !important;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.8)); }
+        }
+        .logo-animate {
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+        }
+        .logo-animate:hover {
+            transform: scale(1.1);
+        }
+
+        /* Spinner animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Favorite card remove button */
+        .remove-btn {
+            background: rgba(220, 38, 38, 0.1) !important;
+            border: 1px solid rgba(220, 38, 38, 0.3) !important;
+            color: #dc2626 !important;
+            border-radius: 8px !important;
+            padding: 6px 10px !important;
+            font-size: 0.8rem !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+        }
+        .remove-btn:hover {
+            background: rgba(220, 38, 38, 0.2) !important;
+            border-color: rgba(220, 38, 38, 0.5) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2) !important;
+        }
+
+        /* Nav action buttons */
+        .nav-action-btn {
+            background: linear-gradient(45deg, #DAA520, #B8860B) !important;
+            color: #2D2D2D !important;
+            border: 2px solid rgba(25, 25, 112, 0.3) !important;
+            border-radius: 12px !important;
+            padding: 10px 20px !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            transition: all 0.2s ease !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(218, 165, 32, 0.3) !important;
+        }
+        .nav-action-btn:hover {
+            background: linear-gradient(45deg, #FFD700, #DAA520) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(218, 165, 32, 0.5) !important;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: #F5F5DC !important;
+            border: 2px solid rgba(245, 245, 220, 0.4) !important;
+            border-radius: 12px !important;
+            padding: 10px 20px !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+        }
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.25) !important;
+            border-color: rgba(245, 245, 220, 0.7) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* Empty state */
+        .empty-state-icon {
+            font-size: 4rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen" x-data="personalApp()" x-init="init()">
+
+    <!-- Header Section -->
+    <header class="header-mystical border-b border-gray-100 mb-4">
+        <div class="container mx-auto py-4">
+            <div class="text-center">
+                <a href="/index.html" class="inline-block">
+                    <img src="/static/pics/pirkei-avot-online-logo.png" alt="פרקי אבות אונליין"
+                        class="h-40 md:h-52 w-auto object-contain mx-auto logo-animate transition-all duration-500">
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 mb-12">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Greeting & Navigation Section -->
+            <div class="content-overlay p-6 rounded-2xl shadow-xl mb-6">
+                <!-- Greeting -->
+                <div class="text-center mb-5">
+                    <h2 class="text-2xl font-bold mb-1" style="color: #191970;">
+                        <span>שלום, </span>
+                        <span x-text="userEmail || 'משתמש'" style="color: #DAA520;"></span>
+                    </h2>
+                    <p class="text-sm" style="color: #4a5568;">ברוך הבא לאזור האישי שלך</p>
+                    <div class="w-24 h-1 mx-auto mt-3 rounded-full"
+                        style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex flex-wrap justify-center gap-3">
+                    <a href="/index.html">
+                        <button type="button" class="nav-action-btn inline-flex items-center">
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חיפוש
+                        </button>
+                    </a>
+                    <button type="button" @click="logout()" class="logout-btn inline-flex items-center">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        התנתק
+                    </button>
+                </div>
+            </div>
+
+            <!-- Favorites Section -->
+            <div class="content-overlay p-6 rounded-2xl shadow-xl">
+                <div class="flex items-center mb-5">
+                    <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        style="color: #DAA520;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z">
+                        </path>
+                    </svg>
+                    <h3 class="text-xl font-bold" style="color: #191970;">המשניות המועדפות שלי</h3>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-12">
+                    <svg class="spinner w-10 h-10 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" style="color: #DAA520;">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="text-sm font-medium" style="color: #4a5568;">טוען מועדפים...</p>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="!loading && error" x-cloak
+                    class="bg-red-50 border-2 border-red-300 rounded-xl p-4 mb-4"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-95"
+                    x-transition:enter-end="opacity-100 transform scale-100">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-2 text-red-600 flex-shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-red-800 font-semibold text-sm" x-text="error"></p>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="!loading && !error && favorites.length === 0" x-cloak
+                    class="text-center py-12">
+                    <div class="empty-state-icon mb-4">☆</div>
+                    <p class="text-lg font-semibold mb-2" style="color: #4a5568;">עדיין לא שמרת משניות למועדפים</p>
+                    <p class="text-sm mb-5" style="color: #6b7280;">חפש משניות ושמור אותן כדי לגשת אליהן בקלות</p>
+                    <a href="/index.html">
+                        <button type="button" class="nav-action-btn inline-flex items-center">
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            עבור לחיפוש
+                        </button>
+                    </a>
+                </div>
+
+                <!-- Favorites Grid -->
+                <div x-show="!loading && !error && favorites.length > 0" x-cloak
+                    class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <template x-for="fav in favorites" :key="fav.mishna_id">
+                        <div class="result-card p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+
+                            <!-- Card Header: Chapter / Mishna -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="chapter-mishna-header px-4 py-2 rounded-xl inline-flex items-center shadow-md">
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        style="color: #2D2D2D;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                                    </svg>
+                                    <span class="font-bold text-sm" style="color: #2D2D2D;"
+                                        x-text="'פרק ' + fav.chapter + ' • משנה ' + fav.mishna"></span>
+                                </div>
+
+                                <!-- Remove Button -->
+                                <button type="button"
+                                    @click="removeFavorite(fav.mishna_id)"
+                                    class="remove-btn inline-flex items-center"
+                                    title="הסר מהמועדפים">
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    הסר
+                                </button>
+                            </div>
+
+                            <!-- Text Preview -->
+                            <div class="bg-gray-50 p-4 rounded-xl mb-4 border-r-4 border-yellow-600">
+                                <p class="text-sm leading-relaxed text-gray-800 font-medium text-center"
+                                    x-text="truncateText(fav.text_pretty, 150)"></p>
+                            </div>
+
+                            <!-- Tags -->
+                            <template x-if="fav.tags && fav.tags.length > 0">
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="tag in fav.tags" :key="tag.id">
+                                        <span
+                                            class="px-2 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm"
+                                            :style="`background-color: ${tag.category_color || '#F5F5F5'}; border: 1px solid ${tag.category_color || '#F5F5F5'}40;`"
+                                            x-text="tag.name">
+                                        </span>
+                                    </template>
+                                </div>
+                            </template>
+
+                        </div>
+                    </template>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="footer-ancient mt-8 py-6">
+        <div class="container mx-auto text-center">
+            <p class="text-sm" style="direction: ltr; display: flex; justify-content: center; align-items: center;">
+                Built by
+                <a href="https://www.linkedin.com/in/moti-shaul"
+                    target="_blank" rel="noopener noreferrer"
+                    class="hover:underline font-medium inline-flex items-center"
+                    style="margin-left: 0.25rem; color: #DAA520;">
+                    Moti Shaul
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22.225 0H1.771C.791 0 0 .776 0 1.729v20.543C0 23.214.792 24 1.77 24h20.453C23.208 24 24 23.214 24 22.272V1.729C24 .776 23.208 0 22.225 0zM7.119 20.459H3.56V9h3.558v11.459zM5.341 7.447c-1.134 0-2.054-.91-2.054-2.032a2.054 2.054 0 114.109 0c0 1.122-.92 2.032-2.055 2.032zM20.453 20.459h-3.558v-5.661c0-1.35-.027-3.086-1.885-3.086-1.889 0-2.178 1.476-2.178 3v5.747h-3.557V9h3.417v1.561h.049c.476-.9 1.633-1.848 3.36-1.848 3.593 0 4.257 2.364 4.257 5.435v6.311z"/>
+                    </svg>
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        function personalApp() {
+            return {
+                userEmail: '',
+                userRole: '',
+                favorites: [],
+                loading: true,
+                error: '',
+
+                init() {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    this.loadData();
+                },
+
+                getAuthHeaders() {
+                    const token = localStorage.getItem('authToken');
+                    return {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    };
+                },
+
+                async loadData() {
+                    this.loading = true;
+                    this.error = '';
+                    try {
+                        // Fetch profile and favorites in parallel
+                        const [profileRes, favRes] = await Promise.all([
+                            fetch('/api/user/profile', { headers: this.getAuthHeaders() }),
+                            fetch('/api/user/favorites', { headers: this.getAuthHeaders() })
+                        ]);
+
+                        if (profileRes.status === 401 || favRes.status === 401) {
+                            localStorage.removeItem('authToken');
+                            window.location.href = '/login.html';
+                            return;
+                        }
+
+                        if (profileRes.ok) {
+                            const profileData = await profileRes.json();
+                            this.userEmail = profileData.email || '';
+                            this.userRole = profileData.role || 'user';
+                        }
+
+                        if (favRes.ok) {
+                            const favData = await favRes.json();
+                            this.favorites = favData.favorites || [];
+                        }
+                    } catch (e) {
+                        this.error = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async removeFavorite(mishnaId) {
+                    try {
+                        const response = await fetch(`/api/user/favorites/${mishnaId}`, {
+                            method: 'DELETE',
+                            headers: this.getAuthHeaders()
+                        });
+                        if (response.ok) {
+                            this.favorites = this.favorites.filter(f => f.mishna_id !== mishnaId);
+                        } else if (response.status === 401) {
+                            localStorage.removeItem('authToken');
+                            window.location.href = '/login.html';
+                        }
+                    } catch (e) {
+                        this.error = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/index.html';
+                },
+
+                truncateText(text, maxLen = 150) {
+                    if (!text) return '';
+                    return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>
