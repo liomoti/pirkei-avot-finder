@@ -74,22 +74,32 @@ def serialize_mishna(mishna):
 def serialize_favorite(favorite):
     """Serialize a UserFavorite ORM object with its joined Mishna data.
 
+    Flattens the mishna fields to the top level so the frontend can access
+    fav.chapter, fav.mishna, fav.text_pretty, fav.tags directly.
+
     Args:
         favorite: A UserFavorite SQLAlchemy model instance (with mishna eagerly loaded).
 
     Returns:
-        dict with favorite fields and nested mishna dict.
+        dict with favorite fields and flattened mishna data.
     """
+    mishna = favorite.mishna
     return {
         'id': favorite.id,
         'mishna_id': favorite.mishna_id,
         'created_at': favorite.created_at.isoformat(),
-        'mishna': {
-            'chapter': favorite.mishna.chapter,
-            'mishna': favorite.mishna.mishna,
-            'text_pretty': favorite.mishna.text_pretty,
-            'tags': [tag.name for tag in favorite.mishna.tags]
-        }
+        # Flattened mishna fields
+        'chapter': mishna.chapter,
+        'mishna': mishna.mishna,
+        'text_pretty': mishna.text_pretty,
+        'tags': [
+            {
+                'id': tag.id,
+                'name': tag.name,
+                'category_color': tag.category.color if tag.category else '#F5F5F5'
+            }
+            for tag in mishna.tags
+        ]
     }
 
 

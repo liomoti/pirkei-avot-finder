@@ -2659,12 +2659,16 @@ button.search-type-button.active {
 }
 
 .auth-nav-btn {
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.875rem;
+    padding: 8px 16px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.875rem !important;
     transition: all 0.2s ease !important;
     cursor: pointer;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.4 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .auth-nav-btn.primary {
@@ -2676,6 +2680,7 @@ button.search-type-button.active {
 .auth-nav-btn.primary:hover {
     background: linear-gradient(45deg, #FFD700, #DAA520) !important;
     transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(218, 165, 32, 0.4) !important;
 }
 
 .auth-nav-btn.secondary {
@@ -2687,6 +2692,16 @@ button.search-type-button.active {
 .auth-nav-btn.secondary:hover {
     background: rgba(255, 255, 255, 0.25) !important;
     transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Mobile adjustments for auth nav buttons */
+@media (max-width: 640px) {
+    .auth-nav-btn {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+        border-radius: 10px !important;
+    }
 }
 
 /* ===== Responsive adjustments for new pages ===== */
@@ -2706,5 +2721,29 @@ button.search-type-button.active {
     
     .log-query-cell {
         max-width: 150px;
+    }
+}
+
+/* ===== Mobile-friendly login/register forms ===== */
+@media (max-width: 640px) {
+    /* Reduce logo size on small mobile */
+    .logo-animate {
+        max-height: 120px !important;
+    }
+
+    /* Tighter form padding on mobile */
+    .content-overlay form .space-y-5 > div {
+        margin-bottom: 0.75rem;
+    }
+
+    /* Full-width submit buttons on mobile */
+    .main-search-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* Reduce forgot password section padding */
+    .content-overlay [x-show="showForgotPassword"] {
+        padding: 0.75rem !important;
     }
 }

@@ -76,9 +76,9 @@
     <!-- Registration Form -->
     <div class="container mx-auto px-4 mb-12">
         <div class="max-w-md mx-auto">
-            <div class="content-overlay p-8 rounded-2xl shadow-xl">
+            <div class="content-overlay p-5 sm:p-8 rounded-2xl shadow-xl">
                 <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold mb-2" style="color: #191970;">הרשמה למערכת</h2>
+                    <h2 class="text-xl sm:text-2xl font-bold mb-2" style="color: #191970;">הרשמה למערכת</h2>
                     <p class="text-gray-600">צור חשבון חדש כדי לגשת לאזור האישי</p>
                     <div class="w-24 h-1 mx-auto mt-4 rounded-full"
                         style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
@@ -117,6 +117,14 @@
                 </template>
 
                 <form @submit.prevent="register()" class="space-y-5">
+                    <!-- Full Name Field -->
+                    <div>
+                        <label for="fullName" class="block text-sm font-bold mb-2" style="color: #1F2937;">שם מלא</label>
+                        <input type="text" id="fullName" x-model="fullName" required
+                            placeholder="הכנס שם מלא"
+                            class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200">
+                    </div>
+
                     <!-- Email Field -->
                     <div>
                         <label for="email" class="block text-sm font-bold mb-2" style="color: #1F2937;">אימייל</label>
@@ -152,7 +160,7 @@
                     <!-- Submit Button -->
                     <div class="text-center pt-2">
                         <button type="submit" :disabled="loading"
-                            class="main-search-btn px-8 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center"
+                            class="main-search-btn w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 inline-flex items-center justify-center"
                             :class="{ 'opacity-60 cursor-not-allowed': loading }">
                             <svg x-show="!loading" class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -204,6 +212,7 @@
                 email: '',
                 password: '',
                 confirmPassword: '',
+                fullName: '',
                 errorMessage: '',
                 successMessage: '',
                 loading: false,
@@ -220,6 +229,12 @@
                     this.errorMessage = '';
                     this.successMessage = '';
 
+                    // Client-side validation: full name required
+                    if (!this.fullName.trim()) {
+                        this.errorMessage = 'אנא הכנס שם מלא';
+                        return;
+                    }
+
                     // Client-side validation: password confirmation match
                     if (this.password !== this.confirmPassword) {
                         this.errorMessage = 'הסיסמאות אינן תואמות';
@@ -231,7 +246,7 @@
                         const response = await fetch('/api/auth/register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: this.email, password: this.password })
+                            body: JSON.stringify({ email: this.email, password: this.password, full_name: this.fullName.trim() })
                         });
                         const data = await response.json();
                         if (response.ok) {

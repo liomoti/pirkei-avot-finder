@@ -114,6 +114,7 @@ def _register(event):
 
     email = body.get('email', '').strip()
     password = body.get('password', '')
+    full_name = body.get('full_name', '').strip()
 
     if not email or not password:
         return error_response('חסרים שדות חובה: email, password', 'VALIDATION_ERROR', 400)
@@ -128,11 +129,15 @@ def _register(event):
     logger.info(f'Registration attempt for: {email}')
 
     try:
+        user_attributes = [{'Name': 'custom:role', 'Value': 'user'}]
+        if full_name:
+            user_attributes.append({'Name': 'custom:full_name', 'Value': full_name})
+
         cognito_client.sign_up(
             ClientId=COGNITO_USER_POOL_CLIENT_ID,
             Username=email,
             Password=password,
-            UserAttributes=[{'Name': 'custom:role', 'Value': 'user'}],
+            UserAttributes=user_attributes,
         )
 
         # Auto-confirm the user so they can log in immediately

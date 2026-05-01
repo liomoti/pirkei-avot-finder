@@ -361,6 +361,13 @@ Resources:
       Environment:
         Variables:
           COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource: !GetAtt CognitoUserPool.Arn
       Events:
         UserGetFavorites:
           Type: HttpApi
@@ -391,6 +398,14 @@ Resources:
           Properties:
             Path: /api/user/profile
             Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserUpdateProfile:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/profile
+            Method: PUT
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
@@ -460,6 +475,8 @@ Resources:
           RequireLowercase: true
           RequireNumbers: true
           RequireSymbols: false
+      # NOTE: custom:role and custom:full_name are added via CLI (add-custom-attributes)
+      # because Cognito Schema is immutable after User Pool creation.
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -471,6 +488,14 @@ Resources:
         - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
+      ReadAttributes:
+        - email
+        - custom:role
+        - custom:full_name
+      WriteAttributes:
+        - email
+        - custom:role
+        - custom:full_name
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 30

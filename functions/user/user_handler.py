@@ -1,13 +1,17 @@
 """User handler Lambda function for Pirkei Avot Finder.
 
-Routes all authenticated user endpoints: favorites CRUD and profile retrieval.
+Routes all authenticated user endpoints: favorites CRUD and profile retrieval/update.
 JWT validation is handled by the API Gateway Cognito authorizer before this
-handler is invoked. The user's Cognito sub is extracted from the JWT claims.
+handler is invoked. The user's Cognito sub and email are extracted from JWT claims.
+Profile updates (full_name) are written directly to Cognito via AdminUpdateUserAttributes.
 """
 
 import json
 import logging
+import os
 
+import boto3
+from botocore.exceptions import ClientError
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from db import Session
@@ -17,6 +21,10 @@ from response import success_response, error_response, serialize_favorite
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Cognito client initialized at module level — persists across warm invocations
+cognito_client = boto3.client('cognito-idp')
+COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID', '')
+
 
 def handler(event, context):
     """Main Lambda entry point — dispatches to the correct user function."""
@@ -25,14 +33,14 @@ def handler(event, context):
 
     logger.info(f'User handler invoked: {method} {path}')
 
-    # Extract user sub from JWT claims (injected by API Gateway Cognito authorizer)
-    user_sub = (
+    # Extract claims injected by API Gateway Cognito authorizer
+    claims = (
         event.get('requestContext', {})
              .get('authorizer', {})
              .get('jwt', {})
              .get('claims', {})
-             .get('sub', '')
     )
+    user_sub = claims.get('sub', '')
 
     session = Session()
     try:
@@ -51,7 +59,11 @@ def handler(event, context):
 
         # GET /api/user/profile
         elif path == '/api/user/profile' and method == 'GET':
-            return _get_profile(event)
+            return _get_profile(claims)
+
+        # PUT /api/user/profile
+        elif path == '/api/user/profile' and method == 'PUT':
+            return _update_profile(event, claims)
 
         else:
             return error_response('הנתיב המבוקש לא נמצא', 'NOT_FOUND', 404)
@@ -71,7 +83,7 @@ def _parse_body(event):
     body = event.get('body', '{}')
     if isinstance(body, str):
         return json.loads(body)
-    return body
+    return body or {}
 
 
 # ---------------------------------------------------------------------------
@@ -79,10 +91,7 @@ def _parse_body(event):
 # ---------------------------------------------------------------------------
 
 def _get_favorites(session, user_sub):
-    """Return all favorites for the user, ordered by created_at DESC.
-
-    Validates: Requirements 6.1, 6.3
-    """
+    """Return all favorites for the user, ordered by created_at DESC."""
     logger.info(f'Get favorites — user_sub: {user_sub}')
 
     favorites = (
@@ -99,10 +108,7 @@ def _get_favorites(session, user_sub):
 
 
 def _add_favorite(session, event, user_sub):
-    """Add a Mishna to the user's favorites.
-
-    Validates: Requirements 6.2, 6.6
-    """
+    """Add a Mishna to the user's favorites."""
     body = _parse_body(event)
     mishna_id = body.get('mishna_id', '').strip()
 
@@ -111,7 +117,6 @@ def _add_favorite(session, event, user_sub):
 
     logger.info(f'Add favorite — user_sub: {user_sub}, mishna_id: {mishna_id}')
 
-    # Verify the Mishna exists
     mishna = session.query(Mishna).filter_by(id=mishna_id).first()
     if not mishna:
         return error_response('המשנה לא נמצאה', 'NOT_FOUND', 404)
@@ -133,10 +138,7 @@ def _add_favorite(session, event, user_sub):
 
 
 def _remove_favorite(session, user_sub, mishna_id):
-    """Remove a Mishna from the user's favorites.
-
-    Validates: Requirements 6.3
-    """
+    """Remove a Mishna from the user's favorites."""
     logger.info(f'Remove favorite — user_sub: {user_sub}, mishna_id: {mishna_id}')
 
     favorite = (
@@ -156,24 +158,68 @@ def _remove_favorite(session, user_sub, mishna_id):
 
 
 # ---------------------------------------------------------------------------
-# Profile  (GET /api/user/profile)
+# Profile  (GET, PUT /api/user/profile)
 # ---------------------------------------------------------------------------
 
-def _get_profile(event):
-    """Return the authenticated user's email and role from JWT claims.
+def _get_profile(claims):
+    """Return the authenticated user's profile.
 
-    Validates: Requirements 8.1
+    email and role come from JWT claims (always fresh from Cognito authorizer).
+    full_name is fetched live from Cognito via AdminGetUser so it reflects
+    the latest value even if the stored JWT predates the last update.
     """
-    claims = (
-        event.get('requestContext', {})
-             .get('authorizer', {})
-             .get('jwt', {})
-             .get('claims', {})
-    )
-
     email = claims.get('email', '')
     role = claims.get('custom:role', 'user')
 
     logger.info(f'Get profile — email: {email}, role: {role}')
 
-    return success_response({'email': email, 'role': role})
+    # Fetch full_name live from Cognito so it's always up-to-date
+    full_name = ''
+    if email and COGNITO_USER_POOL_ID:
+        try:
+            response = cognito_client.admin_get_user(
+                UserPoolId=COGNITO_USER_POOL_ID,
+                Username=email
+            )
+            attrs = {a['Name']: a['Value'] for a in response.get('UserAttributes', [])}
+            full_name = attrs.get('custom:full_name', '')
+        except ClientError as e:
+            # Non-fatal — return empty string if lookup fails
+            logger.warning(f'Could not fetch full_name from Cognito: {str(e)}')
+
+    return success_response({'email': email, 'role': role, 'full_name': full_name})
+
+
+def _update_profile(event, claims):
+    """Update custom:full_name in Cognito via AdminUpdateUserAttributes.
+
+    Uses the user's email (username) from JWT claims and the pool ID from env.
+    No access token needed — Lambda has AdminUpdateUserAttributes IAM permission.
+    """
+    body = _parse_body(event)
+    full_name = body.get('full_name', '').strip()
+
+    if len(full_name) > 200:
+        return error_response('השם המלא ארוך מדי (מקסימום 200 תווים)', 'VALIDATION_ERROR', 400)
+
+    # Cognito username is the email (UsernameAttributes: [email])
+    username = claims.get('email', '')
+    if not username:
+        return error_response('לא ניתן לזהות את המשתמש', 'AUTH_REQUIRED', 401)
+
+    logger.info(f'Update profile — username: {username}, full_name: {full_name}')
+
+    try:
+        cognito_client.admin_update_user_attributes(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=username,
+            UserAttributes=[
+                {'Name': 'custom:full_name', 'Value': full_name}
+            ]
+        )
+        logger.info(f'Updated custom:full_name for: {username}')
+        return success_response({'message': 'הפרופיל עודכן בהצלחה', 'full_name': full_name})
+
+    except ClientError as e:
+        logger.error(f'Cognito error updating profile: {str(e)}', exc_info=True)
+        return error_response('אירעה שגיאה בעדכון הפרופיל', 'INTERNAL_ERROR', 500)
