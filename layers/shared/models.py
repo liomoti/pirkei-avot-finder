@@ -156,6 +156,31 @@ class UserFavorite(Base):
     )
 
 
+class UserLearned(Base):
+    """
+    Model representing a user's learned Mishna record.
+
+    Attributes:
+        id (int): Auto-incremented primary key.
+        user_sub (str): Cognito user sub (UUID) identifying the user.
+        mishna_id (str): Foreign key reference to the Mishna.
+        created_at (datetime): UTC timestamp when the Mishna was marked as learned.
+        mishna (Mishna): The associated Mishna object (eager-loaded).
+    """
+    __tablename__ = 'user_learned'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_sub = Column(String(128), nullable=False, index=True)
+    mishna_id = Column(String(100), ForeignKey('mishna.id'), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    mishna = relationship('Mishna', lazy='joined')
+
+    __table_args__ = (
+        UniqueConstraint('user_sub', 'mishna_id', name='uq_user_learned'),
+    )
+
+
 class AiSearchLog(Base):
     """
     Model representing a logged AI/semantic search query for admin analytics.

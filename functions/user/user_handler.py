@@ -15,7 +15,8 @@ from botocore.exceptions import ClientError
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from db import Session
-from models import Mishna, UserFavorite
+from models import Mishna, UserFavorite, UserLearned
+from constants import ALLOWED_CHAPTERS
 from response import success_response, error_response, serialize_favorite
 
 logger = logging.getLogger()
@@ -56,6 +57,23 @@ def handler(event, context):
         elif path.startswith('/api/user/favorites/') and method == 'DELETE':
             mishna_id = path.replace('/api/user/favorites/', '')
             return _remove_favorite(session, user_sub, mishna_id)
+
+        # GET /api/user/learned
+        elif path == '/api/user/learned' and method == 'GET':
+            return _get_learned(session, user_sub)
+
+        # POST /api/user/learned
+        elif path == '/api/user/learned' and method == 'POST':
+            return _add_learned(session, event, user_sub)
+
+        # DELETE /api/user/learned/{mishna_id}
+        elif path.startswith('/api/user/learned/') and method == 'DELETE':
+            mishna_id = path.replace('/api/user/learned/', '')
+            return _remove_learned(session, user_sub, mishna_id)
+
+        # GET /api/user/progress
+        elif path == '/api/user/progress' and method == 'GET':
+            return _get_progress(session, user_sub)
 
         # GET /api/user/profile
         elif path == '/api/user/profile' and method == 'GET':
@@ -223,3 +241,129 @@ def _update_profile(event, claims):
     except ClientError as e:
         logger.error(f'Cognito error updating profile: {str(e)}', exc_info=True)
         return error_response('אירעה שגיאה בעדכון הפרופיל', 'INTERNAL_ERROR', 500)
+
+
+# ---------------------------------------------------------------------------
+# Learned  (GET, POST, DELETE /api/user/learned and GET /api/user/progress)
+# ---------------------------------------------------------------------------
+
+def _get_learned(session, user_sub):
+    """Return all learned mishna_id values for the user, ordered by created_at DESC."""
+    logger.info(f'Get learned — user_sub: {user_sub}')
+
+    learned_records = (
+        session.query(UserLearned)
+               .filter_by(user_sub=user_sub)
+               .order_by(UserLearned.created_at.desc())
+               .all()
+    )
+
+    mishna_ids = [r.mishna_id for r in learned_records]
+    logger.info(f'Found {len(mishna_ids)} learned records for user')
+
+    return success_response({'learned': mishna_ids, 'count': len(mishna_ids)})
+
+
+def _add_learned(session, event, user_sub):
+    """Mark a Mishna as learned."""
+    body = _parse_body(event)
+    mishna_id = body.get('mishna_id', '').strip()
+
+    if not mishna_id:
+        return error_response('חסר מזהה משנה', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Add learned — user_sub: {user_sub}, mishna_id: {mishna_id}')
+
+    mishna = session.query(Mishna).filter_by(id=mishna_id).first()
+    if not mishna:
+        return error_response('המשנה לא נמצאה', 'NOT_FOUND', 404)
+
+    try:
+        learned = UserLearned(user_sub=user_sub, mishna_id=mishna_id)
+        session.add(learned)
+        session.commit()
+        logger.info(f'Added learned: user_sub={user_sub}, mishna_id={mishna_id}')
+        return success_response(
+            {'message': 'המשנה סומנה כנלמדה', 'mishna_id': mishna_id},
+            status=201
+        )
+
+    except IntegrityError:
+        session.rollback()
+        logger.warning(f'Duplicate learned attempt: user_sub={user_sub}, mishna_id={mishna_id}')
+        return error_response('המשנה כבר סומנה כנלמדה', 'DUPLICATE_ENTRY', 409)
+
+
+def _remove_learned(session, user_sub, mishna_id):
+    """Remove a learned record."""
+    logger.info(f'Remove learned — user_sub: {user_sub}, mishna_id: {mishna_id}')
+
+    learned = (
+        session.query(UserLearned)
+               .filter_by(user_sub=user_sub, mishna_id=mishna_id)
+               .first()
+    )
+
+    if not learned:
+        return error_response('המשנה לא נמצאה ברשימת הנלמדות', 'NOT_FOUND', 404)
+
+    session.delete(learned)
+    session.commit()
+    logger.info(f'Removed learned: user_sub={user_sub}, mishna_id={mishna_id}')
+
+    return success_response({'message': 'הסימון כנלמדה הוסר'})
+
+
+def _get_progress(session, user_sub):
+    """Calculate per-chapter learning progress using ALLOWED_CHAPTERS."""
+    logger.info(f'Get progress — user_sub: {user_sub}')
+
+    learned_records = (
+        session.query(UserLearned)
+               .filter_by(user_sub=user_sub)
+               .all()
+    )
+
+    # Build a set of learned mishna_ids
+    learned_ids = {r.mishna_id for r in learned_records}
+
+    # Group learned IDs by chapter (mishna_id format: "chapter_mishna", e.g. "א_א")
+    learned_by_chapter = {}
+    for mishna_id in learned_ids:
+        parts = mishna_id.split('_', 1)
+        if parts:
+            chapter = parts[0]
+            if chapter not in learned_by_chapter:
+                learned_by_chapter[chapter] = 0
+            learned_by_chapter[chapter] += 1
+
+    # Build per-chapter stats using ALLOWED_CHAPTERS as source of truth
+    chapters = []
+    total_mishnayot = 0
+    total_learned = len(learned_ids)
+
+    chapter_names = {'א': 'פרק א', 'ב': 'פרק ב', 'ג': 'פרק ג', 'ד': 'פרק ד', 'ה': 'פרק ה', 'ו': 'פרק ו'}
+
+    for chapter, mishna_list in ALLOWED_CHAPTERS.items():
+        chapter_total = len(mishna_list)
+        chapter_learned = learned_by_chapter.get(chapter, 0)
+        chapter_remaining = chapter_total - chapter_learned
+        is_completed = chapter_remaining == 0
+        total_mishnayot += chapter_total
+
+        chapters.append({
+            'chapter': chapter,
+            'chapter_name': chapter_names.get(chapter, f'פרק {chapter}'),
+            'total': chapter_total,
+            'learned': chapter_learned,
+            'remaining': chapter_remaining,
+            'is_completed': is_completed,
+        })
+
+    logger.info(f'Progress: {total_learned}/{total_mishnayot} learned')
+
+    return success_response({
+        'total_learned': total_learned,
+        'total_mishnayot': total_mishnayot,
+        'chapters': chapters,
+    })

@@ -12,10 +12,11 @@ import os
 from datetime import datetime
 
 import boto3
+from botocore.exceptions import ClientError
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import Mishna, Tag, Category, mishna_tag, UserFavorite, AiSearchLog
+from models import Mishna, Tag, Category, mishna_tag, UserFavorite, UserLearned, AiSearchLog
 from text_utils import remove_niqqud
 from response import success_response, error_response, serialize_mishna, serialize_search_log
 
@@ -23,7 +24,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID', '')
+CACHE_GENERATOR_FUNCTION_NAME = os.environ.get('CACHE_GENERATOR_FUNCTION_NAME', '')
 cognito_client = boto3.client('cognito-idp')
+lambda_client = boto3.client('lambda')
 
 
 def _get_caller_role(event):
@@ -122,12 +125,24 @@ def handler(event, context):
             email = path.replace('/api/admin/users/', '')
             return _delete_user(session, event, email)
 
+        # GET /api/admin/search-logs/{log_id}/results
+        elif path.startswith('/api/admin/search-logs/') and path.endswith('/results') and method == 'GET':
+            auth_error = _require_admin(event)
+            if auth_error:
+                return auth_error
+            log_id_str = path.replace('/api/admin/search-logs/', '').replace('/results', '')
+            return _get_search_log_results(session, log_id_str)
+
         # GET /api/admin/search-logs
         elif path == '/api/admin/search-logs' and method == 'GET':
             auth_error = _require_admin(event)
             if auth_error:
                 return auth_error
             return _get_search_logs(session, event)
+
+        # POST /api/admin/generate-cache
+        elif path == '/api/admin/generate-cache' and method == 'POST':
+            return _generate_cache(event)
 
         else:
             return error_response('הנתיב המבוקש לא נמצא', 'NOT_FOUND', 404)
@@ -590,10 +605,11 @@ def _delete_user(session, event, email):
             user_sub = attr['Value']
             break
 
-    # Delete all favorites for this user from the database
+    # Delete all favorites and learned records for this user from the database
     if user_sub:
         deleted_count = session.query(UserFavorite).filter_by(user_sub=user_sub).delete()
-        logger.info(f'Deleted {deleted_count} favorites for user sub: {user_sub}')
+        deleted_learned_count = session.query(UserLearned).filter_by(user_sub=user_sub).delete()
+        logger.info(f'Deleted {deleted_count} favorites and {deleted_learned_count} learned records for user sub: {user_sub}')
 
     # Delete the Cognito user
     cognito_client.admin_delete_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
@@ -604,8 +620,89 @@ def _delete_user(session, event, email):
 
 
 # ---------------------------------------------------------------------------
-# AI search logs endpoint  (GET /api/admin/search-logs)
+# Cache generation  (POST /api/admin/generate-cache)
 # ---------------------------------------------------------------------------
+
+def _generate_cache(event):
+    """Invoke the Cache Generator Lambda and return its response."""
+    auth_error = _require_admin(event)
+    if auth_error:
+        return auth_error
+
+    logger.info('Invoking Cache Generator Lambda')
+
+    try:
+        response = lambda_client.invoke(
+            FunctionName=CACHE_GENERATOR_FUNCTION_NAME,
+            InvocationType='RequestResponse',
+        )
+
+        # Check for Lambda-level errors
+        if response.get('FunctionError'):
+            error_payload = response['Payload'].read().decode('utf-8')
+            logger.error(f'Cache Generator Lambda error: {error_payload}')
+            return error_response('שגיאה בהפעלת מחולל המטמון', 'INTERNAL_ERROR', 500)
+
+        # Parse and forward the Cache Generator's response
+        payload = json.loads(response['Payload'].read().decode('utf-8'))
+        return payload
+
+    except ClientError as e:
+        logger.error(f'Error invoking Cache Generator Lambda: {str(e)}', exc_info=True)
+        return error_response('שגיאה בהפעלת מחולל המטמון', 'INTERNAL_ERROR', 500)
+
+
+# ---------------------------------------------------------------------------
+# AI search logs endpoints
+# (GET /api/admin/search-logs, GET /api/admin/search-logs/{id}/results)
+# ---------------------------------------------------------------------------
+
+def _get_search_log_results(session, log_id_str):
+    """Return the Mishna objects referenced by a search log entry's result_ids.
+
+    Parses the comma-separated result_ids field, queries the mishna table,
+    and returns the list of Mishna objects with their text.
+    """
+    try:
+        log_id = int(log_id_str)
+    except (ValueError, TypeError):
+        return error_response('מזהה לוג לא חוקי', 'VALIDATION_ERROR', 400)
+
+    log_entry = session.query(AiSearchLog).filter_by(id=log_id).first()
+    if not log_entry:
+        return error_response('רשומת לוג לא נמצאה', 'NOT_FOUND', 404)
+
+    # Parse result_ids — may be NULL or empty
+    result_ids_str = (log_entry.result_ids or '').strip()
+    if not result_ids_str:
+        return success_response({
+            'query_text': log_entry.query_text,
+            'results': []
+        })
+
+    mishna_ids = [mid.strip() for mid in result_ids_str.split(',') if mid.strip()]
+
+    # Query all matching Mishna records in one query
+    mishnas = session.query(Mishna).filter(Mishna.id.in_(mishna_ids)).all()
+
+    # Preserve the original order from result_ids
+    mishna_map = {m.id: m for m in mishnas}
+    ordered_results = []
+    for mid in mishna_ids:
+        if mid in mishna_map:
+            m = mishna_map[mid]
+            ordered_results.append({
+                'id': m.id,
+                'chapter': m.chapter,
+                'mishna': m.mishna,
+                'text_pretty': m.text_pretty,
+            })
+
+    return success_response({
+        'query_text': log_entry.query_text,
+        'results': ordered_results,
+    })
+
 
 def _get_search_logs(session, event):
     """Return paginated AI search logs with optional filters.

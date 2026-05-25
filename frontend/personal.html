@@ -224,6 +224,88 @@
                 </div>
             </div>
 
+            <!-- Progress Dashboard Section -->
+            <div class="content-overlay p-6 rounded-2xl shadow-xl mb-6">
+                <div class="flex items-center mb-5">
+                    <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        style="color: #22C55E;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-xl font-bold" style="color: #191970;">התקדמות הלימוד שלי</h3>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="progressLoading" class="text-center py-8">
+                    <svg class="spinner w-8 h-8 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" style="color: #22C55E;">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="text-sm font-medium" style="color: #4a5568;">טוען נתוני התקדמות...</p>
+                </div>
+
+                <!-- Progress Content -->
+                <div x-show="!progressLoading && progress" x-cloak>
+                    <!-- Overall Progress -->
+                    <div class="mb-6 p-4 rounded-xl" style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-base" style="color: #191970;">סה"כ משניות שנלמדו</span>
+                            <span class="font-bold text-xl" style="color: #22C55E;"
+                                x-text="(progress ? progress.total_learned : 0) + '/' + (progress ? progress.total_mishnayot : 108)"></span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-bar"
+                                :style="'width: ' + (progress ? Math.round((progress.total_learned / progress.total_mishnayot) * 100) : 0) + '%'"></div>
+                        </div>
+                        <p class="text-xs mt-1 text-left" style="color: #6b7280;"
+                            x-text="(progress ? Math.round((progress.total_learned / progress.total_mishnayot) * 100) : 0) + '%'"></p>
+                    </div>
+
+                    <!-- Chapter Cards Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <template x-for="ch in (progress ? progress.chapters : [])" :key="ch.chapter">
+                            <div class="chapter-card p-4 rounded-xl relative"
+                                :class="ch.is_completed ? 'chapter-card-completed' : ''">
+                                <!-- Completion Badge -->
+                                <div x-show="ch.is_completed" class="completion-badge">✔</div>
+
+                                <!-- Chapter Name -->
+                                <h4 class="font-bold text-base mb-2 text-center" style="color: #191970;"
+                                    x-text="ch.chapter_name"></h4>
+
+                                <!-- Learned / Total -->
+                                <p class="text-center font-bold text-lg mb-1"
+                                    :style="ch.is_completed ? 'color: #22C55E;' : 'color: #191970;'"
+                                    x-text="ch.learned + '/' + ch.total"></p>
+
+                                <!-- Remaining -->
+                                <p class="text-center text-xs mb-3" style="color: #6b7280;"
+                                    x-show="!ch.is_completed"
+                                    x-text="'נותרו ' + ch.remaining + ' משניות'"></p>
+                                <p class="text-center text-xs mb-3 font-medium" style="color: #22C55E;"
+                                    x-show="ch.is_completed">הושלם! 🎉</p>
+
+                                <!-- Chapter Progress Bar -->
+                                <div class="progress-track">
+                                    <div class="progress-bar"
+                                        :style="'width: ' + (ch.total > 0 ? Math.round((ch.learned / ch.total) * 100) : 0) + '%'"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Empty State (no progress yet) -->
+                <div x-show="!progressLoading && progress && progress.total_learned === 0" x-cloak
+                    class="text-center py-6">
+                    <div class="text-4xl mb-3 opacity-50">✓</div>
+                    <p class="text-base font-semibold mb-1" style="color: #4a5568;">עדיין לא סימנת משניות כנלמדות</p>
+                    <p class="text-sm" style="color: #6b7280;">חפש משניות וסמן אותן כנלמדות כדי לעקוב אחר ההתקדמות שלך</p>
+                </div>
+            </div>
+
             <!-- Favorites Section -->
             <div class="content-overlay p-6 rounded-2xl shadow-xl">
                 <div class="flex items-center mb-5">
@@ -370,6 +452,8 @@
                 favorites: [],
                 loading: true,
                 error: '',
+                progress: null,
+                progressLoading: true,
 
                 init() {
                     const token = localStorage.getItem('authToken');
@@ -390,15 +474,17 @@
 
                 async loadData() {
                     this.loading = true;
+                    this.progressLoading = true;
                     this.error = '';
                     try {
-                        // Fetch profile and favorites in parallel
-                        const [profileRes, favRes] = await Promise.all([
+                        // Fetch profile, favorites, and progress in parallel
+                        const [profileRes, favRes, progressRes] = await Promise.all([
                             fetch('/api/user/profile', { headers: this.getAuthHeaders() }),
-                            fetch('/api/user/favorites', { headers: this.getAuthHeaders() })
+                            fetch('/api/user/favorites', { headers: this.getAuthHeaders() }),
+                            fetch('/api/user/progress', { headers: this.getAuthHeaders() })
                         ]);
 
-                        if (profileRes.status === 401 || favRes.status === 401) {
+                        if (profileRes.status === 401 || favRes.status === 401 || progressRes.status === 401) {
                             localStorage.removeItem('authToken');
                             window.location.href = '/login.html';
                             return;
@@ -415,10 +501,15 @@
                             const favData = await favRes.json();
                             this.favorites = favData.favorites || [];
                         }
+
+                        if (progressRes.ok) {
+                            this.progress = await progressRes.json();
+                        }
                     } catch (e) {
                         this.error = 'שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.';
                     } finally {
                         this.loading = false;
+                        this.progressLoading = false;
                     }
                 },
 

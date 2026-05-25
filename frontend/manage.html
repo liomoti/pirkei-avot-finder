@@ -241,6 +241,40 @@
                     </div>
                 </div>
 
+                <!-- Generate Static Data Card -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                            </svg>
+                            <span class="text-lg font-bold" style="color: #1F2937;">יצירת נתונים סטטיים</span>
+                        </div>
+                        <button type="button" @click="generateCache()" :disabled="cacheGenerating"
+                            class="inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+                            :class="cacheGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5'"
+                            style="background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%); color: #2D2D2D;">
+                            <template x-if="cacheGenerating">
+                                <svg class="animate-spin w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <template x-if="!cacheGenerating">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </template>
+                            <span x-text="cacheGenerating ? 'מייצר...' : 'יצירת נתונים סטטיים'"></span>
+                        </button>
+                    </div>
+                    <template x-if="lastCacheGenerated">
+                        <p class="mt-3 text-sm text-green-700 font-semibold">
+                            ✅ נוצר בהצלחה: <span x-text="new Date(lastCacheGenerated).toLocaleString('he-IL')"></span>
+                        </p>
+                    </template>
+                </div>
+
                 <!-- Search Mishna Card -->
                 <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
                     <div class="flex items-center justify-center mb-6">
@@ -945,6 +979,7 @@
                                     <tr class="border-b-2 border-gray-200">
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">שאילתה</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">תוצאות</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">צפייה</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">משתמש</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">תאריך</th>
                                     </tr>
@@ -954,6 +989,16 @@
                                         <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                             <td class="py-3 px-4 text-gray-800 max-w-xs truncate" x-text="log.query_text"></td>
                                             <td class="py-3 px-4 text-gray-600 text-center" x-text="log.result_count"></td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button x-show="log.result_count > 0 && log.result_ids"
+                                                    @click="openResultsModal(log)"
+                                                    class="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                                                    style="background: rgba(218,165,32,0.15); color: #B8860B; border: 1px solid #DAA520;">
+                                                    צפה בתוצאות
+                                                </button>
+                                                <span x-show="!log.result_count || !log.result_ids"
+                                                    class="text-xs text-gray-400">—</span>
+                                            </td>
                                             <td class="py-3 px-4 text-gray-500 text-xs" x-text="log.user_sub ? log.user_sub.substring(0, 8) + '...' : 'אנונימי'"></td>
                                             <td class="py-3 px-4 text-gray-500 text-xs" x-text="new Date(log.created_at).toLocaleString('he-IL')"></td>
                                         </tr>
@@ -985,6 +1030,84 @@
 
         </div>
         <!-- End Tab Content -->
+
+        <!-- Results Modal -->
+        <div x-show="resultsModalOpen" x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+             style="z-index: 10000; backdrop-filter: blur(4px);"
+             @click.self="closeResultsModal()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col"
+                 style="border: 2px solid rgba(218,165,32,0.4);"
+                 @click.stop>
+                <!-- Header -->
+                <div class="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">
+                        תוצאות חיפוש AI
+                    </h3>
+                    <button @click="closeResultsModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">×</button>
+                </div>
+
+                <!-- Query display -->
+                <div class="px-6 pt-4 flex-shrink-0">
+                    <p class="text-sm text-gray-500 mb-1">שאילתה:</p>
+                    <p class="font-semibold text-gray-800 mb-4" x-text="resultsModalQuery"></p>
+                </div>
+
+                <!-- Scrollable content -->
+                <div class="px-6 pb-6 overflow-y-auto flex-1">
+                    <!-- Loading -->
+                    <template x-if="resultsModalLoading">
+                        <div class="text-center py-8">
+                            <svg class="animate-spin w-8 h-8 mx-auto mb-3" style="color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-gray-600">טוען תוצאות...</p>
+                        </div>
+                    </template>
+
+                    <!-- Error -->
+                    <template x-if="!resultsModalLoading && resultsModalError">
+                        <div class="text-center py-8">
+                            <p class="text-red-600 mb-4">שגיאה בטעינת התוצאות. אנא נסה שוב.</p>
+                            <button @click="retryResultsModal()" class="main-search-btn px-6 py-2 rounded-xl font-bold">
+                                נסה שוב
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Empty results -->
+                    <template x-if="!resultsModalLoading && !resultsModalError && resultsModalData.length === 0">
+                        <p class="text-center text-gray-500 py-8">לא נמצאו תוצאות לחיפוש זה</p>
+                    </template>
+
+                    <!-- Results list -->
+                    <template x-if="!resultsModalLoading && !resultsModalError && resultsModalData.length > 0">
+                        <div class="space-y-4">
+                            <template x-for="(result, index) in resultsModalData" :key="result.id">
+                                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-xs font-bold px-2 py-1 rounded-full"
+                                              style="background: rgba(218,165,32,0.15); color: #B8860B;"
+                                              x-text="'פרק ' + result.chapter + ', משנה ' + result.mishna"></span>
+                                        <span class="text-xs text-gray-400 mr-2" x-text="'#' + (index + 1)"></span>
+                                    </div>
+                                    <p class="text-gray-800 leading-relaxed text-sm" style="line-height: 1.8;"
+                                       x-text="result.text_pretty"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
     </div>
     <!-- End Main Container -->
 
@@ -1128,6 +1251,18 @@
                 logQueryFilter: '',
                 logDateFrom: '',
                 logDateTo: '',
+
+                // Cache generation state
+                cacheGenerating: false,
+                lastCacheGenerated: '',
+
+                // Results modal state
+                resultsModalOpen: false,
+                resultsModalLoading: false,
+                resultsModalError: false,
+                resultsModalQuery: '',
+                resultsModalData: [],
+                resultsModalLogId: null,
 
                 async init() {
                     // Check auth — support both authToken and auth_token keys
@@ -1515,6 +1650,80 @@
                         this.showMessage('שגיאה בטעינת לוגים', 'error');
                     } finally {
                         this.logsLoading = false;
+                    }
+                },
+
+                async openResultsModal(log) {
+                    this.resultsModalLogId = log.id;
+                    this.resultsModalQuery = log.query_text;
+                    this.resultsModalOpen = true;
+                    this.resultsModalLoading = true;
+                    this.resultsModalError = false;
+                    this.resultsModalData = [];
+                    document.body.style.overflow = 'hidden';
+
+                    try {
+                        const data = await apiAuthGet('/admin/search-logs/' + log.id + '/results');
+                        if (data) {
+                            this.resultsModalQuery = data.query_text || log.query_text;
+                            this.resultsModalData = data.results || [];
+                        } else {
+                            this.resultsModalError = true;
+                        }
+                    } catch (e) {
+                        this.resultsModalError = true;
+                    } finally {
+                        this.resultsModalLoading = false;
+                    }
+                },
+
+                closeResultsModal() {
+                    this.resultsModalOpen = false;
+                    this.resultsModalData = [];
+                    this.resultsModalQuery = '';
+                    this.resultsModalLogId = null;
+                    this.resultsModalError = false;
+                    document.body.style.overflow = '';
+                },
+
+                async retryResultsModal() {
+                    if (this.resultsModalLogId) {
+                        this.resultsModalLoading = true;
+                        this.resultsModalError = false;
+                        try {
+                            const data = await apiAuthGet('/admin/search-logs/' + this.resultsModalLogId + '/results');
+                            if (data) {
+                                this.resultsModalQuery = data.query_text || this.resultsModalQuery;
+                                this.resultsModalData = data.results || [];
+                            } else {
+                                this.resultsModalError = true;
+                            }
+                        } catch (e) {
+                            this.resultsModalError = true;
+                        } finally {
+                            this.resultsModalLoading = false;
+                        }
+                    }
+                },
+
+                // ===== CACHE GENERATION =====
+                async generateCache() {
+                    this.cacheGenerating = true;
+                    this.lastCacheGenerated = '';
+                    try {
+                        const resp = await apiAuthPost('/admin/generate-cache', {});
+                        if (resp && resp.ok) {
+                            const result = await resp.json();
+                            this.lastCacheGenerated = result.generated_at || '';
+                            this.showMessage('הנתונים הסטטיים נוצרו בהצלחה');
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה ביצירת הנתונים הסטטיים', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    } finally {
+                        this.cacheGenerating = false;
                     }
                 },
 

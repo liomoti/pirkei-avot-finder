@@ -150,6 +150,7 @@ Resources:
       Environment:
         Variables:
           COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          CACHE_GENERATOR_FUNCTION_NAME: pirkei-avot-cache-generator
       Policies:
         - Statement:
             - Effect: Allow
@@ -160,6 +161,10 @@ Resources:
                 - cognito-idp:AdminDeleteUser
                 - cognito-idp:AdminGetUser
               Resource: !GetAtt CognitoUserPool.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:pirkei-avot-cache-generator'
       Events:
         AdminGetMishna:
           Type: HttpApi
@@ -265,6 +270,22 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        AdminGetSearchLogResults:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/search-logs/{log_id}/results
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGenerateCache:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/generate-cache
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   SettingsFunction:
     Type: AWS::Serverless::Function
@@ -352,6 +373,27 @@ Resources:
             Auth:
               Authorizer: NONE
 
+  CacheGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-cache-generator
+      Handler: cache_generator_handler.handler
+      CodeUri: functions/cache_generator/
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref FrontendBucket
+          CLOUDFRONT_DISTRIBUTION_ID: !Ref CloudFrontDistribution
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub '${FrontendBucket.Arn}/static/mishnaiot.json'
+            - Effect: Allow
+              Action:
+                - cloudfront:CreateInvalidation
+              Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
   UserFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -406,6 +448,38 @@ Resources:
           Properties:
             Path: /api/user/profile
             Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserPostLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserDeleteLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned/{mishna_id}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetProgress:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/progress
+            Method: GET
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
