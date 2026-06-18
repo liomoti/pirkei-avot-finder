@@ -200,7 +200,7 @@ def _create_or_update_mishna(session, event):
     # Auto-generate derived fields
     composite_id = f'{chapter}_{mishna}'
     text_raw = remove_niqqud(text_pretty)
-    pirush_url = body.get('pirush_url', '').strip() or None
+    pirush_url = (body.get('pirush_url') or '').strip() or None
     tag_ids = body.get('tags', [])
 
     logger.info(f'Create/update mishna — id: {composite_id}, tags: {tag_ids}')
@@ -422,7 +422,7 @@ def _create_category(session, event):
     if not name:
         return error_response('חסר שם קטגוריה', 'VALIDATION_ERROR', 400)
 
-    color = body.get('color', '').strip() or '#F5F5F5'
+    color = (body.get('color') or '').strip() or '#F5F5F5'
 
     logger.info(f'Create category — name: {name}, color: {color}')
 

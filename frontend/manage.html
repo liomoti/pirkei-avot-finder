@@ -225,20 +225,62 @@
                     <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
                 </div>
 
-                <!-- Global Pirush Toggle -->
+                <!-- Pirush Management Card -->
                 <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 ml-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            <label class="text-lg font-bold cursor-pointer" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" x-model="pirushEnabled" @change="togglePirush()">
-                            <span class="toggle-slider"></span>
-                        </label>
+
+                  <!-- Master toggle (existing) -->
+                  <div class="flex items-center justify-between mb-6">
+                    <label class="text-lg font-bold" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
+                    <label class="toggle-switch">
+                      <input type="checkbox" x-model="pirushEnabled" @change="togglePirush()">
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <hr class="border-gray-200 mb-6">
+
+                  <!-- Add new pirush option -->
+                  <h4 class="font-bold mb-4" style="color: #1F2937;">אפשרויות פירוש</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <input type="text" x-model="newPirushS3Url" placeholder="כתובת S3 (URL)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                    <input type="text" x-model="newPirushInternalName" placeholder="שם פנימי (למנהל)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                    <input type="text" x-model="newPirushButtonLabel" placeholder="טקסט הכפתור (למשתמש)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                  </div>
+                  <button type="button" @click="addPirushOption()"
+                    class="mb-6 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all duration-200"
+                    style="background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%); color: #2D2D2D;">
+                    + הוסף פירוש
+                  </button>
+
+                  <!-- Existing options list -->
+                  <template x-if="pirushOptions.length === 0">
+                    <p class="text-gray-500 text-sm text-center">אין אפשרויות פירוש שמורות</p>
+                  </template>
+                  <template x-for="opt in pirushOptions" :key="opt.internal_name">
+                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-200 mb-2 bg-gray-50">
+                      <div class="flex-1 min-w-0 ml-3">
+                        <p class="font-bold text-sm truncate" style="color: #1F2937;" x-text="opt.internal_name"></p>
+                        <p class="text-xs text-gray-400 truncate direction-ltr" dir="ltr" x-text="opt.s3_url"></p>
+                        <p class="text-xs text-gray-500 truncate" x-text="opt.button_label"></p>
+                      </div>
+                      <label class="toggle-switch ml-3 flex-shrink-0">
+                        <input type="checkbox" :checked="opt.enabled"
+                          @change="togglePirushOption(opt.internal_name, $event.target.checked)">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" @click="deletePirushOption(opt.internal_name)"
+                        class="mr-3 text-red-500 hover:text-red-700 transition-colors duration-200 flex-shrink-0"
+                        style="background: transparent; border: none;">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
                     </div>
+                  </template>
                 </div>
 
                 <!-- Generate Static Data Card -->
@@ -1166,13 +1208,17 @@
             return response;
         }
 
-        async function apiAuthDelete(path) {
+        async function apiAuthDelete(path, body) {
             const token = getAuthToken();
             if (!token) { window.location.href = '/login.html'; return; }
-            const response = await fetch('/api' + path, {
+            const options = {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-            });
+            };
+            if (body !== undefined) {
+                options.body = JSON.stringify(body);
+            }
+            const response = await fetch('/api' + path, options);
             if (response.status === 401) {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('auth_token');
@@ -1211,6 +1257,12 @@
                 pirushUrlWarning: false,
                 selectedTags: [],
                 pirushEnabled: false,
+
+                // Pirush options management
+                pirushOptions: [],        // array of { s3_url, internal_name, button_label, enabled }
+                newPirushS3Url: '',
+                newPirushInternalName: '',
+                newPirushButtonLabel: '',
 
                 // Tag/Category data
                 categories: [],
@@ -1301,6 +1353,7 @@
                         const data = await fetch('/api/settings').then(r => r.json());
                         if (data) {
                             this.pirushEnabled = data.pirush_enabled || false;
+                            this.pirushOptions = data.pirush_options || [];
                         }
                     } catch (e) {
                         console.error('Failed to load settings:', e);
@@ -1317,6 +1370,46 @@
                         }
                     } catch (e) {
                         this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                async addPirushOption() {
+                    const body = {
+                        s3_url: this.newPirushS3Url,
+                        internal_name: this.newPirushInternalName,
+                        button_label: this.newPirushButtonLabel,
+                    };
+                    const resp = await apiAuthPost('/settings/pirush/options', body);
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                        this.newPirushS3Url = '';
+                        this.newPirushInternalName = '';
+                        this.newPirushButtonLabel = '';
+                        this.showMessage('אפשרות הפירוש נוספה בהצלחה');
+                    } else {
+                        this.showMessage('שגיאה בהוספת אפשרות הפירוש', 'error');
+                    }
+                },
+
+                async togglePirushOption(internalName, enabled) {
+                    const resp = await apiAuthPut('/settings/pirush/options', { internal_name: internalName, enabled });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                    } else {
+                        this.showMessage('שגיאה בעדכון אפשרות הפירוש', 'error');
+                    }
+                },
+
+                async deletePirushOption(internalName) {
+                    const resp = await apiAuthDelete('/settings/pirush/options', { internal_name: internalName });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                        this.showMessage('אפשרות הפירוש הוסרה בהצלחה');
+                    } else {
+                        this.showMessage('שגיאה בהסרת אפשרות הפירוש', 'error');
                     }
                 },
 

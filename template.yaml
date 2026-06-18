@@ -314,6 +314,30 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsPost:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsDelete:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsPut:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   AuthFunction:
     Type: AWS::Serverless::Function

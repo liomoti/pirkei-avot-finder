@@ -1,5 +1,9 @@
+import json
+import logging
 import os
 from datetime import datetime, timezone
+
+logger = logging.getLogger()
 
 from sqlalchemy import Column, String, SmallInteger, Integer, Text, DateTime, ForeignKey, Table, UniqueConstraint, Index
 from sqlalchemy.orm import relationship, declarative_base
@@ -94,7 +98,7 @@ class SiteSetting(Base):
     """
     __tablename__ = 'site_setting'
     key = Column(String(100), primary_key=True)
-    value = Column(String(255), nullable=False)
+    value = Column(Text, nullable=False)
 
 
 def get_pirush_settings(session):
@@ -128,6 +132,31 @@ def set_pirush_enabled(session, enabled):
         session.add(setting)
     else:
         setting.value = 'true' if enabled else 'false'
+    session.commit()
+
+
+def get_pirush_options(session):
+    """Return the pirush_options list from SiteSetting.
+    Falls back to [] if key is absent or value is malformed JSON."""
+    setting = session.query(SiteSetting).filter_by(key='pirush_options').first()
+    if not setting:
+        return []
+    try:
+        return json.loads(setting.value)
+    except (json.JSONDecodeError, TypeError):
+        logger.warning('pirush_options value is malformed JSON — returning empty list')
+        return []
+
+
+def set_pirush_options(session, options):
+    """Upsert pirush_options as JSON-encoded list."""
+    value = json.dumps(options, ensure_ascii=False)
+    setting = session.query(SiteSetting).filter_by(key='pirush_options').first()
+    if setting is None:
+        setting = SiteSetting(key='pirush_options', value=value)
+        session.add(setting)
+    else:
+        setting.value = value
     session.commit()
 
 

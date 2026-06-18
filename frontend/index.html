@@ -427,18 +427,18 @@
                                     </div>
                                 </div>
 
-                                <!-- Pirush Button -->
-                                <template x-if="pirushEnabled && result.pirush_url">
-                                    <div class="text-center my-4">
-                                        <button type="button"
-                                            @click="$dispatch('open-pirush', { url: result.pirush_url, chapter: result.chapter, mishna: result.mishna })"
-                                            class="pirush-btn"
-                                            aria-label="פתח פירוש למשנה">
-                                            <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                            </svg>
-                                            פירוש
-                                        </button>
+                                <!-- Pirush Buttons -->
+                                <template x-if="pirushEnabled && pirushOptions.some(o => o.enabled)">
+                                    <div class="text-center my-4 flex flex-wrap justify-center gap-2">
+                                        <template x-for="opt in pirushOptions.filter(o => o.enabled)" :key="opt.internal_name">
+                                            <button
+                                                type="button"
+                                                @click="$dispatch('open-pirush', { url: opt.s3_url.replace(/\/+$/, '') + '/' + result.number + '.pdf', chapter: result.chapter, mishna: result.mishna })"
+                                                class="pirush-btn"
+                                                :aria-label="'פתח ' + opt.button_label + ' למשנה'"
+                                                x-text="opt.button_label">
+                                            </button>
+                                        </template>
                                     </div>
                                 </template>
 
@@ -857,6 +857,7 @@
                 results: [],
                 hasSearched: false,
                 pirushEnabled: false,
+                pirushOptions: [],
                 pirushAttributionUrl: '',
                 errorMessage: '',
                 isAuthenticated: false,
@@ -889,6 +890,7 @@
                     try {
                         const data = await apiGet('/settings');
                         this.pirushEnabled = data.pirush_enabled || false;
+                        this.pirushOptions = data.pirush_options || [];
                         this.pirushAttributionUrl = data.pirush_attribution_url || '';
                     } catch (e) {
                         console.error('Failed to fetch settings:', e);
