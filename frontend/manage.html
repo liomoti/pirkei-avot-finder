@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Umami Analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="bd47690c-1c4e-4e28-a0c5-570005686aa2"></script>
     <title>פאנל ניהול - פרקי אבות</title>
     <link rel="icon" type="image/png" href="/static/pics/pirkei-avot-online-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
@@ -185,6 +187,22 @@
                 </svg>
                 ניהול נושאים
             </button>
+            <button @click="activeTab = 'users'; fetchUsers()"
+                    :class="{ 'active': activeTab === 'users' }"
+                    class="tab-button flex-1 md:flex-none">
+                <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                ניהול משתמשים
+            </button>
+            <button @click="activeTab = 'searchlogs'; fetchSearchLogs()"
+                    :class="{ 'active': activeTab === 'searchlogs' }"
+                    class="tab-button flex-1 md:flex-none">
+                <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                לוג חיפושי AI
+            </button>
         </div>
 
         <!-- Tab Content -->
@@ -207,20 +225,96 @@
                     <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
                 </div>
 
-                <!-- Global Pirush Toggle -->
+                <!-- Pirush Management Card -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+
+                  <!-- Master toggle (existing) -->
+                  <div class="flex items-center justify-between mb-6">
+                    <label class="text-lg font-bold" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
+                    <label class="toggle-switch">
+                      <input type="checkbox" x-model="pirushEnabled" @change="togglePirush()">
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <hr class="border-gray-200 mb-6">
+
+                  <!-- Add new pirush option -->
+                  <h4 class="font-bold mb-4" style="color: #1F2937;">אפשרויות פירוש</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <input type="text" x-model="newPirushS3Url" placeholder="כתובת S3 (URL)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                    <input type="text" x-model="newPirushInternalName" placeholder="שם פנימי (למנהל)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                    <input type="text" x-model="newPirushButtonLabel" placeholder="טקסט הכפתור (למשתמש)"
+                      class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 transition-all duration-200">
+                  </div>
+                  <button type="button" @click="addPirushOption()"
+                    class="mb-6 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all duration-200"
+                    style="background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%); color: #2D2D2D;">
+                    + הוסף פירוש
+                  </button>
+
+                  <!-- Existing options list -->
+                  <template x-if="pirushOptions.length === 0">
+                    <p class="text-gray-500 text-sm text-center">אין אפשרויות פירוש שמורות</p>
+                  </template>
+                  <template x-for="opt in pirushOptions" :key="opt.internal_name">
+                    <div class="flex items-center justify-between p-3 rounded-xl border border-gray-200 mb-2 bg-gray-50">
+                      <div class="flex-1 min-w-0 ml-3">
+                        <p class="font-bold text-sm truncate" style="color: #1F2937;" x-text="opt.internal_name"></p>
+                        <p class="text-xs text-gray-400 truncate direction-ltr" dir="ltr" x-text="opt.s3_url"></p>
+                        <p class="text-xs text-gray-500 truncate" x-text="opt.button_label"></p>
+                      </div>
+                      <label class="toggle-switch ml-3 flex-shrink-0">
+                        <input type="checkbox" :checked="opt.enabled"
+                          @change="togglePirushOption(opt.internal_name, $event.target.checked)">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" @click="deletePirushOption(opt.internal_name)"
+                        class="mr-3 text-red-500 hover:text-red-700 transition-colors duration-200 flex-shrink-0"
+                        style="background: transparent; border: none;">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Generate Static Data Card -->
                 <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
-                            <svg class="w-6 h-6 ml-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            <svg class="w-6 h-6 ml-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
                             </svg>
-                            <label class="text-lg font-bold cursor-pointer" style="color: #1F2937;">הצגת כפתור פירוש באתר</label>
+                            <span class="text-lg font-bold" style="color: #1F2937;">יצירת נתונים סטטיים</span>
                         </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" x-model="pirushEnabled" @change="togglePirush()">
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <button type="button" @click="generateCache()" :disabled="cacheGenerating"
+                            class="inline-flex items-center px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+                            :class="cacheGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5'"
+                            style="background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%); color: #2D2D2D;">
+                            <template x-if="cacheGenerating">
+                                <svg class="animate-spin w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <template x-if="!cacheGenerating">
+                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </template>
+                            <span x-text="cacheGenerating ? 'מייצר...' : 'יצירת נתונים סטטיים'"></span>
+                        </button>
                     </div>
+                    <template x-if="lastCacheGenerated">
+                        <p class="mt-3 text-sm text-green-700 font-semibold">
+                            ✅ נוצר בהצלחה: <span x-text="new Date(lastCacheGenerated).toLocaleString('he-IL')"></span>
+                        </p>
+                    </template>
                 </div>
 
                 <!-- Search Mishna Card -->
@@ -724,15 +818,345 @@
             </div>
             <!-- End Tag Management Tab -->
 
+            <!-- ===== USER MANAGEMENT TAB ===== -->
+            <div x-show="activeTab === 'users'"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+                        <svg class="w-8 h-8 inline-block ml-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        ניהול משתמשים
+                    </h2>
+                    <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                </div>
+
+                <!-- Search Users -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+                    <div class="flex gap-3 mb-4">
+                        <input type="email" x-model="userSearch" placeholder="חפש לפי אימייל..."
+                            class="flex-1 border-2 border-gray-200 p-3 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200">
+                        <button type="button" @click="searchUsers()"
+                            class="main-search-btn px-6 py-3 rounded-xl font-bold inline-flex items-center">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            חפש
+                        </button>
+                        <button type="button" @click="fetchUsers()"
+                            class="px-4 py-3 rounded-xl font-bold transition-all duration-200"
+                            style="background: rgba(255,255,255,0.15); color: #1F2937; border: 2px solid rgba(25,25,112,0.3);">
+                            הצג הכל
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200 overflow-x-auto">
+                    <template x-if="usersLoading">
+                        <div class="text-center py-8">
+                            <svg class="animate-spin w-8 h-8 mx-auto mb-3" style="color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <p class="text-gray-600">טוען משתמשים...</p>
+                        </div>
+                    </template>
+                    <template x-if="!usersLoading && users.length === 0">
+                        <p class="text-center text-gray-500 py-8">לא נמצאו משתמשים</p>
+                    </template>
+                    <template x-if="!usersLoading && users.length > 0">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="text-right py-3 px-4 font-bold text-gray-700">אימייל</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-700">סטטוס</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-700">תפקיד</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-700">תאריך הצטרפות</th>
+                                    <th class="text-right py-3 px-4 font-bold text-gray-700">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="user in users" :key="user.email">
+                                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                        <td class="py-3 px-4 font-medium text-gray-800" x-text="user.email"></td>
+                                        <td class="py-3 px-4">
+                                            <span class="px-2 py-1 rounded-full text-xs font-bold"
+                                                :class="user.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                                x-text="user.enabled ? 'פעיל' : 'מושבת'"></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-gray-600" x-text="user.role === 'admin' ? 'מנהל' : 'משתמש'"></td>
+                                        <td class="py-3 px-4 text-gray-600 text-xs" x-text="new Date(user.created).toLocaleDateString('he-IL')"></td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex gap-2" x-show="user.email !== currentAdminEmail">
+                                                <button x-show="user.enabled" type="button" @click="disableUser(user.email)"
+                                                    class="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                                                    style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;">
+                                                    השבת
+                                                </button>
+                                                <button x-show="!user.enabled" type="button" @click="enableUser(user.email)"
+                                                    class="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                                                    style="background: #D1FAE5; color: #065F46; border: 1px solid #10B981;">
+                                                    הפעל
+                                                </button>
+                                                <button type="button" @click="confirmDeleteUser(user.email)"
+                                                    class="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                                                    style="background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444;">
+                                                    מחק
+                                                </button>
+                                            </div>
+                                            <span x-show="user.email === currentAdminEmail" class="text-xs text-gray-400">החשבון שלך</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                    <!-- Pagination -->
+                    <div x-show="usersNextToken" class="text-center mt-4">
+                        <button type="button" @click="fetchMoreUsers()"
+                            class="px-6 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                            style="background: rgba(25,25,112,0.1); color: #191970; border: 2px solid rgba(25,25,112,0.3);">
+                            טען עוד משתמשים
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div x-show="showDeleteUserConfirm" x-cloak
+                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                     style="z-index: 10000;" @click.self="showDeleteUserConfirm = false">
+                    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md mx-4 border border-gray-100" @click.stop>
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-xl font-bold text-gray-800 mb-2">אישור מחיקת משתמש</p>
+                            <p class="text-gray-600">האם אתה בטוח שברצונך למחוק את המשתמש <strong x-text="userToDelete"></strong>? פעולה זו תמחק גם את כל המועדפים שלו.</p>
+                        </div>
+                        <div class="flex justify-center gap-4">
+                            <button type="button" @click="deleteUser(userToDelete); showDeleteUserConfirm = false"
+                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                מחק
+                            </button>
+                            <button type="button" @click="showDeleteUserConfirm = false"
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-bold transition-all duration-200">
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== AI SEARCH LOGS TAB ===== -->
+            <div x-show="activeTab === 'searchlogs'"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100">
+
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-3" style="color: #1F2937;">
+                        <svg class="w-8 h-8 inline-block ml-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        לוג חיפושי AI
+                    </h2>
+                    <div class="w-24 h-1 mx-auto rounded-full" style="background: linear-gradient(45deg, #DAA520, #FFD700, #B8860B);"></div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">חיפוש בטקסט</label>
+                            <input type="text" x-model="logQueryFilter" placeholder="חפש בשאילתות..."
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">מתאריך</label>
+                            <input type="date" x-model="logDateFrom"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2" style="color: #1F2937;">עד תאריך</label>
+                            <input type="date" x-model="logDateTo"
+                                class="w-full border-2 border-gray-200 p-3 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" @click="fetchSearchLogs()"
+                            class="main-search-btn px-6 py-3 rounded-xl font-bold inline-flex items-center">
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"></path>
+                            </svg>
+                            סנן
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Table -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200 overflow-x-auto">
+                    <template x-if="logsLoading">
+                        <div class="text-center py-8">
+                            <svg class="animate-spin w-8 h-8 mx-auto mb-3" style="color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <p class="text-gray-600">טוען לוגים...</p>
+                        </div>
+                    </template>
+                    <template x-if="!logsLoading && searchLogs.length === 0">
+                        <p class="text-center text-gray-500 py-8">לא נמצאו רשומות</p>
+                    </template>
+                    <template x-if="!logsLoading && searchLogs.length > 0">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-4" x-text="'סה\u05b4כ: ' + logsTotalCount + ' רשומות'"></p>
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-200">
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">שאילתה</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">תוצאות</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">צפייה</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">משתמש</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">תאריך</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="log in searchLogs" :key="log.id">
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                            <td class="py-3 px-4 text-gray-800 max-w-xs truncate" x-text="log.query_text"></td>
+                                            <td class="py-3 px-4 text-gray-600 text-center" x-text="log.result_count"></td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button x-show="log.result_count > 0 && log.result_ids"
+                                                    @click="openResultsModal(log)"
+                                                    class="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                                                    style="background: rgba(218,165,32,0.15); color: #B8860B; border: 1px solid #DAA520;">
+                                                    צפה בתוצאות
+                                                </button>
+                                                <span x-show="!log.result_count || !log.result_ids"
+                                                    class="text-xs text-gray-400">—</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-gray-500 text-xs" x-text="log.user_sub ? log.user_sub.substring(0, 8) + '...' : 'אנונימי'"></td>
+                                            <td class="py-3 px-4 text-gray-500 text-xs" x-text="new Date(log.created_at).toLocaleString('he-IL')"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <!-- Pagination -->
+                            <div class="flex justify-center gap-3 mt-4" x-show="logsTotalCount > logsPageSize">
+                                <button type="button" @click="logsPage > 1 && (logsPage--, fetchSearchLogs())"
+                                    :disabled="logsPage <= 1"
+                                    class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                                    style="background: rgba(25,25,112,0.1); color: #191970; border: 2px solid rgba(25,25,112,0.3);"
+                                    :class="{ 'opacity-40 cursor-not-allowed': logsPage <= 1 }">
+                                    הקודם
+                                </button>
+                                <span class="px-4 py-2 text-sm text-gray-600" x-text="'עמוד ' + logsPage"></span>
+                                <button type="button" @click="logsPage * logsPageSize < logsTotalCount && (logsPage++, fetchSearchLogs())"
+                                    :disabled="logsPage * logsPageSize >= logsTotalCount"
+                                    class="px-4 py-2 rounded-xl font-bold text-sm transition-all duration-200"
+                                    style="background: rgba(25,25,112,0.1); color: #191970; border: 2px solid rgba(25,25,112,0.3);"
+                                    :class="{ 'opacity-40 cursor-not-allowed': logsPage * logsPageSize >= logsTotalCount }">
+                                    הבא
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
         </div>
         <!-- End Tab Content -->
+
+        <!-- Results Modal -->
+        <div x-show="resultsModalOpen" x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+             style="z-index: 10000; backdrop-filter: blur(4px);"
+             @click.self="closeResultsModal()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col"
+                 style="border: 2px solid rgba(218,165,32,0.4);"
+                 @click.stop>
+                <!-- Header -->
+                <div class="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                    <h3 class="text-lg font-bold" style="color: #1F2937;">
+                        תוצאות חיפוש AI
+                    </h3>
+                    <button @click="closeResultsModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">×</button>
+                </div>
+
+                <!-- Query display -->
+                <div class="px-6 pt-4 flex-shrink-0">
+                    <p class="text-sm text-gray-500 mb-1">שאילתה:</p>
+                    <p class="font-semibold text-gray-800 mb-4" x-text="resultsModalQuery"></p>
+                </div>
+
+                <!-- Scrollable content -->
+                <div class="px-6 pb-6 overflow-y-auto flex-1">
+                    <!-- Loading -->
+                    <template x-if="resultsModalLoading">
+                        <div class="text-center py-8">
+                            <svg class="animate-spin w-8 h-8 mx-auto mb-3" style="color: #DAA520;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-gray-600">טוען תוצאות...</p>
+                        </div>
+                    </template>
+
+                    <!-- Error -->
+                    <template x-if="!resultsModalLoading && resultsModalError">
+                        <div class="text-center py-8">
+                            <p class="text-red-600 mb-4">שגיאה בטעינת התוצאות. אנא נסה שוב.</p>
+                            <button @click="retryResultsModal()" class="main-search-btn px-6 py-2 rounded-xl font-bold">
+                                נסה שוב
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Empty results -->
+                    <template x-if="!resultsModalLoading && !resultsModalError && resultsModalData.length === 0">
+                        <p class="text-center text-gray-500 py-8">לא נמצאו תוצאות לחיפוש זה</p>
+                    </template>
+
+                    <!-- Results list -->
+                    <template x-if="!resultsModalLoading && !resultsModalError && resultsModalData.length > 0">
+                        <div class="space-y-4">
+                            <template x-for="(result, index) in resultsModalData" :key="result.id">
+                                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                    <div class="flex items-center mb-2">
+                                        <span class="text-xs font-bold px-2 py-1 rounded-full"
+                                              style="background: rgba(218,165,32,0.15); color: #B8860B;"
+                                              x-text="'פרק ' + result.chapter + ', משנה ' + result.mishna"></span>
+                                        <span class="text-xs text-gray-400 mr-2" x-text="'#' + (index + 1)"></span>
+                                    </div>
+                                    <p class="text-gray-800 leading-relaxed text-sm" style="line-height: 1.8;"
+                                       x-text="result.text_pretty"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
     </div>
     <!-- End Main Container -->
 
     <script>
         // ===== AUTH HELPERS =====
         function getAuthToken() {
-            return localStorage.getItem('auth_token');
+            return localStorage.getItem('authToken') || localStorage.getItem('auth_token');
         }
 
         async function apiAuthGet(path) {
@@ -741,7 +1165,12 @@
             const response = await fetch('/api' + path, {
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
             });
-            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            if (response.status === 401) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html';
+                return;
+            }
             return response.json();
         }
 
@@ -753,7 +1182,12 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify(body)
             });
-            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            if (response.status === 401) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html';
+                return;
+            }
             return response;
         }
 
@@ -765,18 +1199,32 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify(body)
             });
-            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            if (response.status === 401) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html';
+                return;
+            }
             return response;
         }
 
-        async function apiAuthDelete(path) {
+        async function apiAuthDelete(path, body) {
             const token = getAuthToken();
             if (!token) { window.location.href = '/login.html'; return; }
-            const response = await fetch('/api' + path, {
+            const options = {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-            });
-            if (response.status === 401) { localStorage.removeItem('auth_token'); window.location.href = '/login.html'; return; }
+            };
+            if (body !== undefined) {
+                options.body = JSON.stringify(body);
+            }
+            const response = await fetch('/api' + path, options);
+            if (response.status === 401) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login.html';
+                return;
+            }
             return response;
         }
 
@@ -810,6 +1258,12 @@
                 selectedTags: [],
                 pirushEnabled: false,
 
+                // Pirush options management
+                pirushOptions: [],        // array of { s3_url, internal_name, button_label, enabled }
+                newPirushS3Url: '',
+                newPirushInternalName: '',
+                newPirushButtonLabel: '',
+
                 // Tag/Category data
                 categories: [],
                 uncategorizedTags: [],
@@ -831,9 +1285,56 @@
                 // Delete tag form
                 deleteTagId: '',
 
+                // User management state
+                users: [],
+                usersLoading: false,
+                usersNextToken: null,
+                userSearch: '',
+                currentAdminEmail: '',
+                showDeleteUserConfirm: false,
+                userToDelete: '',
+
+                // Search logs state
+                searchLogs: [],
+                logsLoading: false,
+                logsTotalCount: 0,
+                logsPage: 1,
+                logsPageSize: 20,
+                logQueryFilter: '',
+                logDateFrom: '',
+                logDateTo: '',
+
+                // Cache generation state
+                cacheGenerating: false,
+                lastCacheGenerated: '',
+
+                // Results modal state
+                resultsModalOpen: false,
+                resultsModalLoading: false,
+                resultsModalError: false,
+                resultsModalQuery: '',
+                resultsModalData: [],
+                resultsModalLogId: null,
+
                 async init() {
-                    // Check auth
-                    if (!getAuthToken()) {
+                    // Check auth — support both authToken and auth_token keys
+                    const token = getAuthToken();
+                    if (!token) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    // Decode JWT payload to check role and extract email
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        const role = payload['custom:role'] || '';
+                        if (role === 'user') {
+                            // Regular users are not allowed in the admin panel
+                            window.location.href = '/personal.html';
+                            return;
+                        }
+                        this.currentAdminEmail = payload.email || '';
+                    } catch (e) {
+                        // If JWT decode fails, redirect to login
                         window.location.href = '/login.html';
                         return;
                     }
@@ -852,6 +1353,7 @@
                         const data = await fetch('/api/settings').then(r => r.json());
                         if (data) {
                             this.pirushEnabled = data.pirush_enabled || false;
+                            this.pirushOptions = data.pirush_options || [];
                         }
                     } catch (e) {
                         console.error('Failed to load settings:', e);
@@ -868,6 +1370,46 @@
                         }
                     } catch (e) {
                         this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    }
+                },
+
+                async addPirushOption() {
+                    const body = {
+                        s3_url: this.newPirushS3Url,
+                        internal_name: this.newPirushInternalName,
+                        button_label: this.newPirushButtonLabel,
+                    };
+                    const resp = await apiAuthPost('/settings/pirush/options', body);
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                        this.newPirushS3Url = '';
+                        this.newPirushInternalName = '';
+                        this.newPirushButtonLabel = '';
+                        this.showMessage('אפשרות הפירוש נוספה בהצלחה');
+                    } else {
+                        this.showMessage('שגיאה בהוספת אפשרות הפירוש', 'error');
+                    }
+                },
+
+                async togglePirushOption(internalName, enabled) {
+                    const resp = await apiAuthPut('/settings/pirush/options', { internal_name: internalName, enabled });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                    } else {
+                        this.showMessage('שגיאה בעדכון אפשרות הפירוש', 'error');
+                    }
+                },
+
+                async deletePirushOption(internalName) {
+                    const resp = await apiAuthDelete('/settings/pirush/options', { internal_name: internalName });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        this.pirushOptions = data.options;
+                        this.showMessage('אפשרות הפירוש הוסרה בהצלחה');
+                    } else {
+                        this.showMessage('שגיאה בהסרת אפשרות הפירוש', 'error');
                     }
                 },
 
@@ -1082,8 +1624,205 @@
                     }
                 },
 
+                // ===== USER MANAGEMENT =====
+                async fetchUsers() {
+                    this.usersLoading = true;
+                    this.users = [];
+                    this.usersNextToken = null;
+                    try {
+                        const data = await apiAuthGet('/admin/users');
+                        if (data) {
+                            this.users = data.users || [];
+                            this.usersNextToken = data.next_token || null;
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאה בטעינת משתמשים', 'error');
+                    } finally {
+                        this.usersLoading = false;
+                    }
+                },
+
+                async fetchMoreUsers() {
+                    if (!this.usersNextToken) return;
+                    this.usersLoading = true;
+                    try {
+                        const data = await apiAuthGet('/admin/users?next_token=' + encodeURIComponent(this.usersNextToken));
+                        if (data) {
+                            this.users = [...this.users, ...(data.users || [])];
+                            this.usersNextToken = data.next_token || null;
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאה בטעינת משתמשים נוספים', 'error');
+                    } finally {
+                        this.usersLoading = false;
+                    }
+                },
+
+                async searchUsers() {
+                    if (!this.userSearch.trim()) { await this.fetchUsers(); return; }
+                    this.usersLoading = true;
+                    try {
+                        const data = await apiAuthGet('/admin/users/search?email=' + encodeURIComponent(this.userSearch));
+                        if (data) {
+                            this.users = data.users || [];
+                            this.usersNextToken = null;
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאה בחיפוש משתמשים', 'error');
+                    } finally {
+                        this.usersLoading = false;
+                    }
+                },
+
+                async disableUser(email) {
+                    try {
+                        const resp = await apiAuthPost('/admin/users/' + encodeURIComponent(email) + '/disable', {});
+                        if (resp && resp.ok) {
+                            this.showMessage('המשתמש הושבת בהצלחה');
+                            const user = this.users.find(u => u.email === email);
+                            if (user) user.enabled = false;
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בהשבתת המשתמש', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת', 'error');
+                    }
+                },
+
+                async enableUser(email) {
+                    try {
+                        const resp = await apiAuthPost('/admin/users/' + encodeURIComponent(email) + '/enable', {});
+                        if (resp && resp.ok) {
+                            this.showMessage('המשתמש הופעל בהצלחה');
+                            const user = this.users.find(u => u.email === email);
+                            if (user) user.enabled = true;
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה בהפעלת המשתמש', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת', 'error');
+                    }
+                },
+
+                confirmDeleteUser(email) {
+                    this.userToDelete = email;
+                    this.showDeleteUserConfirm = true;
+                },
+
+                async deleteUser(email) {
+                    try {
+                        const resp = await apiAuthDelete('/admin/users/' + encodeURIComponent(email));
+                        if (resp && resp.ok) {
+                            this.showMessage('המשתמש נמחק בהצלחה');
+                            this.users = this.users.filter(u => u.email !== email);
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה במחיקת המשתמש', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת', 'error');
+                    }
+                },
+
+                // ===== SEARCH LOGS =====
+                async fetchSearchLogs() {
+                    this.logsLoading = true;
+                    try {
+                        let path = '/admin/search-logs?page=' + this.logsPage + '&page_size=' + this.logsPageSize;
+                        if (this.logQueryFilter) path += '&query=' + encodeURIComponent(this.logQueryFilter);
+                        if (this.logDateFrom) path += '&date_from=' + encodeURIComponent(this.logDateFrom);
+                        if (this.logDateTo) path += '&date_to=' + encodeURIComponent(this.logDateTo);
+                        const data = await apiAuthGet(path);
+                        if (data) {
+                            this.searchLogs = data.logs || [];
+                            this.logsTotalCount = data.total || 0;
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאה בטעינת לוגים', 'error');
+                    } finally {
+                        this.logsLoading = false;
+                    }
+                },
+
+                async openResultsModal(log) {
+                    this.resultsModalLogId = log.id;
+                    this.resultsModalQuery = log.query_text;
+                    this.resultsModalOpen = true;
+                    this.resultsModalLoading = true;
+                    this.resultsModalError = false;
+                    this.resultsModalData = [];
+                    document.body.style.overflow = 'hidden';
+
+                    try {
+                        const data = await apiAuthGet('/admin/search-logs/' + log.id + '/results');
+                        if (data) {
+                            this.resultsModalQuery = data.query_text || log.query_text;
+                            this.resultsModalData = data.results || [];
+                        } else {
+                            this.resultsModalError = true;
+                        }
+                    } catch (e) {
+                        this.resultsModalError = true;
+                    } finally {
+                        this.resultsModalLoading = false;
+                    }
+                },
+
+                closeResultsModal() {
+                    this.resultsModalOpen = false;
+                    this.resultsModalData = [];
+                    this.resultsModalQuery = '';
+                    this.resultsModalLogId = null;
+                    this.resultsModalError = false;
+                    document.body.style.overflow = '';
+                },
+
+                async retryResultsModal() {
+                    if (this.resultsModalLogId) {
+                        this.resultsModalLoading = true;
+                        this.resultsModalError = false;
+                        try {
+                            const data = await apiAuthGet('/admin/search-logs/' + this.resultsModalLogId + '/results');
+                            if (data) {
+                                this.resultsModalQuery = data.query_text || this.resultsModalQuery;
+                                this.resultsModalData = data.results || [];
+                            } else {
+                                this.resultsModalError = true;
+                            }
+                        } catch (e) {
+                            this.resultsModalError = true;
+                        } finally {
+                            this.resultsModalLoading = false;
+                        }
+                    }
+                },
+
+                // ===== CACHE GENERATION =====
+                async generateCache() {
+                    this.cacheGenerating = true;
+                    this.lastCacheGenerated = '';
+                    try {
+                        const resp = await apiAuthPost('/admin/generate-cache', {});
+                        if (resp && resp.ok) {
+                            const result = await resp.json();
+                            this.lastCacheGenerated = result.generated_at || '';
+                            this.showMessage('הנתונים הסטטיים נוצרו בהצלחה');
+                        } else {
+                            const err = resp ? await resp.json().catch(() => ({})) : {};
+                            this.showMessage(err.error || 'שגיאה ביצירת הנתונים הסטטיים', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
+                    } finally {
+                        this.cacheGenerating = false;
+                    }
+                },
+
                 // ===== LOGOUT =====
                 logout() {
+                    localStorage.removeItem('authToken');
                     localStorage.removeItem('auth_token');
                     window.location.href = '/index.html';
                 },

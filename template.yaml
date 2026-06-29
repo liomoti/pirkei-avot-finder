@@ -139,7 +139,11 @@ Resources:
             - Effect: Allow
               Action:
                 - bedrock:InvokeModel
-              Resource: 'arn:aws:bedrock:us-east-2::foundation-model/us.amazon.nova-pro-v1:0'
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/us.amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-pro-v1:0'
 
   AdminFunction:
     Type: AWS::Serverless::Function
@@ -147,6 +151,24 @@ Resources:
       FunctionName: pirkei-avot-admin
       Handler: admin_handler.handler
       CodeUri: functions/admin/
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          CACHE_GENERATOR_FUNCTION_NAME: pirkei-avot-cache-generator
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminDisableUser
+                - cognito-idp:AdminEnableUser
+                - cognito-idp:AdminDeleteUser
+                - cognito-idp:AdminGetUser
+              Resource: !GetAtt CognitoUserPool.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:pirkei-avot-cache-generator'
       Events:
         AdminGetMishna:
           Type: HttpApi
@@ -204,6 +226,70 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        AdminListUsers:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminSearchUsers:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/search
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminDisableUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}/disable
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminEnableUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}/enable
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminDeleteUser:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/users/{email}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGetSearchLogs:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/search-logs
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGetSearchLogResults:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/search-logs/{log_id}/results
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminGenerateCache:
+          Type: HttpApi
+          Properties:
+            Path: /api/admin/generate-cache
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   SettingsFunction:
     Type: AWS::Serverless::Function
@@ -228,6 +314,30 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsPost:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsDelete:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        SettingsPirushOptionsPut:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/pirush/options
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   AuthFunction:
     Type: AWS::Serverless::Function
@@ -238,11 +348,16 @@ Resources:
       Environment:
         Variables:
           COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - cognito-idp:InitiateAuth
+                - cognito-idp:SignUp
+                - cognito-idp:AdminConfirmSignUp
+                - cognito-idp:ForgotPassword
+                - cognito-idp:ConfirmForgotPassword
               Resource: !GetAtt CognitoUserPool.Arn
       Events:
         AuthLogin:
@@ -261,6 +376,141 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: NONE
+        AuthRegister:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/register
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        AuthForgotPassword:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/forgot-password
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+        AuthConfirmReset:
+          Type: HttpApi
+          Properties:
+            Path: /api/auth/confirm-reset
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: NONE
+
+  CacheGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-cache-generator
+      Handler: cache_generator_handler.handler
+      CodeUri: functions/cache_generator/
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref FrontendBucket
+          CLOUDFRONT_DISTRIBUTION_ID: !Ref CloudFrontDistribution
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub '${FrontendBucket.Arn}/static/mishnaiot.json'
+            - Effect: Allow
+              Action:
+                - cloudfront:CreateInvalidation
+              Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-user
+      Handler: user_handler.handler
+      CodeUri: functions/user/
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource: !GetAtt CognitoUserPool.Arn
+      Events:
+        UserGetFavorites:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserPostFavorites:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserDeleteFavorite:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/favorites/{mishna_id}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetProfile:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/profile
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserUpdateProfile:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/profile
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserPostLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned
+            Method: POST
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserDeleteLearned:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/learned/{mishna_id}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UserGetProgress:
+          Type: HttpApi
+          Properties:
+            Path: /api/user/progress
+            Method: GET
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   # ============================================================
   # Task 6.3 - API Gateway HTTP API with Cognito Authorizer
@@ -313,13 +563,13 @@ Resources:
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: pirkei-avot-admin-pool
+      UserPoolName: pirkei-avot-user-pool
       AutoVerifiedAttributes:
         - email
       UsernameAttributes:
         - email
       AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: true
+        AllowAdminCreateUserOnly: false
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -327,6 +577,8 @@ Resources:
           RequireLowercase: true
           RequireNumbers: true
           RequireSymbols: false
+      # NOTE: custom:role and custom:full_name are added via CLI (add-custom-attributes)
+      # because Cognito Schema is immutable after User Pool creation.
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -336,7 +588,16 @@ Resources:
       GenerateSecret: false
       ExplicitAuthFlows:
         - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
+      ReadAttributes:
+        - email
+        - custom:role
+        - custom:full_name
+      WriteAttributes:
+        - email
+        - custom:role
+        - custom:full_name
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 30

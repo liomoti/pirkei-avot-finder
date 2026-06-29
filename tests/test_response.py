@@ -2,9 +2,16 @@
 
 import json
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-from layers.shared.python.response import success_response, error_response, serialize_mishna
+from layers.shared.python.response import (
+    success_response,
+    error_response,
+    serialize_mishna,
+    serialize_favorite,
+    serialize_search_log,
+)
 
 
 class TestSuccessResponse(unittest.TestCase):
@@ -159,6 +166,123 @@ class TestSerializeMishna(unittest.TestCase):
         self.assertEqual(result['chapter'], 'א')
         self.assertEqual(result['number'], 1)
         self.assertEqual(result['text_pretty'], 'מֹשֶׁה קִבֵּל תּוֹרָה מִסִּינַי')
+
+
+class TestSerializeFavorite(unittest.TestCase):
+
+    def _make_tag(self, name):
+        tag = MagicMock()
+        tag.name = name
+        return tag
+
+    def _make_mishna(self, tags=None):
+        m = MagicMock()
+        m.chapter = 'א'
+        m.mishna = 'ב'
+        m.text_pretty = 'מֹשֶׁה קִבֵּל תּוֹרָה מִסִּינַי'
+        m.tags = tags or []
+        return m
+
+    def _make_favorite(self, tags=None):
+        fav = MagicMock()
+        fav.id = 42
+        fav.mishna_id = 'א_ב'
+        fav.created_at = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        fav.mishna = self._make_mishna(tags=tags)
+        return fav
+
+    def test_top_level_keys(self):
+        """Validates: Requirements 8.2 — all required top-level keys present."""
+        fav = self._make_favorite()
+        result = serialize_favorite(fav)
+        self.assertEqual(set(result.keys()), {'id', 'mishna_id', 'created_at', 'mishna'})
+
+    def test_mishna_nested_keys(self):
+        """Validates: Requirements 8.2 — nested mishna dict has required keys."""
+        fav = self._make_favorite()
+        result = serialize_favorite(fav)
+        self.assertEqual(set(result['mishna'].keys()), {'chapter', 'mishna', 'text_pretty', 'tags'})
+
+    def test_field_values(self):
+        """Serialized values match the source UserFavorite object."""
+        fav = self._make_favorite()
+        result = serialize_favorite(fav)
+        self.assertEqual(result['id'], 42)
+        self.assertEqual(result['mishna_id'], 'א_ב')
+        self.assertEqual(result['mishna']['chapter'], 'א')
+        self.assertEqual(result['mishna']['mishna'], 'ב')
+        self.assertEqual(result['mishna']['text_pretty'], 'מֹשֶׁה קִבֵּל תּוֹרָה מִסִּינַי')
+
+    def test_created_at_iso_format(self):
+        """created_at is serialized as an ISO format string."""
+        fav = self._make_favorite()
+        result = serialize_favorite(fav)
+        # Should be parseable as ISO datetime
+        parsed = datetime.fromisoformat(result['created_at'])
+        self.assertEqual(parsed.year, 2024)
+        self.assertEqual(parsed.month, 6)
+        self.assertEqual(parsed.day, 1)
+
+    def test_tags_are_name_strings(self):
+        """Tags in nested mishna dict are a list of tag name strings."""
+        tags = [self._make_tag('ענווה'), self._make_tag('חכמה')]
+        fav = self._make_favorite(tags=tags)
+        result = serialize_favorite(fav)
+        self.assertEqual(result['mishna']['tags'], ['ענווה', 'חכמה'])
+
+    def test_empty_tags(self):
+        """Favorite with no tags returns empty tags list."""
+        fav = self._make_favorite(tags=[])
+        result = serialize_favorite(fav)
+        self.assertEqual(result['mishna']['tags'], [])
+
+
+class TestSerializeSearchLog(unittest.TestCase):
+
+    def _make_log(self, user_sub=None, result_ids=None):
+        log = MagicMock()
+        log.id = 7
+        log.query_text = 'מה ההבדל בין חכמה לבינה'
+        log.result_count = 3
+        log.result_ids = result_ids
+        log.user_sub = user_sub
+        log.created_at = datetime(2024, 7, 15, 9, 30, 0, tzinfo=timezone.utc)
+        return log
+
+    def test_all_keys_present(self):
+        """Validates: Requirements 7.4 — all required keys present."""
+        log = self._make_log()
+        result = serialize_search_log(log)
+        self.assertEqual(
+            set(result.keys()),
+            {'id', 'query_text', 'result_count', 'result_ids', 'user_sub', 'created_at'}
+        )
+
+    def test_field_values(self):
+        """Serialized values match the source AiSearchLog object."""
+        log = self._make_log(user_sub='abc-123', result_ids='א_א,א_ב,א_ג')
+        result = serialize_search_log(log)
+        self.assertEqual(result['id'], 7)
+        self.assertEqual(result['query_text'], 'מה ההבדל בין חכמה לבינה')
+        self.assertEqual(result['result_count'], 3)
+        self.assertEqual(result['result_ids'], 'א_א,א_ב,א_ג')
+        self.assertEqual(result['user_sub'], 'abc-123')
+
+    def test_created_at_iso_format(self):
+        """created_at is serialized as an ISO format string."""
+        log = self._make_log()
+        result = serialize_search_log(log)
+        parsed = datetime.fromisoformat(result['created_at'])
+        self.assertEqual(parsed.year, 2024)
+        self.assertEqual(parsed.month, 7)
+        self.assertEqual(parsed.day, 15)
+
+    def test_nullable_fields_preserved(self):
+        """Nullable user_sub and result_ids are serialized as None."""
+        log = self._make_log(user_sub=None, result_ids=None)
+        result = serialize_search_log(log)
+        self.assertIsNone(result['user_sub'])
+        self.assertIsNone(result['result_ids'])
 
 
 if __name__ == '__main__':
