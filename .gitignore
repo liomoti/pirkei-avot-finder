@@ -36,6 +36,9 @@ env/
 .cache/
 .pytest_cache/
 
+# Hypothesis property-based testing cache
+.hypothesis/
+
 # IDE files
 .vscode/
 .idea/
