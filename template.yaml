@@ -374,6 +374,14 @@ Resources:
             ApiId: !Ref HttpApi
             Auth:
               Authorizer: CognitoAuthorizer
+        SettingsPutSemanticSearchMethod:
+          Type: HttpApi
+          Properties:
+            Path: /api/settings/semantic-search-method
+            Method: PUT
+            ApiId: !Ref HttpApi
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   AuthFunction:
     Type: AWS::Serverless::Function

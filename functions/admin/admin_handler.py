@@ -452,6 +452,298 @@ def _create_category(session, event):
 
 
 # ---------------------------------------------------------------------------
+# User management helpers
+# ---------------------------------------------------------------------------
+
+def _get_user_attr(user, attr_name, default=''):
+    """Extract a named attribute from a Cognito user's Attributes list."""
+    for attr in user.get('Attributes', []):
+        if attr['Name'] == attr_name:
+            return attr['Value']
+    return default
+
+
+# ---------------------------------------------------------------------------
+# User management endpoints  (GET /api/admin/users, etc.)
+# ---------------------------------------------------------------------------
+
+def _list_users(event):
+    """Return a paginated list of all Cognito users.
+
+    Supports optional pagination via next_token query param.
+    Requirements: 10.2
+    """
+    params = event.get('queryStringParameters') or {}
+    next_token = params.get('next_token')
+
+    logger.info('Listing Cognito users')
+
+    kwargs = {'UserPoolId': COGNITO_USER_POOL_ID, 'Limit': 20}
+    if next_token:
+        kwargs['PaginationToken'] = next_token
+
+    response = cognito_client.list_users(**kwargs)
+
+    users = [
+        {
+            'email': _get_user_attr(u, 'email'),
+            'status': u['UserStatus'],
+            'enabled': u['Enabled'],
+            'created': u['UserCreateDate'].isoformat(),
+            'role': _get_user_attr(u, 'custom:role', 'user'),
+        }
+        for u in response.get('Users', [])
+    ]
+
+    logger.info(f'Found {len(users)} users')
+    return success_response({'users': users, 'next_token': response.get('PaginationToken')})
+
+
+def _search_users(event):
+    """Search Cognito users by email address.
+
+    Requirements: 10.3
+    """
+    params = event.get('queryStringParameters') or {}
+    email = params.get('email', '')
+
+    logger.info(f'Searching Cognito users by email: {email}')
+
+    response = cognito_client.list_users(
+        UserPoolId=COGNITO_USER_POOL_ID,
+        Filter=f'email = "{email}"',
+        Limit=20,
+    )
+
+    users = [
+        {
+            'email': _get_user_attr(u, 'email'),
+            'status': u['UserStatus'],
+            'enabled': u['Enabled'],
+            'created': u['UserCreateDate'].isoformat(),
+            'role': _get_user_attr(u, 'custom:role', 'user'),
+        }
+        for u in response.get('Users', [])
+    ]
+
+    logger.info(f'Search returned {len(users)} users')
+    return success_response({'users': users})
+
+
+def _disable_user(event, email):
+    """Disable a Cognito user account.
+
+    Prevents an admin from disabling their own account.
+    Requirements: 10.4, 10.7
+    """
+    caller_email = (
+        event.get('requestContext', {})
+             .get('authorizer', {})
+             .get('jwt', {})
+             .get('claims', {})
+             .get('email', '')
+    )
+
+    if caller_email == email:
+        return error_response('לא ניתן לבצע פעולה זו על החשבון שלך', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Disabling user: {email}')
+
+    try:
+        cognito_client.admin_disable_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    logger.info(f'User disabled: {email}')
+    return success_response({'message': 'המשתמש הושבת בהצלחה'})
+
+
+def _enable_user(event, email):
+    """Enable a previously disabled Cognito user account.
+
+    Requirements: 10.5
+    """
+    logger.info(f'Enabling user: {email}')
+
+    try:
+        cognito_client.admin_enable_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    logger.info(f'User enabled: {email}')
+    return success_response({'message': 'המשתמש הופעל בהצלחה'})
+
+
+def _delete_user(session, event, email):
+    """Delete a Cognito user and cascade-delete their favorites from the DB.
+
+    Prevents an admin from deleting their own account.
+    Requirements: 10.6, 10.7
+    """
+    caller_email = (
+        event.get('requestContext', {})
+             .get('authorizer', {})
+             .get('jwt', {})
+             .get('claims', {})
+             .get('email', '')
+    )
+
+    if caller_email == email:
+        return error_response('לא ניתן לבצע פעולה זו על החשבון שלך', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Deleting user: {email}')
+
+    # Fetch the user's sub from Cognito to identify their DB records
+    try:
+        user_data = cognito_client.admin_get_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    except cognito_client.exceptions.UserNotFoundException:
+        return error_response('המשתמש לא נמצא', 'NOT_FOUND', 404)
+
+    user_sub = None
+    for attr in user_data.get('UserAttributes', []):
+        if attr['Name'] == 'sub':
+            user_sub = attr['Value']
+            break
+
+    # Delete all favorites and learned records for this user from the database
+    if user_sub:
+        deleted_count = session.query(UserFavorite).filter_by(user_sub=user_sub).delete()
+        deleted_learned_count = session.query(UserLearned).filter_by(user_sub=user_sub).delete()
+        logger.info(f'Deleted {deleted_count} favorites and {deleted_learned_count} learned records for user sub: {user_sub}')
+
+    # Delete the Cognito user
+    cognito_client.admin_delete_user(UserPoolId=COGNITO_USER_POOL_ID, Username=email)
+    session.commit()
+
+    logger.info(f'User deleted: {email}')
+    return success_response({'message': 'המשתמש נמחק בהצלחה'})
+
+
+# ---------------------------------------------------------------------------
+# Cache generation  (POST /api/admin/generate-cache)
+# ---------------------------------------------------------------------------
+
+def _generate_cache(event):
+    """Invoke the Cache Generator Lambda and return its response."""
+    auth_error = _require_admin(event)
+    if auth_error:
+        return auth_error
+
+    logger.info('Invoking Cache Generator Lambda')
+
+    try:
+        response = lambda_client.invoke(
+            FunctionName=CACHE_GENERATOR_FUNCTION_NAME,
+            InvocationType='RequestResponse',
+        )
+
+        # Check for Lambda-level errors
+        if response.get('FunctionError'):
+            error_payload = response['Payload'].read().decode('utf-8')
+            logger.error(f'Cache Generator Lambda error: {error_payload}')
+            return error_response('שגיאה בהפעלת מחולל המטמון', 'INTERNAL_ERROR', 500)
+
+        # Parse and forward the Cache Generator's response
+        payload = json.loads(response['Payload'].read().decode('utf-8'))
+        return payload
+
+    except ClientError as e:
+        logger.error(f'Error invoking Cache Generator Lambda: {str(e)}', exc_info=True)
+        return error_response('שגיאה בהפעלת מחולל המטמון', 'INTERNAL_ERROR', 500)
+
+
+# ---------------------------------------------------------------------------
+# AI search logs endpoints
+# (GET /api/admin/search-logs, GET /api/admin/search-logs/{id}/results)
+# ---------------------------------------------------------------------------
+
+def _get_search_log_results(session, log_id_str):
+    """Return the Mishna objects referenced by a search log entry's result_ids.
+
+    Parses the comma-separated result_ids field, queries the mishna table,
+    and returns the list of Mishna objects with their text.
+    """
+    try:
+        log_id = int(log_id_str)
+    except (ValueError, TypeError):
+        return error_response('מזהה לוג לא חוקי', 'VALIDATION_ERROR', 400)
+
+    log_entry = session.query(AiSearchLog).filter_by(id=log_id).first()
+    if not log_entry:
+        return error_response('רשומת לוג לא נמצאה', 'NOT_FOUND', 404)
+
+    # Parse result_ids — may be NULL or empty
+    result_ids_str = (log_entry.result_ids or '').strip()
+    if not result_ids_str:
+        return success_response({
+            'query_text': log_entry.query_text,
+            'results': []
+        })
+
+    mishna_ids = [mid.strip() for mid in result_ids_str.split(',') if mid.strip()]
+
+    # Query all matching Mishna records in one query
+    mishnas = session.query(Mishna).filter(Mishna.id.in_(mishna_ids)).all()
+
+    # Preserve the original order from result_ids
+    mishna_map = {m.id: m for m in mishnas}
+    ordered_results = []
+    for mid in mishna_ids:
+        if mid in mishna_map:
+            m = mishna_map[mid]
+            ordered_results.append({
+                'id': m.id,
+                'chapter': m.chapter,
+                'mishna': m.mishna,
+                'text_pretty': m.text_pretty,
+            })
+
+    return success_response({
+        'query_text': log_entry.query_text,
+        'results': ordered_results,
+    })
+
+
+def _get_search_logs(session, event):
+    """Return paginated AI search logs with optional filters.
+
+    Supports filtering by date_from, date_to, and query substring.
+    Requirements: 7.4, 7.5, 10.9
+    """
+    params = event.get('queryStringParameters') or {}
+
+    date_from = params.get('date_from')
+    date_to = params.get('date_to')
+    query_filter = params.get('query')
+
+    try:
+        page = int(params.get('page', 1))
+    except (ValueError, TypeError):
+        page = 1
+
+    try:
+        page_size = int(params.get('page_size', 20))
+    except (ValueError, TypeError):
+        page_size = 20
+
+    logger.info(f'Fetching search logs — page: {page}, page_size: {page_size}, '
+                f'date_from: {date_from}, date_to: {date_to}, query: {query_filter}')
+
+    q = session.query(AiSearchLog).order_by(AiSearchLog.created_at.desc())
+
+    if date_from:
+        q = q.filter(AiSearchLog.created_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(AiSearchLog.created_at <= datetime.fromisoformat(date_to))
+    if query_filter:
+        q = q.filter(AiSearchLog.query_text.ilike(f'%{query_filter}%'))
+
+    total = q.count()
+    logs = q.offset((page - 1) * page_size).limit(page_size).all()
+
+    serialized = [serialize_search_log(log) for log in logs]
+
+    logger.info(f'Returning {len(serialized)} of {total} search logs')
     return success_response({
         'logs': serialized,
         'total': total,
