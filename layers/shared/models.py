@@ -101,6 +101,34 @@ class SiteSetting(Base):
     value = Column(Text, nullable=False)
 
 
+class AiSearchLog(Base):
+    """
+    Model recording AI/semantic search queries for admin analytics.
+
+    Attributes:
+        id (int): Auto-incrementing primary key.
+        query_text (str): The user's search query text.
+        result_count (int): Number of results returned for the query.
+        result_ids (str): Comma-separated mishna IDs of the results.
+        user_sub (str): Cognito user sub of the requester, if any.
+        search_method (str): Which Lambda processed the query ('rag' or 'json_context').
+        created_at (datetime): UTC timestamp of when the search was logged.
+    """
+    __tablename__ = 'ai_search_log'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    query_text = Column(String(500), nullable=False)
+    result_count = Column(Integer, nullable=False, default=0)
+    result_ids = Column(Text, nullable=True)
+    user_sub = Column(String(128), nullable=True, index=True)
+    search_method = Column(String(20), nullable=True)  # 'rag' or 'json_context'
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('ix_ai_search_log_created', 'created_at'),
+    )
+
+
 def get_pirush_settings(session):
     """Fetch pirush settings in a single DB query + env var read.
 
@@ -160,6 +188,37 @@ def set_pirush_options(session, options):
     session.commit()
 
 
+def get_semantic_search_method(session):
+    """Fetch the active semantic search method from SiteSetting.
+
+    Args:
+        session: SQLAlchemy session instance.
+
+    Returns:
+        The configured method string, or 'rag' when the key is absent.
+    """
+    setting = session.query(SiteSetting).filter_by(key='semantic_search_method').first()
+    return setting.value if setting else 'rag'
+
+
+def set_semantic_search_method(session, method):
+    """Upsert the semantic_search_method setting.
+
+    Caller must validate that method is 'rag' or 'json_context'.
+
+    Args:
+        session: SQLAlchemy session instance.
+        method: The semantic search method value to store.
+    """
+    setting = session.query(SiteSetting).filter_by(key='semantic_search_method').first()
+    if setting is None:
+        setting = SiteSetting(key='semantic_search_method', value=method)
+        session.add(setting)
+    else:
+        setting.value = method
+    session.commit()
+
+
 class UserFavorite(Base):
     """
     Model representing a user's saved favorite Mishna.
@@ -207,30 +266,4 @@ class UserLearned(Base):
 
     __table_args__ = (
         UniqueConstraint('user_sub', 'mishna_id', name='uq_user_learned'),
-    )
-
-
-class AiSearchLog(Base):
-    """
-    Model representing a logged AI/semantic search query for admin analytics.
-
-    Attributes:
-        id (int): Auto-incremented primary key.
-        query_text (str): The semantic search query string.
-        result_count (int): Number of results returned.
-        result_ids (str): Comma-separated mishna IDs from results (nullable).
-        user_sub (str): Cognito user sub if authenticated, NULL otherwise.
-        created_at (datetime): UTC timestamp when the search was performed.
-    """
-    __tablename__ = 'ai_search_log'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    query_text = Column(String(500), nullable=False)
-    result_count = Column(Integer, nullable=False, default=0)
-    result_ids = Column(Text, nullable=True)
-    user_sub = Column(String(128), nullable=True, index=True)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-
-    __table_args__ = (
-        Index('ix_ai_search_log_created', 'created_at'),
     )

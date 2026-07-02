@@ -11,7 +11,14 @@ import logging
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import get_pirush_settings, get_pirush_options, set_pirush_enabled, set_pirush_options
+from models import (
+    get_pirush_settings,
+    get_pirush_options,
+    set_pirush_enabled,
+    set_pirush_options,
+    get_semantic_search_method,
+    set_semantic_search_method,
+)
 from response import success_response, error_response
 
 logger = logging.getLogger()
@@ -47,6 +54,10 @@ def handler(event, context):
         elif path == '/api/settings/pirush' and method == 'PUT':
             return _update_pirush(session, event)
 
+        # PUT /api/settings/semantic-search-method
+        elif path == '/api/settings/semantic-search-method' and method == 'PUT':
+            return _update_semantic_search_method(session, event)
+
         else:
             return error_response('הנתיב המבוקש לא נמצא', 'NOT_FOUND', 404)
 
@@ -78,6 +89,8 @@ def _get_settings(session):
 
     settings = get_pirush_settings(session)
     settings['pirush_options'] = get_pirush_options(session)
+
+    settings['semantic_search_method'] = get_semantic_search_method(session)
 
     logger.info(f'Settings retrieved — pirush_enabled: {settings["pirush_enabled"]}')
     return success_response(settings)
@@ -149,3 +162,28 @@ def _delete_pirush_option(session, event):
     updated = [o for o in options if o.get('internal_name') != internal_name]
     set_pirush_options(session, updated)
     return success_response({'message': 'אפשרות הפירוש הוסרה בהצלחה', 'options': updated})
+
+
+def _update_semantic_search_method(session, event):
+    """Validate and upsert semantic_search_method in SiteSetting table."""
+    body = _parse_body(event)
+
+    method = body.get('method', '')
+    if method not in ('rag', 'json_context'):
+        logger.warning(f'Invalid semantic_search_method value: {method}')
+        return error_response('ערך לא חוקי עבור שיטת חיפוש', 'VALIDATION_ERROR', 400)
+
+    logger.info(f'Updating semantic_search_method to {method}')
+
+    try:
+        set_semantic_search_method(session, method)
+        logger.info(f'semantic_search_method updated to {method}')
+        return success_response({
+            'message': 'שיטת החיפוש עודכנה בהצלחה',
+            'semantic_search_method': method,
+        })
+
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.error(f'Database error while updating semantic search method: {str(e)}', exc_info=True)
+        return error_response('אירעה שגיאה בשמירת הנתונים', 'INTERNAL_ERROR', 500)

@@ -13,7 +13,7 @@ import boto3
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import Mishna, Tag, Category, AiSearchLog
+from models import Mishna, Tag, Category, AiSearchLog, get_semantic_search_method
 from constants import ALLOWED_CHAPTERS
 from text_utils import remove_niqqud
 from response import success_response, error_response, serialize_mishna
@@ -52,26 +52,6 @@ def _extract_user_sub_from_event(event):
         return claims.get('sub')
     except Exception:
         return None
-
-
-def _log_ai_search(session, query, results, user_sub):
-    """Best-effort logging of an AI/semantic search query to the ai_search_log table.
-
-    Failures are logged as warnings but never raised — they must not affect the search response.
-    """
-    try:
-        result_ids = ','.join(str(r.get('id', '')) for r in results)
-        log_entry = AiSearchLog(
-            query_text=query,
-            result_count=len(results),
-            result_ids=result_ids if result_ids else None,
-            user_sub=user_sub,
-        )
-        session.add(log_entry)
-        session.commit()
-        logger.info(f'AI search logged — query length: {len(query)}, results: {len(results)}')
-    except Exception as e:
-        logger.warning(f'Failed to log AI search (non-critical): {str(e)}')
 
 
 def handler(event, context):
@@ -193,7 +173,12 @@ def _exact_text_search(session, query):
 
 def _semantic_search(session, query, event):
     """Invoke the Semantic Search Lambda directly and fetch matching records."""
-    function_name = os.environ.get('SEMANTIC_SEARCH_FUNCTION_NAME', '')
+    # Select the target Lambda based on the active semantic search method
+    method = get_semantic_search_method(session)
+    if method == 'json_context':
+        function_name = os.environ.get('JSON_CONTEXT_SEARCH_FUNCTION_NAME', '')
+    else:
+        function_name = os.environ.get('SEMANTIC_SEARCH_FUNCTION_NAME', '')
 
     if not function_name:
         logger.error('SEMANTIC_SEARCH_FUNCTION_NAME env var not configured')
@@ -230,9 +215,8 @@ def _semantic_search(session, query, event):
 
         if not api_results:
             logger.info('Semantic search returned no results')
-            response = success_response([])
-            _log_ai_search(session, query, [], _extract_user_sub_from_event(event))
-            return response
+            _log_ai_search(session, query, [], _extract_user_sub_from_event(event), search_method=method)
+            return success_response([])
 
         # Build a mapping of mishna_number -> score
         number_score_map = {}
@@ -261,9 +245,8 @@ def _semantic_search(session, query, event):
         serialized.sort(key=lambda x: x['similarity_score'], reverse=True)
 
         logger.info(f'Semantic search returned {len(serialized)} results')
-        response = success_response(serialized)
-        _log_ai_search(session, query, serialized, _extract_user_sub_from_event(event))
-        return response
+        _log_ai_search(session, query, serialized, _extract_user_sub_from_event(event), search_method=method)
+        return success_response(serialized)
 
     except Exception as e:
         logger.error(f'Semantic search error: {str(e)}', exc_info=True)
@@ -271,6 +254,35 @@ def _semantic_search(session, query, event):
             'חיפוש סמנטי נכשל. אנא נסה שוב מאוחר יותר.',
             'SEARCH_FAILED', 502
         )
+
+
+def _log_ai_search(session, query, results, user_sub, search_method=None):
+    """Best-effort logging of an AI/semantic search query.
+
+    Args:
+        session: SQLAlchemy session.
+        query: The user's search query text.
+        results: List of serialized result dicts.
+        user_sub: Cognito user sub or None.
+        search_method: 'rag' or 'json_context' indicating which Lambda was used.
+    """
+    try:
+        result_ids = ','.join(str(r.get('id', '')) for r in results)
+        log_entry = AiSearchLog(
+            query_text=query,
+            result_count=len(results),
+            result_ids=result_ids if result_ids else None,
+            user_sub=user_sub,
+            search_method=search_method,
+        )
+        session.add(log_entry)
+        session.commit()
+        logger.info(
+            f'AI search logged — query length: {len(query)}, '
+            f'results: {len(results)}, method: {search_method}'
+        )
+    except Exception as e:
+        logger.warning(f'Failed to log AI search (non-critical): {str(e)}')
 
 
 # ---------------------------------------------------------------------------

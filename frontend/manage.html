@@ -317,6 +317,24 @@
                     </template>
                 </div>
 
+                <!-- Semantic Search Method Selector -->
+                <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 ml-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                            <label class="text-lg font-bold cursor-pointer" style="color: #1F2937;">שיטת חיפוש סמנטי</label>
+                        </div>
+                        <select x-model="semanticSearchMethod" @change="updateSemanticSearchMethod()"
+                            class="border-2 border-gray-200 p-3 rounded-xl focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 transition-all duration-200 font-semibold"
+                            style="color: #1F2937;">
+                            <option value="rag">RAG (חיפוש וקטורי)</option>
+                            <option value="json_context">JSON Context (הקשר מלא)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Search Mishna Card -->
                 <div class="bg-white bg-opacity-95 rounded-2xl shadow-lg p-6 md:p-8 mb-6 border border-gray-200">
                     <div class="flex items-center justify-center mb-6">
@@ -1022,6 +1040,7 @@
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">שאילתה</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">תוצאות</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">צפייה</th>
+                                        <th class="text-right py-3 px-4 font-bold text-gray-700">שיטה</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">משתמש</th>
                                         <th class="text-right py-3 px-4 font-bold text-gray-700">תאריך</th>
                                     </tr>
@@ -1041,6 +1060,7 @@
                                                 <span x-show="!log.result_count || !log.result_ids"
                                                     class="text-xs text-gray-400">—</span>
                                             </td>
+                                            <td class="py-3 px-4 text-gray-600 text-xs" x-text="log.search_method === 'rag' ? 'RAG' : log.search_method === 'json_context' ? 'JSON Context' : ''"></td>
                                             <td class="py-3 px-4 text-gray-500 text-xs" x-text="log.user_sub ? log.user_sub.substring(0, 8) + '...' : 'אנונימי'"></td>
                                             <td class="py-3 px-4 text-gray-500 text-xs" x-text="new Date(log.created_at).toLocaleString('he-IL')"></td>
                                         </tr>
@@ -1257,6 +1277,7 @@
                 pirushUrlWarning: false,
                 selectedTags: [],
                 pirushEnabled: false,
+                semanticSearchMethod: 'rag',
 
                 // Pirush options management
                 pirushOptions: [],        // array of { s3_url, internal_name, button_label, enabled }
@@ -1354,9 +1375,23 @@
                         if (data) {
                             this.pirushEnabled = data.pirush_enabled || false;
                             this.pirushOptions = data.pirush_options || [];
+                            this.semanticSearchMethod = data.semantic_search_method || 'rag';
                         }
                     } catch (e) {
                         console.error('Failed to load settings:', e);
+                    }
+                },
+
+                async updateSemanticSearchMethod() {
+                    try {
+                        const resp = await apiAuthPut('/settings/semantic-search-method', { method: this.semanticSearchMethod });
+                        if (resp && resp.ok) {
+                            this.showMessage('שיטת החיפוש עודכנה בהצלחה');
+                        } else {
+                            this.showMessage('שגיאה בעדכון שיטת החיפוש', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט.', 'error');
                     }
                 },
 

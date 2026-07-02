@@ -110,7 +110,7 @@ def serialize_search_log(log):
         log: An AiSearchLog SQLAlchemy model instance.
 
     Returns:
-        dict with all search log fields.
+        dict with all AiSearchLog fields, including search_method.
     """
     return {
         'id': log.id,
@@ -118,5 +118,6 @@ def serialize_search_log(log):
         'result_count': log.result_count,
         'result_ids': log.result_ids,
         'user_sub': log.user_sub,
+        'search_method': log.search_method,
         'created_at': log.created_at.isoformat()
     }

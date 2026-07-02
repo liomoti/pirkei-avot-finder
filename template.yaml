@@ -70,12 +70,17 @@ Resources:
       Environment:
         Variables:
           SEMANTIC_SEARCH_FUNCTION_NAME: !Ref SemanticSearchFunction
+          JSON_CONTEXT_SEARCH_FUNCTION_NAME: !Ref JsonContextSearchFunction
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
               Resource: !GetAtt SemanticSearchFunction.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !GetAtt JsonContextSearchFunction.Arn
       Events:
         SearchMishna:
           Type: HttpApi
@@ -144,6 +149,37 @@ Resources:
                 - 'arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0'
                 - 'arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-pro-v1:0'
                 - 'arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-pro-v1:0'
+
+  # ============================================================
+  # JSON Context Search Function (full-JSON-context semantic search)
+  # ============================================================
+
+  JsonContextSearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pirkei-avot-json-context-search
+      Handler: json_context_search_handler.handler
+      CodeUri: functions/json_context_search/
+      MemorySize: 512
+      Timeout: 60
+      Layers: []
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref FrontendBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/us.amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-pro-v1:0'
+                - 'arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-pro-v1:0'
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub '${FrontendBucket.Arn}/static/mishnaiot.json'
 
   AdminFunction:
     Type: AWS::Serverless::Function
