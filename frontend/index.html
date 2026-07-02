@@ -12,6 +12,8 @@
                     'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
         })(window, document, 'script', 'dataLayer', 'GTM-WVH2ZN86');</script>
     <!-- End Google Tag Manager -->
+    <!-- Umami Analytics -->
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="bd47690c-1c4e-4e28-a0c5-570005686aa2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>חיפוש מִשׁנָה</title>
@@ -65,6 +67,44 @@
             </div>
         </div>
     </header>
+
+    <!-- Auth Navigation Bar -->
+    <div class="container mx-auto px-4 mb-4">
+        <div class="max-w-3xl mx-auto">
+            <!-- Unauthenticated: show login/register buttons -->
+            <div x-show="!isAuthenticated" class="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
+                <a href="/login.html">
+                    <button type="button" class="auth-nav-btn secondary">
+                        התחברות
+                    </button>
+                </a>
+                <a href="/register.html">
+                    <button type="button" class="auth-nav-btn primary">
+                        הרשמה
+                    </button>
+                </a>
+            </div>
+            <!-- Authenticated: show user info and links -->
+            <div x-show="isAuthenticated" x-cloak class="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3">
+                <span class="text-sm font-medium w-full sm:w-auto text-center sm:text-right" style="color: #F5F5DC;" x-text="userEmail"></span>
+                <a href="/personal.html">
+                    <button type="button" class="auth-nav-btn secondary">
+                        האזור האישי
+                    </button>
+                </a>
+                <template x-if="userRole === 'admin'">
+                    <a href="/manage.html">
+                        <button type="button" class="auth-nav-btn secondary">
+                            פאנל ניהול
+                        </button>
+                    </a>
+                </template>
+                <button type="button" @click="logout()" class="auth-nav-btn secondary" style="opacity: 0.8;">
+                    התנתק
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Search Container -->
     <div class="container mx-auto px-4 mb-12">
@@ -301,33 +341,104 @@
                                 <div class="bg-gray-50 p-6 rounded-xl mb-6 border-r-4 border-yellow-600 gold-gradient-border relative">
                                     <div class="flex items-start justify-between">
                                         <p class="text-lg leading-relaxed text-gray-800 text-center font-medium flex-1" x-text="result.text_pretty"></p>
-                                        <button
-                                            :data-mishna-text="'פרק ' + result.chapter + ' משנה ' + result.mishna + ': ' + result.text_pretty"
-                                            @click="copyMishnaText($event.currentTarget)"
-                                            class="mr-3 p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-all duration-200 flex-shrink-0 group"
-                                            title="העתק משנה">
-                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none"
-                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                                                </path>
-                                            </svg>
-                                        </button>
+                                        <!-- Action icons: copy, favorite, learned -->
+                                        <div class="mr-3 flex flex-col items-center gap-2 flex-shrink-0">
+
+                                            <!-- Copy button -->
+                                            <button
+                                                :data-mishna-text="'פרק ' + result.chapter + ' משנה ' + result.mishna + ': ' + result.text_pretty"
+                                                @click="copyMishnaText($event.currentTarget)"
+                                                class="p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-all duration-200 group"
+                                                style="background: transparent; border: none; box-shadow: none; cursor: pointer;"
+                                                title="העתק משנה">
+                                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                    </path>
+                                                </svg>
+                                            </button>
+
+                                            <!-- Favorite (heart) button -->
+                                            <div class="relative">
+                                                <button type="button"
+                                                    @click.stop="toggleFavorite(result.id)"
+                                                    class="p-2 rounded-lg transition-all duration-200 group"
+                                                    style="background: transparent; border: none; box-shadow: none; cursor: pointer;"
+                                                    :title="userFavoriteIds.has(result.id) ? 'הסר מהמועדפים' : 'הוסף למועדפים'">
+                                                    <!-- Favorited: filled red heart -->
+                                                    <svg x-show="userFavoriteIds.has(result.id)" class="w-5 h-5 transition-transform duration-200 group-hover:scale-110" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#F87171" stroke="#F87171" stroke-width="1">
+                                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                    </svg>
+                                                    <!-- Not favorited: stroke-only heart -->
+                                                    <svg x-show="!userFavoriteIds.has(result.id)" class="w-5 h-5 text-gray-500 transition-transform duration-200 group-hover:scale-110 group-hover:text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                                    </svg>
+                                                </button>
+                                                <!-- Guest popup for favorites -->
+                                                <div x-show="favoritePopupMishnaId === result.id" x-cloak
+                                                     @click.outside="closeFavoritePopup()"
+                                                     class="absolute top-10 left-0 z-50 p-3 rounded-xl shadow-xl text-sm font-medium"
+                                                     style="background: rgba(255,255,255,0.95); color: #1F2937; border: 2px solid rgba(218,165,32,0.4); min-width: 210px; backdrop-filter: blur(10px);"
+                                                     x-transition:enter="transition ease-out duration-200"
+                                                     x-transition:enter-start="opacity-0 transform scale-95"
+                                                     x-transition:enter-end="opacity-100 transform scale-100">
+                                                    <p class="mb-2 text-center">כדי לשמור מועדפים יש להתחבר</p>
+                                                    <div class="flex gap-2 justify-center">
+                                                        <a href="/login.html" class="font-bold hover:underline px-3 py-1 rounded-lg" style="color: #191970; background: rgba(25,25,112,0.08);">התחברות</a>
+                                                        <a href="/register.html" class="font-bold hover:underline px-3 py-1 rounded-lg" style="color: #191970; background: rgba(218,165,32,0.15);">הרשמה</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Learned (checkmark) button -->
+                                            <div class="relative">
+                                                <button type="button"
+                                                    @click.stop="toggleLearned(result.id)"
+                                                    class="p-2 rounded-lg transition-all duration-200 group learned-btn"
+                                                    style="background: transparent; border: none; box-shadow: none; cursor: pointer;"
+                                                    :title="userLearnedIds.has(result.id) ? 'הסר סימון נלמד' : 'סמן כנלמד'">
+                                                    <!-- Learned: filled green checkmark -->
+                                                    <svg x-show="userLearnedIds.has(result.id)" class="w-5 h-5 transition-transform duration-200 group-hover:scale-110" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"/>
+                                                    </svg>
+                                                    <!-- Not learned: gray checkmark outline -->
+                                                    <svg x-show="!userLearnedIds.has(result.id)" class="w-5 h-5 text-gray-500 transition-transform duration-200 group-hover:scale-110 group-hover:text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"/>
+                                                    </svg>
+                                                </button>
+                                                <!-- Guest popup for learned -->
+                                                <div x-show="learnedPopupMishnaId === result.id" x-cloak
+                                                     @click.outside="closeLearnedPopup()"
+                                                     class="absolute top-10 left-0 z-50 p-3 rounded-xl shadow-xl text-sm font-medium"
+                                                     style="background: rgba(255,255,255,0.95); color: #1F2937; border: 2px solid rgba(34,197,94,0.4); min-width: 210px; backdrop-filter: blur(10px);"
+                                                     x-transition:enter="transition ease-out duration-200"
+                                                     x-transition:enter-start="opacity-0 transform scale-95"
+                                                     x-transition:enter-end="opacity-100 transform scale-100">
+                                                    <p class="mb-2 text-center">כדי לסמן משניות כנלמדות יש להתחבר</p>
+                                                    <div class="flex gap-2 justify-center">
+                                                        <a href="/login.html" class="font-bold hover:underline px-3 py-1 rounded-lg" style="color: #22C55E; background: rgba(34,197,94,0.08);">התחברות</a>
+                                                        <a href="/register.html" class="font-bold hover:underline px-3 py-1 rounded-lg" style="color: #22C55E; background: rgba(34,197,94,0.15);">הרשמה</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Pirush Button -->
-                                <template x-if="pirushEnabled && result.pirush_url">
-                                    <div class="text-center my-4">
-                                        <button type="button"
-                                            @click="$dispatch('open-pirush', { url: result.pirush_url, chapter: result.chapter, mishna: result.mishna })"
-                                            class="pirush-btn"
-                                            aria-label="פתח פירוש למשנה">
-                                            <svg class="w-5 h-5 ml-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                            </svg>
-                                            פירוש
-                                        </button>
+                                <!-- Pirush Buttons -->
+                                <template x-if="pirushEnabled && pirushOptions.some(o => o.enabled)">
+                                    <div class="text-center my-4 flex flex-wrap justify-center gap-2">
+                                        <template x-for="opt in pirushOptions.filter(o => o.enabled)" :key="opt.internal_name">
+                                            <button
+                                                type="button"
+                                                @click="$dispatch('open-pirush', { url: opt.s3_url.replace(/\/+$/, '') + '/' + result.number + '.pdf', chapter: result.chapter, mishna: result.mishna })"
+                                                class="pirush-btn"
+                                                :aria-label="'פתח ' + opt.button_label + ' למשנה'"
+                                                x-text="opt.button_label">
+                                            </button>
+                                        </template>
                                     </div>
                                 </template>
 
@@ -746,12 +857,25 @@
                 results: [],
                 hasSearched: false,
                 pirushEnabled: false,
+                pirushOptions: [],
                 pirushAttributionUrl: '',
                 errorMessage: '',
+                isAuthenticated: false,
+                userRole: '',
+                userEmail: '',
+                userFavoriteIds: new Set(),
+                favoritePopupMishnaId: null,
+                userLearnedIds: new Set(),
+                learnedPopupMishnaId: null,
+                cacheLoaded: false,
+                cachedMishnayot: [],
+                cachedTags: null,
 
-                init() {
+                async init() {
+                    await this.loadStaticCache();
                     this.updateMishnaOptions();
                     this.fetchSettings();
+                    this._initAuthState();
                 },
 
                 updateMishnaOptions() {
@@ -766,9 +890,24 @@
                     try {
                         const data = await apiGet('/settings');
                         this.pirushEnabled = data.pirush_enabled || false;
+                        this.pirushOptions = data.pirush_options || [];
                         this.pirushAttributionUrl = data.pirush_attribution_url || '';
                     } catch (e) {
                         console.error('Failed to fetch settings:', e);
+                    }
+                },
+
+                async loadStaticCache() {
+                    try {
+                        const response = await fetch('/static/mishnaiot.json');
+                        if (!response.ok) throw new Error('Cache fetch failed');
+                        const data = await response.json();
+                        this.cachedMishnayot = data.mishnayot || [];
+                        this.cachedTags = data.tags || null;
+                        this.cacheLoaded = true;
+                    } catch (e) {
+                        console.warn('Static cache not available, using API fallback:', e.message);
+                        this.cacheLoaded = false;
                     }
                 },
 
@@ -810,12 +949,26 @@
                     try {
                         let data;
                         if (this.searchType === 'search_mishna') {
-                            const params = new URLSearchParams({
-                                chapter: this.selectedChapter,
-                                mishna: this.selectedMishna
-                            });
-                            data = await apiGet('/search/mishna?' + params.toString());
+                            if (this.cacheLoaded) {
+                                // Client-side filtering from cache
+                                if (this.selectedMishna === 'all') {
+                                    data = this.cachedMishnayot
+                                        .filter(m => m.chapter === this.selectedChapter)
+                                        .sort((a, b) => a.number - b.number);
+                                } else {
+                                    const targetId = this.selectedChapter + '_' + this.selectedMishna;
+                                    data = this.cachedMishnayot.filter(m => m.id === targetId);
+                                }
+                            } else {
+                                // Fallback to API
+                                const params = new URLSearchParams({
+                                    chapter: this.selectedChapter,
+                                    mishna: this.selectedMishna
+                                });
+                                data = await apiGet('/search/mishna?' + params.toString());
+                            }
                         } else if (this.searchType === 'search_smart') {
+                            // Smart search always calls the Lambda API
                             const params = new URLSearchParams({
                                 q: this.searchQuery.trim(),
                                 exact_match: this.exactMatch.toString()
@@ -835,8 +988,16 @@
                                 hideLoader();
                                 return;
                             }
-                            const params = new URLSearchParams({ ids: selectedTagIds.join(',') });
-                            data = await apiGet('/search/tags?' + params.toString());
+                            if (this.cacheLoaded) {
+                                // Client-side filtering from cache
+                                data = this.cachedMishnayot
+                                    .filter(m => m.tags.some(t => selectedTagIds.includes(t.id)))
+                                    .sort((a, b) => a.number - b.number);
+                            } else {
+                                // Fallback to API
+                                const params = new URLSearchParams({ ids: selectedTagIds.join(',') });
+                                data = await apiGet('/search/tags?' + params.toString());
+                            }
                         }
 
                         this.results = Array.isArray(data) ? data : [];
@@ -862,8 +1023,17 @@
                 async searchByTag(tagId, tagName) {
                     showLoader('מחפש משניות בנושא: ' + tagName);
                     try {
-                        const params = new URLSearchParams({ ids: tagId.toString() });
-                        const data = await apiGet('/search/tags?' + params.toString());
+                        let data;
+                        if (this.cacheLoaded) {
+                            // Client-side filtering from cache
+                            data = this.cachedMishnayot
+                                .filter(m => m.tags.some(t => t.id === tagId))
+                                .sort((a, b) => a.number - b.number);
+                        } else {
+                            // Fallback to API
+                            const params = new URLSearchParams({ ids: tagId.toString() });
+                            data = await apiGet('/search/tags?' + params.toString());
+                        }
                         this.results = Array.isArray(data) ? data : [];
                         this.hasSearched = true;
                         this.$nextTick(() => {
@@ -885,8 +1055,15 @@
                     const loaderText = direction === 'next' ? 'טוען את המשנה הבאה' : 'טוען את המשנה הקודמת';
                     showLoader(loaderText);
                     try {
-                        const data = await apiGet('/search/number/' + mishnaNumber);
-                        this.results = data ? [data] : [];
+                        if (this.cacheLoaded) {
+                            // Client-side lookup from cache
+                            const found = this.cachedMishnayot.find(m => m.number === mishnaNumber);
+                            this.results = found ? [found] : [];
+                        } else {
+                            // Fallback to API
+                            const data = await apiGet('/search/number/' + mishnaNumber);
+                            this.results = data ? [data] : [];
+                        }
                         this.hasSearched = true;
                         this.$nextTick(() => {
                             const resultsSection = document.getElementById('results-section');
@@ -907,6 +1084,145 @@
 
                 scrollToSearch() {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                _initAuthState() {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        this.isAuthenticated = false;
+                        return;
+                    }
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length !== 3) { this.isAuthenticated = false; return; }
+                        const payload = JSON.parse(atob(parts[1]));
+                        // Check token expiry
+                        if (payload.exp && payload.exp * 1000 < Date.now()) {
+                            localStorage.removeItem('authToken');
+                            this.isAuthenticated = false;
+                            return;
+                        }
+                        this.isAuthenticated = true;
+                        this.userEmail = payload.email || '';
+                        this.userRole = payload['custom:role'] || 'user';
+                        if (this.isAuthenticated) {
+                            this._loadFavoriteIds();
+                            this._loadLearnedIds();
+                        }
+                    } catch (e) {
+                        this.isAuthenticated = false;
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('authToken');
+                    window.location.reload();
+                },
+
+                async _loadFavoriteIds() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch('/api/user/favorites', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.userFavoriteIds = new Set((data.favorites || []).map(f => f.mishna_id));
+                        }
+                    } catch (e) {
+                        // Best-effort, ignore errors
+                    }
+                },
+
+                async toggleFavorite(mishnaId) {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        // Show guest popup
+                        this.favoritePopupMishnaId = mishnaId;
+                        setTimeout(() => { this.favoritePopupMishnaId = null; }, 4000);
+                        return;
+                    }
+                    try {
+                        if (this.userFavoriteIds.has(mishnaId)) {
+                            // Remove favorite
+                            const response = await fetch(`/api/user/favorites/${mishnaId}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                                this.userFavoriteIds = new Set([...this.userFavoriteIds].filter(id => id !== mishnaId));
+                            }
+                        } else {
+                            // Add favorite
+                            const response = await fetch('/api/user/favorites', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({ mishna_id: mishnaId })
+                            });
+                            if (response.ok) {
+                                this.userFavoriteIds = new Set([...this.userFavoriteIds, mishnaId]);
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors silently
+                    }
+                },
+
+                closeFavoritePopup() {
+                    this.favoritePopupMishnaId = null;
+                },
+
+                async _loadLearnedIds() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch('/api/user/learned', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.userLearnedIds = new Set(data.learned || []);
+                        }
+                    } catch (e) {
+                        // Best-effort, ignore errors
+                    }
+                },
+
+                async toggleLearned(mishnaId) {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        // Show guest popup
+                        this.learnedPopupMishnaId = mishnaId;
+                        setTimeout(() => { this.learnedPopupMishnaId = null; }, 4000);
+                        return;
+                    }
+                    try {
+                        if (this.userLearnedIds.has(mishnaId)) {
+                            // Remove learned
+                            const response = await fetch(`/api/user/learned/${mishnaId}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                                this.userLearnedIds = new Set([...this.userLearnedIds].filter(id => id !== mishnaId));
+                            }
+                        } else {
+                            // Add learned
+                            const response = await fetch('/api/user/learned', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({ mishna_id: mishnaId })
+                            });
+                            if (response.ok) {
+                                this.userLearnedIds = new Set([...this.userLearnedIds, mishnaId]);
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors silently
+                    }
+                },
+
+                closeLearnedPopup() {
+                    this.learnedPopupMishnaId = null;
                 }
             };
         }
@@ -922,6 +1238,14 @@
                 showAllCategories: {},
 
                 init() {
+                    // Use cached tags from parent searchApp if available
+                    if (this.cachedTags) {
+                        this.allTags = this.cachedTags.tags || [];
+                        this.categories = this.cachedTags.categories || [];
+                        this.groupTagsByCategory();
+                        return;
+                    }
+                    // Fallback to API call
                     this.fetchTags();
                 },
 

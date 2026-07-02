@@ -36,7 +36,7 @@ env/
 .cache/
 .pytest_cache/
 
-# Hypothesis property-based testing cache
+# Hypothesis (property-based testing cache)
 .hypothesis/
 
 # IDE files

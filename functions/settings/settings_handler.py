@@ -11,7 +11,7 @@ import logging
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import Session
-from models import get_pirush_settings, set_pirush_enabled
+from models import get_pirush_settings, get_pirush_options, set_pirush_enabled, set_pirush_options
 from response import success_response, error_response
 
 logger = logging.getLogger()
@@ -30,6 +30,18 @@ def handler(event, context):
         # GET /api/settings
         if path == '/api/settings' and method == 'GET':
             return _get_settings(session)
+
+        # POST /api/settings/pirush/options
+        elif path == '/api/settings/pirush/options' and method == 'POST':
+            return _add_pirush_option(session, event)
+
+        # DELETE /api/settings/pirush/options
+        elif path == '/api/settings/pirush/options' and method == 'DELETE':
+            return _delete_pirush_option(session, event)
+
+        # PUT /api/settings/pirush/options
+        elif path == '/api/settings/pirush/options' and method == 'PUT':
+            return _update_pirush_option(session, event)
 
         # PUT /api/settings/pirush
         elif path == '/api/settings/pirush' and method == 'PUT':
@@ -61,13 +73,29 @@ def _parse_body(event):
 # ---------------------------------------------------------------------------
 
 def _get_settings(session):
-    """Return pirush_enabled and pirush_attribution_url."""
+    """Return pirush_enabled, pirush_attribution_url, and pirush_options."""
     logger.info('Fetching site settings')
 
     settings = get_pirush_settings(session)
+    settings['pirush_options'] = get_pirush_options(session)
 
     logger.info(f'Settings retrieved — pirush_enabled: {settings["pirush_enabled"]}')
     return success_response(settings)
+
+
+def _update_pirush_option(session, event):
+    """Toggle enabled state of a PirushOption by internal_name."""
+    body = _parse_body(event)
+    internal_name = body.get('internal_name', '')
+    enabled = body.get('enabled', True)
+
+    options = get_pirush_options(session)
+    for option in options:
+        if option.get('internal_name') == internal_name:
+            option['enabled'] = enabled
+            break
+    set_pirush_options(session, options)
+    return success_response({'message': 'ההגדרה עודכנה בהצלחה', 'options': options})
 
 
 def _update_pirush(session, event):
@@ -92,3 +120,32 @@ def _update_pirush(session, event):
         session.rollback()
         logger.error(f'Database error while updating pirush setting: {str(e)}', exc_info=True)
         return error_response('אירעה שגיאה בשמירת הנתונים', 'INTERNAL_ERROR', 500)
+
+
+def _add_pirush_option(session, event):
+    """Append a new PirushOption to the pirush_options list."""
+    body = _parse_body(event)
+    s3_url = body.get('s3_url', '')
+    internal_name = body.get('internal_name', '')
+    button_label = body.get('button_label', '')
+
+    options = get_pirush_options(session)
+    options.append({
+        's3_url': s3_url,
+        'internal_name': internal_name,
+        'button_label': button_label,
+        'enabled': True,
+    })
+    set_pirush_options(session, options)
+    return success_response({'message': 'אפשרות הפירוש נוספה בהצלחה', 'options': options})
+
+
+def _delete_pirush_option(session, event):
+    """Remove a PirushOption by internal_name."""
+    body = _parse_body(event)
+    internal_name = body.get('internal_name', '')
+
+    options = get_pirush_options(session)
+    updated = [o for o in options if o.get('internal_name') != internal_name]
+    set_pirush_options(session, updated)
+    return success_response({'message': 'אפשרות הפירוש הוסרה בהצלחה', 'options': updated})
