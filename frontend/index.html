@@ -86,7 +86,7 @@
             </div>
             <!-- Authenticated: show user info and links -->
             <div x-show="isAuthenticated" x-cloak class="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3">
-                <span class="text-sm font-medium w-full sm:w-auto text-center sm:text-right" style="color: #F5F5DC;" x-text="userEmail"></span>
+                <span class="text-sm font-medium w-full sm:w-auto text-center sm:text-right" style="color: #F5F5DC;" x-text="fullName || userEmail"></span>
                 <a href="/personal.html">
                     <button type="button" class="auth-nav-btn secondary">
                         האזור האישי
@@ -863,6 +863,7 @@
                 isAuthenticated: false,
                 userRole: '',
                 userEmail: '',
+                fullName: '',
                 userFavoriteIds: new Set(),
                 favoritePopupMishnaId: null,
                 userLearnedIds: new Set(),
@@ -1108,9 +1109,24 @@
                         if (this.isAuthenticated) {
                             this._loadFavoriteIds();
                             this._loadLearnedIds();
+                            this._loadFullName(token);
                         }
                     } catch (e) {
                         this.isAuthenticated = false;
+                    }
+                },
+
+                async _loadFullName(token) {
+                    try {
+                        const res = await fetch('/api/user/profile', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.fullName = data.full_name || '';
+                        }
+                    } catch (e) {
+                        // Non-fatal — fall back to userEmail in the UI
                     }
                 },
 

@@ -1833,6 +1833,22 @@ button[class*="text-"] {
     color: #f4e8d0 !important;
 }
 
+/* ===== VIEW RESULTS BUTTON (SEARCH LOG HISTORY) ===== */
+.view-results-btn {
+    color: #1e3a5f !important;
+}
+
+/* ===== RESULTS MODAL (SEARCH LOG HISTORY) ===== */
+.results-modal-container {
+    max-height: 85vh;
+}
+
+@media (max-width: 640px) {
+    .results-modal-container {
+        max-height: 80vh;
+    }
+}
+
 /* ===== S
 PECIFIC STYLING FOR ONLY THE 3 SEARCH OPTION BUTTONS ===== */
 
